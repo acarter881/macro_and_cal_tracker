@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect } from "react";
+import toast from 'react-hot-toast';
 import { useStore } from "../store";
 import type { MealType } from "../types";
 
@@ -132,13 +133,24 @@ function Row({ e, onUpdate, onDelete }: RowProps) {
 
   const handleUpdate = async () => {
     setIsMutating(true);
-    await onUpdate(e.id, g);
-    // No need to set isMutating to false, as the component will re-render with fresh (and now non-busy) data
+    try {
+      await onUpdate(e.id, g);
+    } catch (err: any) {
+      toast.error(err?.response?.data?.detail || "Failed to update entry.");
+    } finally {
+      setIsMutating(false);
+    }
   }
 
   const handleDelete = async () => {
     setIsMutating(true);
-    await onDelete(e.id);
+    try {
+      await onDelete(e.id);
+    } catch (err: any) {
+      toast.error(err?.response?.data?.detail || "Failed to delete entry.");
+    } finally {
+      setIsMutating(false);
+    }
   }
 
   return (
