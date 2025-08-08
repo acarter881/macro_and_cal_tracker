@@ -1,7 +1,4 @@
-// web/src/api.ts (replace entire file)
-
 import axios from "axios";
-// **FIXED**: Removed unused 'format' import
 import type { HistoryDay } from "./types";
 
 const api = axios.create({ baseURL: "http://localhost:8000/api" });
