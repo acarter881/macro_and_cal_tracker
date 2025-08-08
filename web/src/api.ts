@@ -102,3 +102,18 @@ export async function getHistory(startDate: string, endDate: string): Promise<Hi
   const response = await api.get("/history", { params });
   return response.data;
 }
+
+// --- Body Weight ---
+export async function getWeight(date: string) {
+  try {
+    const response = await api.get(`/weight/${date}`);
+    return response.data;
+  } catch (err) {
+    return null;
+  }
+}
+
+export async function setWeight(date: string, weight: number) {
+  const response = await api.put(`/weight/${date}`, { weight });
+  return response.data;
+}

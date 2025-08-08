@@ -56,4 +56,5 @@ export type HistoryDay = {
     protein: number;
     fat: number;
     carb: number;
+    weight?: number;
 };

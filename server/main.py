@@ -62,6 +62,10 @@ class PresetItem(SQLModel, table=True):
     fdc_id: int
     grams: float
 
+class BodyWeight(SQLModel, table=True):
+    date: str = Field(primary_key=True)
+    weight: float
+
 # -------------------------------------------------------------------
 # App + startup
 # -------------------------------------------------------------------
@@ -919,6 +923,27 @@ async def copy_meal_to(
     session.commit()
     return {"message": "Meal copied successfully.", "added_count": len(source_entries)}
 
+class BodyWeightIn(BaseModel):
+    weight: float
+
+@app.get("/api/weight/{date}", response_model=BodyWeight)
+def get_weight(date: date, session: Session = Depends(get_session)):
+    w = session.get(BodyWeight, date.isoformat())
+    if not w:
+        raise HTTPException(status_code=404, detail="Weight not found")
+    return w
+
+@app.put("/api/weight/{date}", response_model=BodyWeight)
+def upsert_weight(date: date, payload: BodyWeightIn, session: Session = Depends(get_session)):
+    w = session.get(BodyWeight, date.isoformat())
+    if w:
+        w.weight = payload.weight
+    else:
+        w = BodyWeight(date=date.isoformat(), weight=payload.weight)
+        session.add(w)
+    session.commit()
+    return w
+
 # --- NEW: Pydantic model for a single day's summary ---
 class HistoryDay(BaseModel):
     date: str
@@ -926,6 +951,7 @@ class HistoryDay(BaseModel):
     protein: float
     fat: float
     carb: float
+    weight: Optional[float] = None
 
 # --- NEW: Endpoint to get summarized data for a date range ---
 @app.get("/api/history", response_model=List[HistoryDay])
@@ -957,7 +983,14 @@ def get_history(
      .order_by(Meal.date)
 
     results = session.exec(query).all()
-    
+    weight_rows = session.exec(
+        select(BodyWeight).where(
+            BodyWeight.date >= start_date.isoformat(),
+            BodyWeight.date <= end_date.isoformat()
+        )
+    ).all()
+    weight_map = {w.date: w.weight for w in weight_rows}
+
     # Fill in any missing days with zero values for a continuous chart
     history_map = {res.date: res for res in results}
     output = []
@@ -966,9 +999,27 @@ def get_history(
         date_str = current_date.isoformat()
         if date_str in history_map:
             day_data = history_map[date_str]
-            output.append(HistoryDay(date=date_str, kcal=day_data.kcal, protein=day_data.protein, fat=day_data.fat, carb=day_data.carb))
+            output.append(
+                HistoryDay(
+                    date=date_str,
+                    kcal=day_data.kcal,
+                    protein=day_data.protein,
+                    fat=day_data.fat,
+                    carb=day_data.carb,
+                    weight=weight_map.get(date_str)
+                )
+            )
         else:
-            output.append(HistoryDay(date=date_str, kcal=0, protein=0, fat=0, carb=0))
+            output.append(
+                HistoryDay(
+                    date=date_str,
+                    kcal=0,
+                    protein=0,
+                    fat=0,
+                    carb=0,
+                    weight=weight_map.get(date_str)
+                )
+            )
         current_date += timedelta(days=1)
-        
+
     return output
