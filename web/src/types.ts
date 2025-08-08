@@ -58,3 +58,11 @@ export type HistoryDay = {
     carb: number;
     weight?: number;
 };
+
+// User-configurable daily macro goals
+export type Goals = {
+  kcal: number;
+  protein: number;
+  fat: number;
+  carb: number;
+};
