@@ -1,0 +1,160 @@
+import { useMemo, useState, useEffect } from "react";
+import { useStore } from "../store";
+import type { MealType } from "../types";
+
+export function DailyLog() {
+  const { day, mealName, setDate, setMealName, addMeal, updateEntry, deleteEntry, deleteMeal, copiedMealId, copyMeal, pasteMeal } = useStore();
+  
+  const [isAddingMeal, setIsAddingMeal] = useState(false);
+  const [isPasting, setIsPasting] = useState(false);
+
+  const handleAddMeal = async () => {
+    setIsAddingMeal(true);
+    await addMeal();
+    setIsAddingMeal(false);
+  }
+
+  const handlePasteMeal = async () => {
+    setIsPasting(true);
+    await pasteMeal();
+    setIsPasting(false);
+  }
+  
+  const pickerMeals = useMemo(() => {
+    if ((day?.meals?.length ?? 0) > 0) {
+      return [...day!.meals].sort((a, b) => a.sort_order - b.sort_order);
+    }
+    return [];
+  }, [day]);
+
+  return (
+    <div className="lg:col-span-2 space-y-6">
+      <div className="card">
+        <div className="card-body flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <label htmlFor="date-picker" className="font-semibold text-sm">Date:</label>
+            <input id="date-picker" className="form-input" type="date" value={day?.date ?? new Date().toISOString().slice(0, 10)} onChange={e => setDate(e.target.value)} />
+          </div>
+          <div className="flex items-center gap-2">
+            <select className="form-input" value={mealName} onChange={e => setMealName(e.target.value)}>
+              {pickerMeals.map(m => (<option key={m.id}>{m.name}</option>))}
+            </select>
+            
+            {copiedMealId && (
+              <button type="button" className="btn btn-secondary whitespace-nowrap" onClick={handlePasteMeal} disabled={isPasting}>
+                {isPasting ? "Pasting..." : `Paste to ${mealName}`}
+              </button>
+            )}
+
+            <button type="button" className="btn btn-secondary" onClick={handleAddMeal} disabled={isAddingMeal}>
+              {isAddingMeal ? "+ ..." : "+ Meal"}
+            </button>
+          </div>
+        </div>
+      </div>
+      {(day?.meals ?? [])
+        .slice()
+        .sort((a, b) => a.sort_order - b.sort_order)
+        .map(m => (
+          <MealCard 
+            key={m.id} 
+            meal={m} 
+            isCurrent={m.name === mealName} 
+            onSelect={() => setMealName(m.name)} 
+            onUpdateEntry={updateEntry} 
+            onDeleteEntry={deleteEntry} 
+            onDeleteMeal={deleteMeal}
+            onCopyMeal={copyMeal}
+          />
+        ))}
+    </div>
+  );
+}
+
+// --- Child Components ---
+
+type MealCardProps = {
+  meal: MealType; isCurrent: boolean; onSelect: () => void;
+  onUpdateEntry: (entryId: number, grams: number) => Promise<void>;
+  onDeleteEntry: (entryId: number) => Promise<void>;
+  onDeleteMeal: (mealId: number) => Promise<void>;
+  onCopyMeal: (mealId: number) => void;
+};
+
+function MealCard({ meal, isCurrent, onSelect, onUpdateEntry, onDeleteEntry, onDeleteMeal, onCopyMeal }: MealCardProps) {
+  return (
+    <div className={`card ${isCurrent ? "ring-2 ring-indigo-500" : ""}`}>
+      <div className="card-header bg-gray-100 dark:bg-gray-700 flex items-center relative py-3" onClick={onSelect}>
+        <h3 className="flex-1 text-center font-semibold text-lg dark:text-gray-200">{meal.name}</h3>
+        <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+            <button type="button" title="Copy meal" onClick={(e) => { e.stopPropagation(); onCopyMeal(meal.id); }} className="btn btn-ghost btn-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+            </button>
+            {meal.entries.length === 0 && (
+              <button type="button" title="Delete empty meal" onClick={(e) => { e.stopPropagation(); onDeleteMeal(meal.id); }} className="btn btn-ghost btn-sm">🗑️</button>
+            )}
+        </div>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm table-zebra">
+          <thead>
+            <tr className="border-b dark:border-gray-600"><th className="text-left p-3 font-medium">Item</th><th className="text-right p-3 font-medium">Qty (g)</th><th className="text-right p-3 font-medium">kcal</th><th className="text-right p-3 font-medium">F</th><th className="text-right p-3 font-medium">C</th><th className="text-right p-3 font-medium">P</th><th className="p-3"></th></tr>
+          </thead>
+          <tbody>
+            {meal.entries.length ? (meal.entries.map(e => (<Row key={e.id} e={e} onUpdate={onUpdateEntry} onDelete={onDeleteEntry} />))) :
+              (<tr><td className="p-4 text-gray-500 text-center" colSpan={7}>No entries yet.</td></tr>)}
+          </tbody>
+          <tfoot>
+            <tr className="font-semibold border-t-2 border-gray-200 dark:border-gray-600">
+                <td className="p-3 text-right" colSpan={2}>Subtotal</td>
+                <td className="p-3 text-right subtotal-kcal">{meal.subtotal.kcal.toFixed(1)}</td>
+                <td className="p-3 text-right subtotal-fat">{meal.subtotal.fat.toFixed(1)}</td>
+                <td className="p-3 text-right subtotal-carb">{meal.subtotal.carb.toFixed(1)}</td>
+                <td className="p-3 text-right subtotal-protein">{meal.subtotal.protein.toFixed(1)}</td>
+                <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+type EntryType = { id: number; description: string; quantity_g: number; kcal: number; protein: number; carb: number; fat: number };
+type RowProps = { e: EntryType, onUpdate: (id: number, grams: number) => Promise<void>, onDelete: (id: number) => Promise<void> };
+
+function Row({ e, onUpdate, onDelete }: RowProps) {
+  const [g, setG] = useState<number>(e.quantity_g);
+  const [isMutating, setIsMutating] = useState(false);
+  const changed = g !== e.quantity_g;
+  
+  useEffect(() => { setG(e.quantity_g); }, [e.quantity_g]);
+
+  const handleUpdate = async () => {
+    setIsMutating(true);
+    await onUpdate(e.id, g);
+    // No need to set isMutating to false, as the component will re-render with fresh (and now non-busy) data
+  }
+
+  const handleDelete = async () => {
+    setIsMutating(true);
+    await onDelete(e.id);
+  }
+
+  return (
+    <tr className="border-t dark:border-gray-700">
+      <td className="p-2 font-medium">{e.description}</td>
+      <td className="p-2 text-right"><input className="form-input text-right w-20 py-1" type="number" min={1} step={1} value={g} onChange={ev=>setG(parseFloat(ev.target.value))} disabled={isMutating} /></td>
+      <td className="p-2 text-right">{e.kcal.toFixed(1)}</td>
+      <td className="p-2 text-right">{e.fat.toFixed(1)}</td>
+      <td className="p-2 text-right">{e.carb.toFixed(1)}</td>
+      <td className="p-2 text-right">{e.protein.toFixed(1)}</td>
+      <td className="p-2 text-right">
+        <div className="flex gap-2 justify-end">
+          <button className="btn btn-secondary btn-sm" disabled={!changed || isNaN(g) || g <= 0 || isMutating} onClick={handleUpdate}>{isMutating ? "..." : "Update"}</button>
+          <button className="btn btn-ghost btn-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/50" onClick={handleDelete} disabled={isMutating}>{isMutating ? "..." : "Delete"}</button>
+        </div>
+      </td>
+    </tr>
+  )
+}
