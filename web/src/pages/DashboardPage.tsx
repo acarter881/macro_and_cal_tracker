@@ -1,5 +1,3 @@
-// web/src/pages/DashboardPage.tsx (replace entire file)
-
 import { useEffect, useState } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { format, subDays, parseISO } from 'date-fns';
@@ -8,7 +6,7 @@ import type { HistoryDay } from "../types";
 
 export function DashboardPage() {
     const [data, setData] = useState<HistoryDay[]>([]);
-    const [loading, setLoading] = useState(true);
+    // <-- Removed the `loading` state
 
     useEffect(() => {
         const fetchHistory = async () => {
@@ -22,17 +20,14 @@ export function DashboardPage() {
                 setData(historyData);
             } catch (error) {
                 console.error("Failed to fetch history:", error);
-            } finally {
-                setLoading(false);
-            }
+            } 
+            // <-- Removed the `finally` block and setLoading(false)
         };
         fetchHistory();
     }, []);
 
-    if (loading) {
-        return <div className="text-center p-8 dark:text-gray-300">Loading dashboard...</div>;
-    }
-    
+    // <-- Removed the conditional "if (loading) { ... }" block
+
     const formattedData = data.map(d => ({...d, date: format(parseISO(d.date), 'E dd')}));
 
     return (
