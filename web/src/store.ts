@@ -14,6 +14,7 @@ interface AppState {
   // busy: boolean; // <-- REMOVED
   allMyFoods: SimpleFood[];
   presets: Preset[];
+  weight: number | null;
 }
 
 interface AppActions {
@@ -32,6 +33,7 @@ interface AppActions {
   refreshPresets: () => Promise<void>;
   applyPreset: (presetId: number) => Promise<void>;
   setAllMyFoods: (foods: SimpleFood[]) => void;
+  saveWeight: (w: number) => Promise<void>;
 }
 
 const getInitialTheme = (): Theme => {
@@ -51,6 +53,7 @@ export const useStore = create<AppState & AppActions>((set, get) => ({
   day: null,
   allMyFoods: [],
   presets: [],
+  weight: null,
 
   copyMeal: (mealId: number) => {
     set({ copiedMealId: mealId });
@@ -92,6 +95,16 @@ export const useStore = create<AppState & AppActions>((set, get) => ({
   setMealName: (newName) => set({ mealName: newName }),
   setAllMyFoods: (foods) => set({ allMyFoods: foods }),
 
+  saveWeight: async (w) => {
+    try {
+      await api.setWeight(get().date, w);
+      set({ weight: w });
+      toast.success('Weight saved!');
+    } catch {
+      toast.error('Failed to save weight.');
+    }
+  },
+
   fetchDay: async () => {
     try {
       let d = await api.getDayFull(get().date);
@@ -99,7 +112,8 @@ export const useStore = create<AppState & AppActions>((set, get) => ({
         for (let i = 0; i < 4; i++) { await api.createMeal(get().date); }
         d = await api.getDayFull(get().date);
       }
-      set({ day: d });
+      const w = await api.getWeight(get().date);
+      set({ day: d, weight: w?.weight ?? null });
       const mealExists = d.meals.some((m: MealType) => m.name === get().mealName);
       if (!mealExists) set({ mealName: d.meals[0]?.name || "Meal 1" });
     } catch (error) { console.error("Failed to fetch day:", error);

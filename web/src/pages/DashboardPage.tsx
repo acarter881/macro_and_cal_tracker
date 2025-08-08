@@ -70,6 +70,24 @@ export function DashboardPage() {
                     </ResponsiveContainer>
                 </div>
             </div>
+            <div className="card">
+                <div className="card-header"><h2 className="font-semibold text-lg dark:text-gray-200">Body Weight Trend (Last 7 Days)</h2></div>
+                <div className="card-body h-80">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={formattedData}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(128, 128, 128, 0.2)" />
+                            <XAxis dataKey="date" tick={{ fill: 'currentColor' }} />
+                            <YAxis tick={{ fill: 'currentColor' }} />
+                            <Tooltip
+                                contentStyle={{ backgroundColor: '#333', border: 'none' }}
+                                labelStyle={{ color: '#fff' }}
+                            />
+                            <Legend />
+                            <Line type="monotone" dataKey="weight" name="Weight" stroke="#8884d8" strokeWidth={2} activeDot={{ r: 8 }} />
+                        </LineChart>
+                    </ResponsiveContainer>
+                </div>
+            </div>
         </div>
     );
 }

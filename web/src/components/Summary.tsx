@@ -1,7 +1,15 @@
+import { useState, useEffect } from "react";
 import { useStore } from "../store";
 
 export function Summary() {
     const totals = useStore(state => state.day?.totals);
+    const weight = useStore(state => state.weight);
+    const saveWeight = useStore(state => state.saveWeight);
+    const [input, setInput] = useState("");
+
+    useEffect(() => {
+        setInput(weight != null ? weight.toString() : "");
+    }, [weight]);
 
     return (
         <div className="lg:col-span-1">
@@ -34,6 +42,13 @@ export function Summary() {
                             <b className="text-lg font-bold text-green-900 dark:text-green-100">{totals?.protein?.toFixed(1) || '0.0'}g</b>
                         </div>
 
+                    </div>
+                    <div className="mt-6">
+                        <label className="block mb-1 text-sm text-gray-700 dark:text-gray-300">Body Weight (lb)</label>
+                        <div className="flex gap-2">
+                            <input className="form-input flex-1" value={input} onChange={e => setInput(e.target.value)} />
+                            <button className="btn btn-primary" onClick={() => { const v = parseFloat(input); if(!isNaN(v)) saveWeight(v); }}>Save</button>
+                        </div>
                     </div>
                     <div className="text-xs text-gray-500 mt-4 text-center">Calories for custom foods use the label; USDA items use 4/4/9.</div>
                 </div>
