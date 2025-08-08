@@ -47,26 +47,37 @@ const getInitialTheme = (): Theme => {
     return 'light';
 };
 
-const getInitialGoals = (): Goals => {
-  if (typeof window !== 'undefined') {
-    try {
-      const raw = localStorage.getItem('goals');
-      if (raw) return JSON.parse(raw);
-    } catch { /* ignore */ }
+// --- Daily Goals helpers -------------------------------------------------
+const EMPTY_GOALS: Goals = { kcal: 0, protein: 0, fat: 0, carb: 0 };
+
+// Return full mapping of date -> goals from localStorage
+const loadGoalsMap = (): Record<string, Goals> => {
+  if (typeof window === 'undefined') return {};
+  try {
+    return JSON.parse(localStorage.getItem('goalsByDate') || '{}');
+  } catch {
+    return {};
   }
-  return { kcal: 0, protein: 0, fat: 0, carb: 0 };
 };
+
+// Load goals for specific date
+const getGoalsForDate = (d: string): Goals => {
+  const all = loadGoalsMap();
+  return all[d] || { ...EMPTY_GOALS };
+};
+
+const initialDate = new Date().toISOString().slice(0, 10);
 
 export const useStore = create<AppState & AppActions>((set, get) => ({
   copiedMealId: null,
   theme: getInitialTheme(),
-  date: new Date().toISOString().slice(0, 10),
+  date: initialDate,
   mealName: "Meal 1",
   day: null,
   allMyFoods: [],
   presets: [],
   weight: null,
-  goals: getInitialGoals(),
+  goals: getGoalsForDate(initialDate),
 
   copyMeal: (mealId: number) => {
     set({ copiedMealId: mealId });
@@ -104,7 +115,7 @@ export const useStore = create<AppState & AppActions>((set, get) => ({
     set({ allMyFoods: foods });
   },
 
-  setDate: (newDate) => { set({ date: newDate }); get().fetchDay(); },
+  setDate: (newDate) => { set({ date: newDate, goals: getGoalsForDate(newDate) }); get().fetchDay(); },
   setMealName: (newName) => set({ mealName: newName }),
   setAllMyFoods: (foods) => set({ allMyFoods: foods }),
 
@@ -187,7 +198,9 @@ export const useStore = create<AppState & AppActions>((set, get) => ({
 
   setGoals: (g) => {
     if (typeof window !== 'undefined') {
-      localStorage.setItem('goals', JSON.stringify(g));
+      const all = loadGoalsMap();
+      all[get().date] = g;
+      localStorage.setItem('goalsByDate', JSON.stringify(all));
     }
     set({ goals: g });
   }
