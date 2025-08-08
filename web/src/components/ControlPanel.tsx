@@ -30,8 +30,9 @@ export function ControlPanel() {
   const [isCreatingFood, setIsCreatingFood] = useState(false);
   const [isSavingPreset, setIsSavingPreset] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
-  type GoalInputState = { protein: string; fat: string; carb: string; kcal?: string };
-  const [goalInput, setGoalInput] = useState<GoalInputState>({ protein: "", fat: "", carb: "" });
+
+  type GoalInputState = { fat: string; carb: string; protein: string; kcal?: string };
+  const [goalInput, setGoalInput] = useState<GoalInputState>({ fat: "", carb: "", protein: "" });
 
   const { register, handleSubmit, formState: { errors, isValid }, watch, setValue, reset } = useForm<CustomFoodFormData>({
       mode: 'onChange',
@@ -81,17 +82,17 @@ export function ControlPanel() {
 
   useEffect(() => {
     setGoalInput({
-      protein: goals.protein ? goals.protein.toString() : "",
       fat: goals.fat ? goals.fat.toString() : "",
       carb: goals.carb ? goals.carb.toString() : "",
+      protein: goals.protein ? goals.protein.toString() : "",
     });
   }, [goals]);
 
   const handleSaveGoals = () => {
     const g = {
-      protein: parseFloat(goalInput.protein) || 0,
       fat: parseFloat(goalInput.fat) || 0,
       carb: parseFloat(goalInput.carb) || 0,
+      protein: parseFloat(goalInput.protein) || 0,
       kcal: 0,
     };
     const computedKcal = g.protein * 4 + g.carb * 4 + g.fat * 9;
@@ -350,9 +351,10 @@ export function ControlPanel() {
       <CollapsibleSection title="Daily Goals" startOpen={true}>
         <div className="space-y-2">
           <div className="grid grid-cols-2 gap-2">
-            <input className="form-input" type="number" step="0.1" placeholder="Protein g" value={goalInput.protein} onChange={e=>setGoalInput({ ...goalInput, protein: e.target.value })} />
+            <input className="form-input" type="number" step="0.1" placeholder="kcal" value={goalInput.kcal} onChange={e=>setGoalInput({ ...goalInput, kcal: e.target.value })} />
             <input className="form-input" type="number" step="0.1" placeholder="Fat g" value={goalInput.fat} onChange={e=>setGoalInput({ ...goalInput, fat: e.target.value })} />
             <input className="form-input" type="number" step="0.1" placeholder="Carb g" value={goalInput.carb} onChange={e=>setGoalInput({ ...goalInput, carb: e.target.value })} />
+            <input className="form-input" type="number" step="0.1" placeholder="Protein g" value={goalInput.protein} onChange={e=>setGoalInput({ ...goalInput, protein: e.target.value })} />
           </div>
           <button className="btn btn-secondary w-full" onClick={handleSaveGoals}>Save Goals</button>
         </div>
