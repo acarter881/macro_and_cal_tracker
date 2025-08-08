@@ -23,13 +23,14 @@ type CustomFoodFormData = {
 };
 
 export function ControlPanel() {
-  const { date, mealName, allMyFoods, presets, setAllMyFoods, addFood, refreshPresets, applyPreset } = useStore();
+  const { date, mealName, allMyFoods, presets, setAllMyFoods, addFood, refreshPresets, applyPreset, goals, setGoals } = useStore();
   const currentMeal = useStore(state => state.day?.meals.find(m => m.name === state.mealName));
 
   const [isAddingFood, setIsAddingFood] = useState(false);
   const [isCreatingFood, setIsCreatingFood] = useState(false);
   const [isSavingPreset, setIsSavingPreset] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [goalInput, setGoalInput] = useState({ kcal: "", protein: "", fat: "", carb: "" });
 
   const { register, handleSubmit, formState: { errors, isValid }, watch, setValue, reset } = useForm<CustomFoodFormData>({
       mode: 'onChange',
@@ -76,6 +77,26 @@ export function ControlPanel() {
     });
     return copy;
   }
+
+  useEffect(() => {
+    setGoalInput({
+      kcal: goals.kcal ? goals.kcal.toString() : "",
+      protein: goals.protein ? goals.protein.toString() : "",
+      fat: goals.fat ? goals.fat.toString() : "",
+      carb: goals.carb ? goals.carb.toString() : "",
+    });
+  }, [goals]);
+
+  const handleSaveGoals = () => {
+    const g = {
+      kcal: parseFloat(goalInput.kcal) || 0,
+      protein: parseFloat(goalInput.protein) || 0,
+      fat: parseFloat(goalInput.fat) || 0,
+      carb: parseFloat(goalInput.carb) || 0,
+    };
+    setGoals(g);
+    toast.success('Goals saved!');
+  };
   
   async function doSearch() {
     if (!query.trim() || query.trim().length < 2) { setResults([]); return; }
@@ -317,6 +338,17 @@ export function ControlPanel() {
               </tbody>
             </table>
           </div>
+        </div>
+      </CollapsibleSection>
+      <CollapsibleSection title="Daily Goals" startOpen={true}>
+        <div className="space-y-2">
+          <div className="grid grid-cols-2 gap-2">
+            <input className="form-input" type="number" placeholder="kcal" value={goalInput.kcal} onChange={e=>setGoalInput({ ...goalInput, kcal: e.target.value })} />
+            <input className="form-input" type="number" step="0.1" placeholder="Protein g" value={goalInput.protein} onChange={e=>setGoalInput({ ...goalInput, protein: e.target.value })} />
+            <input className="form-input" type="number" step="0.1" placeholder="Fat g" value={goalInput.fat} onChange={e=>setGoalInput({ ...goalInput, fat: e.target.value })} />
+            <input className="form-input" type="number" step="0.1" placeholder="Carb g" value={goalInput.carb} onChange={e=>setGoalInput({ ...goalInput, carb: e.target.value })} />
+          </div>
+          <button className="btn btn-secondary w-full" onClick={handleSaveGoals}>Save Goals</button>
         </div>
       </CollapsibleSection>
       <CollapsibleSection title="Export Data">

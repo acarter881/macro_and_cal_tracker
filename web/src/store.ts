@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import toast from 'react-hot-toast';
 import * as api from './api';
-import type { DayFull, Preset, SimpleFood, MealType } from "./types";
+import type { DayFull, Preset, SimpleFood, MealType, Goals } from "./types";
 
 type Theme = 'light' | 'dark';
 
@@ -15,6 +15,7 @@ interface AppState {
   allMyFoods: SimpleFood[];
   presets: Preset[];
   weight: number | null;
+  goals: Goals;
 }
 
 interface AppActions {
@@ -34,6 +35,7 @@ interface AppActions {
   applyPreset: (presetId: number) => Promise<void>;
   setAllMyFoods: (foods: SimpleFood[]) => void;
   saveWeight: (w: number) => Promise<void>;
+  setGoals: (g: Goals) => void;
 }
 
 const getInitialTheme = (): Theme => {
@@ -45,6 +47,16 @@ const getInitialTheme = (): Theme => {
     return 'light';
 };
 
+const getInitialGoals = (): Goals => {
+  if (typeof window !== 'undefined') {
+    try {
+      const raw = localStorage.getItem('goals');
+      if (raw) return JSON.parse(raw);
+    } catch { /* ignore */ }
+  }
+  return { kcal: 0, protein: 0, fat: 0, carb: 0 };
+};
+
 export const useStore = create<AppState & AppActions>((set, get) => ({
   copiedMealId: null,
   theme: getInitialTheme(),
@@ -54,6 +66,7 @@ export const useStore = create<AppState & AppActions>((set, get) => ({
   allMyFoods: [],
   presets: [],
   weight: null,
+  goals: getInitialGoals(),
 
   copyMeal: (mealId: number) => {
     set({ copiedMealId: mealId });
@@ -170,5 +183,12 @@ export const useStore = create<AppState & AppActions>((set, get) => ({
     } catch (e: any) {
       toast.error(e?.response?.data?.detail || "Failed to apply preset.");
     }
+  },
+
+  setGoals: (g) => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('goals', JSON.stringify(g));
+    }
+    set({ goals: g });
   }
 }));
