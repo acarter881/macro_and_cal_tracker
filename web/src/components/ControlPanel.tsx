@@ -351,7 +351,6 @@ export function ControlPanel() {
       <CollapsibleSection title="Daily Goals" startOpen={true}>
         <div className="space-y-2">
           <div className="grid grid-cols-2 gap-2">
-            <input className="form-input" type="number" step="0.1" placeholder="kcal" value={goalInput.kcal} onChange={e=>setGoalInput({ ...goalInput, kcal: e.target.value })} />
             <input className="form-input" type="number" step="0.1" placeholder="Fat g" value={goalInput.fat} onChange={e=>setGoalInput({ ...goalInput, fat: e.target.value })} />
             <input className="form-input" type="number" step="0.1" placeholder="Carb g" value={goalInput.carb} onChange={e=>setGoalInput({ ...goalInput, carb: e.target.value })} />
             <input className="form-input" type="number" step="0.1" placeholder="Protein g" value={goalInput.protein} onChange={e=>setGoalInput({ ...goalInput, protein: e.target.value })} />
