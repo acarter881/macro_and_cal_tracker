@@ -455,6 +455,75 @@ def create_meal(payload: MealCreate, session: Session = Depends(get_session)):
     session.refresh(db_meal)
     return db_meal
 
+
+class MealUpdate(BaseModel):
+    name: Optional[str] = None
+    sort_order: Optional[int] = None
+
+
+@app.patch("/api/meals/{meal_id}", response_model=Meal)
+def update_meal(meal_id: int, payload: MealUpdate, session: Session = Depends(get_session)):
+    meal = session.get(Meal, meal_id)
+    if not meal:
+        raise HTTPException(status_code=404, detail="Meal not found")
+
+    updated = False
+
+    if payload.sort_order is not None and payload.sort_order != meal.sort_order:
+        new_order = max(1, payload.sort_order)
+        meals_same_day = session.exec(
+            select(Meal).where(Meal.date == meal.date).order_by(Meal.sort_order)
+        ).all()
+        max_order = len(meals_same_day)
+        if new_order > max_order:
+            new_order = max_order
+        old_order = meal.sort_order
+        if new_order < old_order:
+            affected = session.exec(
+                select(Meal)
+                .where(
+                    Meal.date == meal.date,
+                    Meal.sort_order >= new_order,
+                    Meal.sort_order < old_order,
+                    Meal.id != meal.id,
+                )
+            ).all()
+            for m in affected:
+                m.sort_order += 1
+                if m.name.startswith("Meal "):
+                    m.name = f"Meal {m.sort_order}"
+                session.add(m)
+        elif new_order > old_order:
+            affected = session.exec(
+                select(Meal)
+                .where(
+                    Meal.date == meal.date,
+                    Meal.sort_order <= new_order,
+                    Meal.sort_order > old_order,
+                    Meal.id != meal.id,
+                )
+            ).all()
+            for m in affected:
+                m.sort_order -= 1
+                if m.name.startswith("Meal "):
+                    m.name = f"Meal {m.sort_order}"
+                session.add(m)
+        meal.sort_order = new_order
+        if meal.name.startswith("Meal "):
+            meal.name = f"Meal {new_order}"
+        updated = True
+
+    if payload.name is not None:
+        meal.name = payload.name
+        updated = True
+
+    if updated:
+        session.add(meal)
+        session.commit()
+        session.refresh(meal)
+
+    return meal
+
 @app.post("/api/entries", response_model=FoodEntry)
 def create_entry(entry: FoodEntry, session: Session = Depends(get_session)):
     # ... (This function is unchanged)

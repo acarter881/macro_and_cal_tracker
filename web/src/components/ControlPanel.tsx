@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import toast from 'react-hot-toast';
 import { useStore } from "../store";
-import { CollapsibleSection } from "./CollapsibleSection";
 import * as api from "../api";
 import { DATA_TYPE_OPTIONS } from "../types";
 import type { DataTypeOpt, LabelUnit, SimpleFood } from "../types";
@@ -55,6 +54,16 @@ export function ControlPanel() {
   const [exportStart, setExportStart] = useState<string>(new Date().toISOString().slice(0, 10));
   const [exportEnd, setExportEnd] = useState<string>(new Date().toISOString().slice(0, 10));
   const invalidRange = !exportStart || !exportEnd || exportStart > exportEnd;
+
+  type TabKey = 'search' | 'custom' | 'presets' | 'goals' | 'export';
+  const tabs: { key: TabKey; label: string }[] = [
+    { key: 'search', label: 'Search' },
+    { key: 'custom', label: 'Custom Food' },
+    { key: 'presets', label: 'Presets' },
+    { key: 'goals', label: 'Goals' },
+    { key: 'export', label: 'Export' },
+  ];
+  const [tab, setTab] = useState<TabKey>('search');
 
   const myFoodsFiltered = useMemo(() => {
     if (!query.trim()) return allMyFoods;
@@ -211,162 +220,181 @@ export function ControlPanel() {
   }
 
   return (
-    <div className="lg:col-span-1 space-y-6">
+    <div className="lg:col-span-1">
       <div className="card">
-        <div className="card-header"><h3 className="font-semibold dark:text-gray-200">Search & Add</h3></div>
-        <div className="card-body space-y-4">
-          <input className="form-input" placeholder="Search foods…" value={query} onChange={e => setQuery(e.target.value)} />
-          <div className="flex items-center gap-2">
-            <select className="form-input" value={typeFilter} onChange={(e) => setTypeFilter(e.target.value as DataTypeOpt)}>
-              {DATA_TYPE_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-            </select>
-            <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">
-              <input type="checkbox" className="rounded text-indigo-600 focus:ring-indigo-500" checked={unbrandedFirst} onChange={(e) => setUnbrandedFirst(e.target.checked)} />
-              Unbranded first
-            </label>
-          </div>
-          {allMyFoods.length > 0 && (
-            <div>
-              <h4 className="font-semibold text-sm mb-1 text-gray-600 dark:text-gray-400">My Foods</h4>
-              <ul className="border rounded-md divide-y dark:border-gray-600 dark:divide-gray-600 max-h-40 overflow-auto">
-                {myFoodsFiltered.map((f) => (
-                  <li key={f.fdcId} className={`p-2 flex justify-between items-center cursor-pointer ${selected === f.fdcId ? "bg-indigo-100 dark:bg-indigo-900" : "hover:bg-gray-50 dark:hover:bg-gray-700"}`} onClick={() => setSelected(f.fdcId)}>
-                    <div className="font-medium truncate text-sm">{f.description}</div>
-                    <button className="btn btn-ghost btn-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/50" onClick={(e) => { e.stopPropagation(); handleDeleteCustomFood(f.fdcId); }}>🗑️</button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-          <div>
-            <h4 className="font-semibold text-sm mb-1 text-gray-600 dark:text-gray-400">USDA Results</h4>
-            <ul className="border rounded-md divide-y dark:border-gray-600 dark:divide-gray-600 h-[250px] overflow-auto">
-              {searching ? (<li className="p-2 text-gray-500">Searching...</li>) :
-                results.map(r => (
-                  <li key={r.fdcId} className={`p-2 cursor-pointer ${selected === r.fdcId ? "bg-indigo-100 dark:bg-indigo-900" : "hover:bg-gray-50 dark:hover:bg-gray-700"}`} onClick={() => setSelected(r.fdcId)}>
-                    <div className="font-medium text-sm">{r.description}</div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">{r.brandOwner || r.dataType}</div>
-                  </li>
-                ))}
-            </ul>
-          </div>
-          <div className="flex items-center gap-2">
-            <input className="form-input w-24" type="number" min={1} step={1} value={grams} onChange={e => setGrams(parseFloat(e.target.value))} />
-            <span>grams</span>
-            <button className="btn btn-primary w-full" onClick={handleAddSelectedFood} disabled={!selected || isAddingFood}>
-              {isAddingFood ? "Adding…" : `Add to ${mealName}`}
-            </button>
+        <div className="card-header p-0">
+          <div className="flex">
+            {tabs.map(t => (
+              <button
+                key={t.key}
+                onClick={() => setTab(t.key)}
+                className={`flex-1 px-3 py-2 text-sm font-medium border-b-2 ${
+                  tab === t.key
+                    ? 'border-indigo-600 text-indigo-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
           </div>
         </div>
-      </div>
-      <CollapsibleSection title="Add Custom Food" startOpen={true}>
-        <form onSubmit={handleSubmit(onCreateCustomFood)} className="space-y-4">
-            <div className="border-b pb-4 dark:border-gray-600">
-              <button type="button" className="text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:underline" onClick={() => setUseLabel(v => !v)}>
-                {useLabel ? "⏷ Hide Converter" : "⏵ Convert from a nutrition label"}
-              </button>
-              {useLabel && (
-                <div className="mt-2 p-3 border rounded-md bg-gray-50 dark:bg-gray-700/50 dark:border-gray-600 space-y-3">
-                  <div className="grid grid-cols-2 gap-2">
-                    <input className="form-input" type="number" step="0.01" placeholder="kcal / serv" {...register("labelKcal", { valueAsNumber: true })} />
-                    <input className="form-input" type="number" step="0.01" placeholder="protein g" {...register("labelP", { valueAsNumber: true })} />
-                    <input className="form-input" type="number" step="0.01" placeholder="fat g" {...register("labelF", { valueAsNumber: true })} />
-                    <input className="form-input" type="number" step="0.01" placeholder="carb g" {...register("labelC", { valueAsNumber: true })} />
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-sm">per</span>
-                    <input className="form-input w-24" type="number" min={0} step="0.01" placeholder="Serv size" {...register("servAmt", { valueAsNumber: true })} />
-                    <select className="form-input flex-1" {...register("servUnit")}>
-                      <option value="g">g</option><option value="ml">ml</option><option value="oz">oz</option><option value="fl oz">fl oz</option><option value="cup">cup</option><option value="tbsp">tbsp</option><option value="tsp">tsp</option>
-                    </select>
-                  </div>
-                  {servUnit !== 'g' && <input className="form-input" type="number" min={0.01} step="0.01" placeholder={`Density (g/ml)`} {...register("density", { valueAsNumber: true })} />}
-                  
-                  {labelPer100 && (
-                    <div className="flex flex-wrap items-center gap-3">
-                      <button className="btn btn-secondary btn-sm" type="button" onClick={applyConverterValues}>
-                        Apply ↓
-                      </button>
-                      <div className="text-xs text-gray-600 dark:text-gray-400">
-                        <b>Per 100g:</b> {labelPer100.kcal.toFixed(0)}kcal, {labelPer100.fat.toFixed(1)}F, {labelPer100.carb.toFixed(1)}C, {labelPer100.protein.toFixed(1)}P
-                      </div>
-                    </div>
-                  )}
+        <div className="card-body space-y-4">
+          {tab === 'search' && (
+            <>
+              <input className="form-input" placeholder="Search foods…" value={query} onChange={e => setQuery(e.target.value)} />
+              <div className="flex items-center gap-2">
+                <select className="form-input" value={typeFilter} onChange={(e) => setTypeFilter(e.target.value as DataTypeOpt)}>
+                  {DATA_TYPE_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                </select>
+                <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                  <input type="checkbox" className="rounded text-indigo-600 focus:ring-indigo-500" checked={unbrandedFirst} onChange={(e) => setUnbrandedFirst(e.target.checked)} />
+                  Unbranded first
+                </label>
+              </div>
+              {allMyFoods.length > 0 && (
+                <div>
+                  <h4 className="font-semibold text-sm mb-1 text-gray-600 dark:text-gray-400">My Foods</h4>
+                  <ul className="border rounded-md divide-y dark:border-gray-600 dark:divide-gray-600 max-h-40 overflow-auto">
+                    {myFoodsFiltered.map((f) => (
+                      <li key={f.fdcId} className={`p-2 flex justify-between items-center cursor-pointer ${selected === f.fdcId ? 'bg-indigo-100 dark:bg-indigo-900' : 'hover:bg-gray-50 dark:hover:bg-gray-700'}`} onClick={() => setSelected(f.fdcId)}>
+                        <div className="font-medium truncate text-sm">{f.description}</div>
+                        <button className="btn btn-ghost btn-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/50" onClick={(e) => { e.stopPropagation(); handleDeleteCustomFood(f.fdcId); }}>🗑️</button>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               )}
-            </div>
-            <div className="space-y-2">
-              <h4 className="font-medium text-sm dark:text-gray-300">Create Food (values per 100g)</h4>
               <div>
-                <input className="form-input" placeholder="Description (e.g., Pop-Tarts)" {...register("description", { required: "Description is required" })} />
-                {errors.description && <p className="text-xs text-red-500 mt-1">{errors.description.message}</p>}
+                <h4 className="font-semibold text-sm mb-1 text-gray-600 dark:text-gray-400">USDA Results</h4>
+                <ul className="border rounded-md divide-y dark:border-gray-600 dark:divide-gray-600 h-[250px] overflow-auto">
+                  {searching ? (<li className="p-2 text-gray-500">Searching...</li>) :
+                    results.map(r => (
+                      <li key={r.fdcId} className={`p-2 cursor-pointer ${selected === r.fdcId ? 'bg-indigo-100 dark:bg-indigo-900' : 'hover:bg-gray-50 dark:hover:bg-gray-700'}`} onClick={() => setSelected(r.fdcId)}>
+                        <div className="font-medium text-sm">{r.description}</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">{r.brandOwner || r.dataType}</div>
+                      </li>
+                    ))}
+                </ul>
               </div>
-              <input className="form-input" placeholder="Brand / store (optional)" {...register("brand_owner")} />
-              <div className="grid grid-cols-2 gap-2">
-                  <input className="form-input" type="number" step="0.01" placeholder="kcal" {...register("kcal_per_100g", { required: true, valueAsNumber: true, min: 0 })} />
-                  <input className="form-input" type="number" step="0.01" placeholder="protein g" {...register("protein_g_per_100g", { required: true, valueAsNumber: true, min: 0 })} />
-                  <input className="form-input" type="number" step="0.01" placeholder="fat g" {...register("fat_g_per_100g", { required: true, valueAsNumber: true, min: 0 })} />
-                  <input className="form-input" type="number" step="0.01" placeholder="carb g" {...register("carb_g_per_100g", { required: true, valueAsNumber: true, min: 0 })} />
+              <div className="flex items-center gap-2">
+                <input className="form-input w-24" type="number" min={1} step={1} value={grams} onChange={e => setGrams(parseFloat(e.target.value))} />
+                <span>grams</span>
+                <button className="btn btn-primary w-full" onClick={handleAddSelectedFood} disabled={!selected || isAddingFood}>
+                  {isAddingFood ? 'Adding…' : `Add to ${mealName}`}
+                </button>
               </div>
-              <div className="flex justify-end pt-2">
+            </>
+          )}
+          {tab === 'custom' && (
+            <form onSubmit={handleSubmit(onCreateCustomFood)} className="space-y-4">
+              <div className="border-b pb-4 dark:border-gray-600">
+                <button type="button" className="text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:underline" onClick={() => setUseLabel(v => !v)}>
+                  {useLabel ? '⏷ Hide Converter' : '⏵ Convert from a nutrition label'}
+                </button>
+                {useLabel && (
+                  <div className="mt-2 p-3 border rounded-md bg-gray-50 dark:bg-gray-700/50 dark:border-gray-600 space-y-3">
+                    <div className="grid grid-cols-2 gap-2">
+                      <input className="form-input" type="number" step="0.01" placeholder="kcal / serv" {...register('labelKcal', { valueAsNumber: true })} />
+                      <input className="form-input" type="number" step="0.01" placeholder="protein g" {...register('labelP', { valueAsNumber: true })} />
+                      <input className="form-input" type="number" step="0.01" placeholder="fat g" {...register('labelF', { valueAsNumber: true })} />
+                      <input className="form-input" type="number" step="0.01" placeholder="carb g" {...register('labelC', { valueAsNumber: true })} />
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-sm">per</span>
+                      <input className="form-input w-24" type="number" min={0} step="0.01" placeholder="Serv size" {...register('servAmt', { valueAsNumber: true })} />
+                      <select className="form-input flex-1" {...register('servUnit')}>
+                        <option value="g">g</option><option value="ml">ml</option><option value="oz">oz</option><option value="fl oz">fl oz</option><option value="cup">cup</option><option value="tbsp">tbsp</option><option value="tsp">tsp</option>
+                      </select>
+                    </div>
+                    {servUnit !== 'g' && <input className="form-input" type="number" min={0.01} step={0.01} placeholder={`Density (g/ml)`} {...register('density', { valueAsNumber: true })} />}
+                    {labelPer100 && (
+                      <div className="flex flex-wrap items-center gap-3">
+                        <button className="btn btn-secondary btn-sm" type="button" onClick={applyConverterValues}>
+                          Apply ↓
+                        </button>
+                        <div className="text-xs text-gray-600 dark:text-gray-400">
+                          <b>Per 100g:</b> {labelPer100.kcal.toFixed(0)}kcal, {labelPer100.fat.toFixed(1)}F, {labelPer100.carb.toFixed(1)}C, {labelPer100.protein.toFixed(1)}P
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+              <div className="space-y-2">
+                <h4 className="font-medium text-sm dark:text-gray-300">Create Food (values per 100g)</h4>
+                <div>
+                  <input className="form-input" placeholder="Description (e.g., Pop-Tarts)" {...register('description', { required: 'Description is required' })} />
+                  {errors.description && <p className="text-xs text-red-500 mt-1">{errors.description.message}</p>}
+                </div>
+                <input className="form-input" placeholder="Brand / store (optional)" {...register('brand_owner')} />
+                <div className="grid grid-cols-2 gap-2">
+                  <input className="form-input" type="number" step="0.01" placeholder="kcal" {...register('kcal_per_100g', { required: true, valueAsNumber: true, min: 0 })} />
+                  <input className="form-input" type="number" step="0.01" placeholder="protein g" {...register('protein_g_per_100g', { required: true, valueAsNumber: true, min: 0 })} />
+                  <input className="form-input" type="number" step="0.01" placeholder="fat g" {...register('fat_g_per_100g', { required: true, valueAsNumber: true, min: 0 })} />
+                  <input className="form-input" type="number" step="0.01" placeholder="carb g" {...register('carb_g_per_100g', { required: true, valueAsNumber: true, min: 0 })} />
+                </div>
+                <div className="flex justify-end pt-2">
                   <button type="submit" className="btn btn-primary" disabled={isCreatingFood || !isValid}>
-                    {isCreatingFood ? "Creating..." : "Create Food"}
+                    {isCreatingFood ? 'Creating...' : 'Create Food'}
                   </button>
+                </div>
+              </div>
+            </form>
+          )}
+          {tab === 'presets' && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <input className="form-input" placeholder="Save current meal as..." value={newPresetName} onChange={(e) => setNewPresetName(e.target.value)} />
+                <button className="btn btn-secondary w-full" onClick={handleSavePreset} disabled={isSavingPreset || !currentMeal?.entries?.length || !newPresetName.trim()}>
+                  {isSavingPreset ? 'Saving...' : 'Save Preset'}
+                </button>
+              </div>
+              <div className="max-h-64 overflow-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50 dark:bg-gray-700/50"><tr><th className="text-left p-2">Name</th><th className="p-2 text-right">Actions</th></tr></thead>
+                  <tbody>
+                    {presets.map((p) => (
+                      <tr key={p.id} className="border-t dark:border-gray-600">
+                        <td className="p-2">{p.name} ({p.item_count})</td>
+                        <td className="p-2 text-right">
+                          <div className="flex gap-1 justify-end">
+                            <button className="btn btn-ghost btn-sm" onClick={() => applyPreset(p.id)}>Apply</button>
+                            <button className="btn btn-ghost btn-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/50" onClick={async () => {
+                              if (!confirm(`Delete preset \"${p.name}\"?`)) return;
+                              await api.deletePreset(p.id);
+                              await refreshPresets();
+                            }}>Delete</button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
-        </form>
-      </CollapsibleSection>
-      <CollapsibleSection title="Meal Presets">
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <input className="form-input" placeholder="Save current meal as..." value={newPresetName} onChange={(e) => setNewPresetName(e.target.value)} />
-            <button className="btn btn-secondary w-full" onClick={handleSavePreset} disabled={isSavingPreset || !currentMeal?.entries?.length || !newPresetName.trim()}>
-              {isSavingPreset ? "Saving..." : "Save Preset"}
-            </button>
-          </div>
-          <div className="max-h-64 overflow-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 dark:bg-gray-700/50"><tr><th className="text-left p-2">Name</th><th className="p-2 text-right">Actions</th></tr></thead>
-              <tbody>
-                {presets.map((p) => (
-                  <tr key={p.id} className="border-t dark:border-gray-600">
-                    <td className="p-2">{p.name} ({p.item_count})</td>
-                    <td className="p-2 text-right">
-                      <div className="flex gap-1 justify-end">
-                        <button className="btn btn-ghost btn-sm" onClick={() => applyPreset(p.id)}>Apply</button>
-                        <button className="btn btn-ghost btn-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/50" onClick={async () => {
-                          if (!confirm(`Delete preset "${p.name}"?`)) return;
-                          await api.deletePreset(p.id);
-                          await refreshPresets();
-                        }}>Delete</button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          )}
+          {tab === 'goals' && (
+            <div className="space-y-2">
+              <div className="grid grid-cols-2 gap-2">
+                <input className="form-input" type="number" step="0.1" placeholder="Fat g" value={goalInput.fat} onChange={e=>setGoalInput({ ...goalInput, fat: e.target.value })} />
+                <input className="form-input" type="number" step="0.1" placeholder="Carb g" value={goalInput.carb} onChange={e=>setGoalInput({ ...goalInput, carb: e.target.value })} />
+                <input className="form-input" type="number" step="0.1" placeholder="Protein g" value={goalInput.protein} onChange={e=>setGoalInput({ ...goalInput, protein: e.target.value })} />
+              </div>
+              <button className="btn btn-secondary w-full" onClick={handleSaveGoals}>Save Goals</button>
+            </div>
+          )}
+          {tab === 'export' && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2"><label className="text-sm">From:</label><input className="form-input" type="date" value={exportStart} onChange={e=>setExportStart(e.target.value)} /></div>
+              <div className="flex items-center gap-2"><label className="text-sm">To: &nbsp;&nbsp;&nbsp;</label><input className="form-input" type="date" value={exportEnd} onChange={e=>setExportEnd(e.target.value)} /></div>
+              <button disabled={invalidRange || isExporting} className="btn btn-secondary w-full" onClick={handleExport}>
+                {isExporting ? 'Downloading...' : 'Download CSV'}
+              </button>
+            </div>
+          )}
         </div>
-      </CollapsibleSection>
-      <CollapsibleSection title="Daily Goals" startOpen={true}>
-        <div className="space-y-2">
-          <div className="grid grid-cols-2 gap-2">
-            <input className="form-input" type="number" step="0.1" placeholder="Fat g" value={goalInput.fat} onChange={e=>setGoalInput({ ...goalInput, fat: e.target.value })} />
-            <input className="form-input" type="number" step="0.1" placeholder="Carb g" value={goalInput.carb} onChange={e=>setGoalInput({ ...goalInput, carb: e.target.value })} />
-            <input className="form-input" type="number" step="0.1" placeholder="Protein g" value={goalInput.protein} onChange={e=>setGoalInput({ ...goalInput, protein: e.target.value })} />
-          </div>
-          <button className="btn btn-secondary w-full" onClick={handleSaveGoals}>Save Goals</button>
-        </div>
-      </CollapsibleSection>
-      <CollapsibleSection title="Export Data">
-        <div className="space-y-2">
-          <div className="flex items-center gap-2"><label className="text-sm">From:</label><input className="form-input" type="date" value={exportStart} onChange={e=>setExportStart(e.target.value)} /></div>
-          <div className="flex items-center gap-2"><label className="text-sm">To: &nbsp;&nbsp;&nbsp;</label><input className="form-input" type="date" value={exportEnd} onChange={e=>setExportEnd(e.target.value)} /></div>
-          <button disabled={invalidRange || isExporting} className="btn btn-secondary w-full" onClick={handleExport}>
-            {isExporting ? "Downloading..." : "Download CSV"}
-          </button>
-        </div>
-      </CollapsibleSection>
+      </div>
     </div>
-  )
+  );
 }

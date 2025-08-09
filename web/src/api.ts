@@ -30,6 +30,11 @@ export async function deleteMeal(mealId: number) {
   return response.data;
 }
 
+export async function updateMeal(mealId: number, payload: { name?: string; sort_order?: number }) {
+  const response = await api.patch(`/meals/${mealId}`, payload);
+  return response.data;
+}
+
 export async function addEntry(meal_id: number, fdc_id: number, quantity_g: number) {
   const response = await api.post("/entries", { meal_id, fdc_id, quantity_g });
   return response.data;
