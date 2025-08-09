@@ -4,10 +4,11 @@ import { useStore } from "../store";
 import type { MealType } from "../types";
 
 export function DailyLog() {
-  const { day, mealName, setDate, setMealName, addMeal, updateEntry, deleteEntry, deleteMeal, copiedMealId, copyMeal, pasteMeal } = useStore();
-  
+  const { day, mealName, setDate, setMealName, addMeal, updateEntry, deleteEntry, deleteMeal, renameMeal, moveMeal, copiedMealId, copyMeal, pasteMeal } = useStore();
+
   const [isAddingMeal, setIsAddingMeal] = useState(false);
   const [isPasting, setIsPasting] = useState(false);
+  const [draggedMealId, setDraggedMealId] = useState<number | null>(null);
 
   const handleAddMeal = async () => {
     setIsAddingMeal(true);
@@ -20,6 +21,16 @@ export function DailyLog() {
     await pasteMeal();
     setIsPasting(false);
   }
+
+  const handleDragStart = (id: number) => setDraggedMealId(id);
+
+  const handleDrop = (id: number) => {
+    if (draggedMealId == null || draggedMealId === id) return;
+    const target = pickerMeals.find(m => m.id === id);
+    if (!target) return;
+    moveMeal(draggedMealId, target.sort_order);
+    setDraggedMealId(null);
+  };
   
   const pickerMeals = useMemo(() => {
     if ((day?.meals?.length ?? 0) > 0) {
@@ -57,15 +68,18 @@ export function DailyLog() {
         .slice()
         .sort((a, b) => a.sort_order - b.sort_order)
         .map(m => (
-          <MealCard 
-            key={m.id} 
-            meal={m} 
-            isCurrent={m.name === mealName} 
-            onSelect={() => setMealName(m.name)} 
-            onUpdateEntry={updateEntry} 
-            onDeleteEntry={deleteEntry} 
+          <MealCard
+            key={m.id}
+            meal={m}
+            isCurrent={m.name === mealName}
+            onSelect={() => setMealName(m.name)}
+            onUpdateEntry={updateEntry}
+            onDeleteEntry={deleteEntry}
             onDeleteMeal={deleteMeal}
             onCopyMeal={copyMeal}
+            onRenameMeal={renameMeal}
+            onDragStart={() => handleDragStart(m.id)}
+            onDrop={() => handleDrop(m.id)}
           />
         ))}
     </div>
@@ -80,14 +94,38 @@ type MealCardProps = {
   onDeleteEntry: (entryId: number) => Promise<void>;
   onDeleteMeal: (mealId: number) => Promise<void>;
   onCopyMeal: (mealId: number) => void;
+  onRenameMeal: (mealId: number, newName: string) => Promise<void>;
+  onDragStart: () => void;
+  onDrop: () => void;
 };
 
-function MealCard({ meal, isCurrent, onSelect, onUpdateEntry, onDeleteEntry, onDeleteMeal, onCopyMeal }: MealCardProps) {
+function MealCard({ meal, isCurrent, onSelect, onUpdateEntry, onDeleteEntry, onDeleteMeal, onCopyMeal, onRenameMeal, onDragStart, onDrop }: MealCardProps) {
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [tempName, setTempName] = useState(meal.name);
+  useEffect(() => setTempName(meal.name), [meal.name]);
+  const submitRename = async () => {
+    await onRenameMeal(meal.id, tempName);
+    setIsRenaming(false);
+  };
   return (
-    <div className={`card ${isCurrent ? "ring-2 ring-indigo-500" : ""}`}>
-      <div className="card-header bg-gray-100 dark:bg-gray-700 flex items-center relative py-3" onClick={onSelect}>
-        <h3 className="flex-1 text-center font-semibold text-lg dark:text-gray-200">{meal.name}</h3>
+    <div
+      className={`card ${isCurrent ? "ring-2 ring-indigo-500" : ""}`}
+      draggable
+      onDragStart={onDragStart}
+      onDragOver={e => e.preventDefault()}
+      onDrop={onDrop}
+    >
+      <div className="card-header bg-gray-100 dark:bg-gray-700 flex items-center relative py-3" onClick={!isRenaming ? onSelect : undefined}>
+        {isRenaming ? (
+          <form className="flex-1 flex items-center gap-2" onSubmit={e => { e.preventDefault(); submitRename(); }}>
+            <input className="form-input flex-1 py-1" value={tempName} onChange={e => setTempName(e.target.value)} autoFocus />
+            <button type="submit" className="btn btn-secondary btn-sm">Save</button>
+          </form>
+        ) : (
+          <h3 className="flex-1 text-center font-semibold text-lg dark:text-gray-200">{meal.name}</h3>
+        )}
         <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+            <button type="button" title="Rename meal" onClick={(e) => { e.stopPropagation(); setIsRenaming(true); }} className="btn btn-ghost btn-sm">✏️</button>
             <button type="button" title="Copy meal" onClick={(e) => { e.stopPropagation(); onCopyMeal(meal.id); }} className="btn btn-ghost btn-sm">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
             </button>

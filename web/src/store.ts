@@ -31,6 +31,8 @@ interface AppActions {
   deleteEntry: (entryId: number) => Promise<void>;
   addMeal: () => Promise<void>;
   deleteMeal: (mealId: number) => Promise<void>;
+  renameMeal: (mealId: number, newName: string) => Promise<void>;
+  moveMeal: (mealId: number, newOrder: number) => Promise<void>;
   refreshPresets: () => Promise<void>;
   applyPreset: (presetId: number) => Promise<void>;
   setAllMyFoods: (foods: SimpleFood[]) => void;
@@ -168,6 +170,18 @@ export const useStore = create<AppState & AppActions>((set, get) => ({
   
   deleteMeal: async (mealId) => {
     await api.deleteMeal(mealId);
+    await get().fetchDay();
+  },
+
+  renameMeal: async (mealId, newName) => {
+    await api.updateMeal(mealId, { name: newName });
+    await get().fetchDay();
+    const updated = get().day?.meals.find(m => m.id === mealId);
+    if (updated) set({ mealName: updated.name });
+  },
+
+  moveMeal: async (mealId, newOrder) => {
+    await api.updateMeal(mealId, { sort_order: newOrder });
     await get().fetchDay();
   },
   
