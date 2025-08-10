@@ -135,7 +135,16 @@ function MealCard({ meal, isCurrent, onSelect, onUpdateEntry, onDeleteEntry, onD
         </div>
       </div>
       <div className="overflow-x-auto">
-        <table className="w-full text-sm table-zebra">
+        <table className="w-full text-sm table-fixed table-zebra">
+          <colgroup>
+            <col />
+            <col className="w-24" />
+            <col className="w-20" />
+            <col className="w-16" />
+            <col className="w-16" />
+            <col className="w-16" />
+            <col className="w-36" />
+          </colgroup>
           <thead>
             <tr className="border-b dark:border-gray-600">
               <th className="text-left p-3 font-medium">Item</th>
