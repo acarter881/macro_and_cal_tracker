@@ -39,14 +39,14 @@ export function DashboardPage() {
                     <button
                         key={opt}
                         onClick={() => setDays(opt)}
-                        className={`px-3 py-1 rounded ${days === opt ? 'bg-blue-500 text-white' : 'bg-gray-200 dark:bg-gray-700'}`}
+                        className={`px-3 py-1 rounded ${days === opt ? 'bg-brand-primary text-text-light' : 'bg-surface-light dark:bg-border-dark'}`}
                     >
                         Last {opt} Days
                     </button>
                 ))}
             </div>
             <div className="card">
-                <div className="card-header"><h2 className="font-semibold text-lg dark:text-gray-200">Calorie Trend (Last {days} Days)</h2></div>
+                <div className="card-header"><h2 className="font-semibold text-lg dark:text-text-light">Calorie Trend (Last {days} Days)</h2></div>
                 <div className="card-body h-80">
                     {loading ? (
                         <LoadingSpinner />
@@ -68,7 +68,7 @@ export function DashboardPage() {
                 </div>
             </div>
             <div className="card">
-                <div className="card-header"><h2 className="font-semibold text-lg dark:text-gray-200">Macro Trend (Last {days} Days)</h2></div>
+                <div className="card-header"><h2 className="font-semibold text-lg dark:text-text-light">Macro Trend (Last {days} Days)</h2></div>
                 <div className="card-body h-80">
                     {loading ? (
                         <LoadingSpinner />
@@ -92,7 +92,7 @@ export function DashboardPage() {
                 </div>
             </div>
             <div className="card">
-                <div className="card-header"><h2 className="font-semibold text-lg dark:text-gray-200">Body Weight Trend (Last {days} Days)</h2></div>
+                <div className="card-header"><h2 className="font-semibold text-lg dark:text-text-light">Body Weight Trend (Last {days} Days)</h2></div>
                 <div className="card-body h-80">
                     {loading ? (
                         <LoadingSpinner />
