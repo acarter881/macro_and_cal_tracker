@@ -137,7 +137,15 @@ function MealCard({ meal, isCurrent, onSelect, onUpdateEntry, onDeleteEntry, onD
       <div className="overflow-x-auto">
         <table className="w-full text-sm table-zebra">
           <thead>
-            <tr className="border-b dark:border-gray-600"><th className="text-left p-3 font-medium">Item</th><th className="text-right p-3 font-medium">Qty (g)</th><th className="text-right p-3 font-medium">kcal</th><th className="text-right p-3 font-medium">F</th><th className="text-right p-3 font-medium">C</th><th className="text-right p-3 font-medium">P</th><th className="p-3"></th></tr>
+            <tr className="border-b dark:border-gray-600">
+              <th className="text-left p-3 font-medium">Item</th>
+              <th className="text-right p-3 font-medium">Qty (g)</th>
+              <th className="text-right p-3 font-medium">kcal</th>
+              <th className="text-right p-3 font-medium">F</th>
+              <th className="text-right p-3 font-medium">C</th>
+              <th className="text-right p-3 font-medium">P</th>
+              <th className="p-3 text-right"></th>
+            </tr>
           </thead>
           <tbody>
             {meal.entries.length ? (meal.entries.map(e => (<Row key={e.id} e={e} onUpdate={onUpdateEntry} onDelete={onDeleteEntry} />))) :
@@ -150,7 +158,7 @@ function MealCard({ meal, isCurrent, onSelect, onUpdateEntry, onDeleteEntry, onD
                 <td className="p-3 text-right subtotal-fat">{meal.subtotal.fat.toFixed(1)}</td>
                 <td className="p-3 text-right subtotal-carb">{meal.subtotal.carb.toFixed(1)}</td>
                 <td className="p-3 text-right subtotal-protein">{meal.subtotal.protein.toFixed(1)}</td>
-                <td></td>
+                <td className="p-3 text-right"></td>
             </tr>
           </tfoot>
         </table>
@@ -193,7 +201,7 @@ function Row({ e, onUpdate, onDelete }: RowProps) {
 
   return (
     <tr className="border-t dark:border-gray-700">
-      <td className="p-2 font-medium">{e.description}</td>
+      <td className="p-2 text-left font-medium">{e.description}</td>
       <td className="p-2 text-right"><input className="form-input text-right w-20 py-1" type="number" min={1} step={1} value={g} onChange={ev=>setG(parseFloat(ev.target.value))} disabled={isMutating} /></td>
       <td className="p-2 text-right">{e.kcal.toFixed(1)}</td>
       <td className="p-2 text-right">{e.fat.toFixed(1)}</td>
