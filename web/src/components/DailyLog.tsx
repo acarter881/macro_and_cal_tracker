@@ -40,7 +40,7 @@ export function DailyLog() {
   }, [day]);
 
   return (
-    <div className="lg:col-span-2 space-y-6">
+    <div className="space-y-6">
       <div className="card">
         <div className="card-body flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-2">
