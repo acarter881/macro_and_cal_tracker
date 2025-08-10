@@ -220,7 +220,7 @@ export function ControlPanel() {
   }
 
   return (
-    <div className="lg:col-span-1">
+    <div>
       <div className="card">
         <div className="card-header p-0">
           <div className="flex">

@@ -14,7 +14,7 @@ export function Summary() {
     }, [weight]);
 
     return (
-        <div className="lg:col-span-1">
+        <div>
             <div className="sticky top-6 card">
                 <div className="card-header"><h2 className="font-semibold text-lg dark:text-gray-200">Today's Totals</h2></div>
                 <div className="card-body">
