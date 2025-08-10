@@ -27,7 +27,7 @@ export default function App() {
       <div className="p-4 lg:p-6 w-full bg-gray-100 dark:bg-gray-900 min-h-screen font-sans">
         <Toaster position="bottom-center" toastOptions={{ style: { background: '#363636', color: '#fff' }, success: { duration: 3000 } }}/>
         
-        <header className="relative mb-6 flex items-center justify-between">
+        <header className="sticky top-0 z-10 mb-6 flex items-center justify-between bg-gray-100 dark:bg-gray-900">
             <nav className="flex items-center gap-4">
                 <h1 className="text-xl lg:text-3xl font-bold text-gray-800 dark:text-gray-100 mr-4">Macro Tracker</h1>
                 <NavLink to="/" className={navLinkClass}>Tracker</NavLink>
