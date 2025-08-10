@@ -210,7 +210,7 @@ function Row({ e, onUpdate, onDelete }: RowProps) {
 
   return (
     <tr className="border-t dark:border-gray-700">
-      <td className="p-2 text-left font-medium truncate">{e.description}</td>
+      <td className="p-2 text-left font-medium">{e.description}</td>
       <td className="p-2 text-right"><input className="form-input text-right w-20 py-1" type="number" min={1} step={1} value={g} onChange={ev=>setG(parseFloat(ev.target.value))} disabled={isMutating} /></td>
       <td className="p-2 text-right">{e.kcal.toFixed(1)}</td>
       <td className="p-2 text-right">{e.fat.toFixed(1)}</td>
