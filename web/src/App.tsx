@@ -1,46 +1,83 @@
 // web/src/App.tsx (replace entire file)
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Toaster } from 'react-hot-toast';
 import { BrowserRouter, Routes, Route, NavLink } from "react-router-dom";
 import { useStore } from "./store";
 import { ThemeToggle } from "./components/ThemeToggle";
 import { TrackerPage } from "./pages/TrackerPage";
 import { DashboardPage } from "./pages/DashboardPage";
+import { Bars3Icon, XMarkIcon, HomeIcon, ChartBarIcon } from "@heroicons/react/24/outline";
 
 export default function App() {
   const init = useStore(state => state.init);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     init();
   }, [init]);
 
   const navLinkClass = ({ isActive }: { isActive: boolean }) =>
-    `px-4 py-2 rounded-md text-sm font-semibold transition-colors ${
+    `flex items-center gap-2 px-4 py-2 rounded-md text-sm font-semibold transition-colors ${
       isActive
         ? 'bg-indigo-600 text-white'
         : 'text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
     }`;
 
+  const navItems = [
+    { to: '/', label: 'Tracker', icon: HomeIcon },
+    { to: '/dashboard', label: 'Dashboard', icon: ChartBarIcon }
+  ];
+
   return (
     <BrowserRouter>
-      <div className="p-4 lg:p-6 w-full bg-gray-100 dark:bg-gray-900 min-h-screen font-sans">
-        <Toaster position="bottom-center" toastOptions={{ style: { background: '#363636', color: '#fff' }, success: { duration: 3000 } }}/>
-        
-        <header className="sticky top-0 z-10 mb-6 flex items-center justify-between bg-gray-100 dark:bg-gray-900">
-            <nav className="flex items-center gap-4">
-                <h1 className="text-xl lg:text-3xl font-bold text-gray-800 dark:text-gray-100 mr-4">Macro Tracker</h1>
-                <NavLink to="/" className={navLinkClass}>Tracker</NavLink>
-                <NavLink to="/dashboard" className={navLinkClass}>Dashboard</NavLink>
-            </nav>
-            <ThemeToggle />
+      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 font-sans">
+        <Toaster position="bottom-center" toastOptions={{ style: { background: '#363636', color: '#fff' }, success: { duration: 3000 } }} />
+
+        <header className="sticky top-0 z-10 bg-gray-100 dark:bg-gray-900">
+          <div className="max-w-screen-lg mx-auto flex items-center justify-between px-4 py-4 lg:px-6">
+            <div className="flex items-center gap-2">
+              <button className="lg:hidden text-gray-800 dark:text-gray-100" onClick={() => setMenuOpen(true)}>
+                <Bars3Icon className="h-6 w-6" />
+              </button>
+              <h1 className="text-xl lg:text-3xl font-bold text-gray-800 dark:text-gray-100">Macro Tracker</h1>
+            </div>
+            <div className="flex items-center gap-4">
+              <nav className="hidden lg:flex items-center gap-4">
+                {navItems.map(({ to, label, icon: Icon }) => (
+                  <NavLink key={to} to={to} className={navLinkClass}>
+                    <Icon className="h-5 w-5" />
+                    {label}
+                  </NavLink>
+                ))}
+              </nav>
+              <ThemeToggle />
+            </div>
+          </div>
         </header>
-        
-        <main>
-            <Routes>
-                <Route path="/" element={<TrackerPage />} />
-                <Route path="/dashboard" element={<DashboardPage />} />
-            </Routes>
+
+        <div className={`fixed inset-0 z-20 transform transition-transform duration-200 lg:hidden ${menuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+          <div className="absolute inset-0 bg-black/50" onClick={() => setMenuOpen(false)}></div>
+          <div className="relative bg-gray-100 dark:bg-gray-900 w-64 h-full p-4">
+            <button className="mb-4 text-gray-800 dark:text-gray-100" onClick={() => setMenuOpen(false)}>
+              <XMarkIcon className="h-6 w-6" />
+            </button>
+            <nav className="flex flex-col gap-2">
+              {navItems.map(({ to, label, icon: Icon }) => (
+                <NavLink key={to} to={to} className={navLinkClass} onClick={() => setMenuOpen(false)}>
+                  <Icon className="h-5 w-5" />
+                  {label}
+                </NavLink>
+              ))}
+            </nav>
+          </div>
+        </div>
+
+        <main className="max-w-screen-lg mx-auto px-4 py-6 lg:px-6">
+          <Routes>
+            <Route path="/" element={<TrackerPage />} />
+            <Route path="/dashboard" element={<DashboardPage />} />
+          </Routes>
         </main>
       </div>
     </BrowserRouter>
