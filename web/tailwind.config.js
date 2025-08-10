@@ -14,7 +14,33 @@ export default {
     path.resolve(__dirname, "./src/**/*.{js,ts,jsx,tsx}"),
   ],
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        brand: {
+          primary: '#6366f1',
+          success: '#82ca9d',
+          warning: '#ffc658',
+          danger: '#ff8042',
+        },
+        surface: {
+          light: '#f3f4f6',
+          dark: '#111827',
+        },
+        text: {
+          DEFAULT: '#1f2937',
+          light: '#f3f4f6',
+          muted: '#6b7280',
+          'muted-dark': '#9ca3af',
+        },
+        border: {
+          light: '#e5e7eb',
+          dark: '#4b5563',
+        },
+      },
+      fontFamily: {
+        sans: ['Poppins', 'sans-serif'],
+      },
+    },
   },
   plugins: [],
 }

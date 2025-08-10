@@ -20,8 +20,8 @@ export default function App() {
   const navLinkClass = ({ isActive }: { isActive: boolean }) =>
     `flex items-center gap-2 px-4 py-2 rounded-md text-sm font-semibold transition-colors ${
       isActive
-        ? 'bg-indigo-600 text-white'
-        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+        ? 'bg-brand-primary text-text-light'
+        : 'text-text dark:text-text-light hover:bg-surface-light dark:hover:bg-border-dark'
     }`;
 
   const navItems = [
@@ -31,16 +31,16 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 font-sans">
+      <div className="min-h-screen bg-surface-light dark:bg-surface-dark font-sans">
         <Toaster position="bottom-center" toastOptions={{ style: { background: '#363636', color: '#fff' }, success: { duration: 3000 } }} />
 
-        <header className="sticky top-0 z-10 bg-gray-100 dark:bg-gray-900">
+        <header className="sticky top-0 z-10 bg-surface-light dark:bg-surface-dark">
           <div className="mx-auto flex items-center justify-between px-4 py-4 lg:px-6">
             <div className="flex items-center gap-2">
-              <button className="lg:hidden text-gray-800 dark:text-gray-100" onClick={() => setMenuOpen(true)}>
+              <button className="lg:hidden text-text dark:text-text-light" onClick={() => setMenuOpen(true)}>
                 <Bars3Icon className="h-6 w-6" />
               </button>
-              <h1 className="text-xl lg:text-3xl font-bold text-gray-800 dark:text-gray-100">Macro Tracker</h1>
+              <h1 className="text-xl lg:text-3xl font-bold text-text dark:text-text-light">Macro Tracker</h1>
             </div>
             <div className="flex items-center gap-4">
               <nav className="hidden lg:flex items-center gap-4">
@@ -58,8 +58,8 @@ export default function App() {
 
         <div className={`fixed inset-0 z-20 transform transition-transform duration-200 lg:hidden ${menuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
           <div className="absolute inset-0 bg-black/50" onClick={() => setMenuOpen(false)}></div>
-          <div className="relative bg-gray-100 dark:bg-gray-900 w-64 h-full p-4">
-            <button className="mb-4 text-gray-800 dark:text-gray-100" onClick={() => setMenuOpen(false)}>
+          <div className="relative bg-surface-light dark:bg-surface-dark w-64 h-full p-4">
+            <button className="mb-4 text-text dark:text-text-light" onClick={() => setMenuOpen(false)}>
               <XMarkIcon className="h-6 w-6" />
             </button>
             <nav className="flex flex-col gap-2">

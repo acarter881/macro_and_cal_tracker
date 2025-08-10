@@ -230,8 +230,8 @@ export function ControlPanel() {
                 onClick={() => setTab(t.key)}
                 className={`flex-1 px-3 py-2 text-sm font-medium border-b-2 ${
                   tab === t.key
-                    ? 'border-indigo-600 text-indigo-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+                    ? 'border-brand-primary text-brand-primary'
+                    : 'border-transparent text-text-muted hover:text-text dark:hover:text-text-light'
                 }`}
               >
                 {t.label}
@@ -253,34 +253,34 @@ export function ControlPanel() {
                   {DATA_TYPE_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                 </select>
                 <label
-                  className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap"
+                  className="flex items-center gap-2 text-sm text-text dark:text-text-light whitespace-nowrap"
                   title="Sort results to show unbranded foods before branded ones"
                 >
-                  <input type="checkbox" className="rounded text-indigo-600 focus:ring-indigo-500" checked={unbrandedFirst} onChange={(e) => setUnbrandedFirst(e.target.checked)} />
+                  <input type="checkbox" className="rounded text-brand-primary focus:ring-brand-primary" checked={unbrandedFirst} onChange={(e) => setUnbrandedFirst(e.target.checked)} />
                   Unbranded first
                 </label>
               </div>
               {allMyFoods.length > 0 && (
                 <div>
-                  <h4 className="font-semibold text-sm mb-1 text-gray-600 dark:text-gray-400">My Foods</h4>
-                  <ul className="border rounded-md divide-y dark:border-gray-600 dark:divide-gray-600 max-h-40 overflow-auto">
+                  <h4 className="font-semibold text-sm mb-1 text-text-muted dark:text-text-muted-dark">My Foods</h4>
+                  <ul className="border-border-light border rounded-md divide-y dark:border-border-dark dark:divide-border-dark max-h-40 overflow-auto">
                     {myFoodsFiltered.map((f) => (
-                      <li key={f.fdcId} className={`p-2 flex justify-between items-center cursor-pointer ${selected === f.fdcId ? 'bg-indigo-100 dark:bg-indigo-900' : 'hover:bg-gray-50 dark:hover:bg-gray-700'}`} onClick={() => setSelected(f.fdcId)}>
+                      <li key={f.fdcId} className={`p-2 flex justify-between items-center cursor-pointer ${selected === f.fdcId ? 'bg-brand-primary/20 dark:bg-brand-primary/30' : 'hover:bg-surface-light dark:hover:bg-border-dark'}`} onClick={() => setSelected(f.fdcId)}>
                         <div className="font-medium truncate text-sm">{f.description}</div>
-                        <button className="btn btn-ghost btn-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/50" onClick={(e) => { e.stopPropagation(); handleDeleteCustomFood(f.fdcId); }}>🗑️</button>
+                        <button className="btn btn-ghost btn-sm text-brand-danger hover:bg-brand-danger/10 dark:hover:bg-brand-danger/30" onClick={(e) => { e.stopPropagation(); handleDeleteCustomFood(f.fdcId); }}>🗑️</button>
                       </li>
                     ))}
                   </ul>
                 </div>
               )}
               <div>
-                <h4 className="font-semibold text-sm mb-1 text-gray-600 dark:text-gray-400">USDA Results</h4>
-                <ul className="border rounded-md divide-y dark:border-gray-600 dark:divide-gray-600 h-[250px] overflow-auto">
-                  {searching ? (<li className="p-2 text-gray-500">Searching...</li>) :
+                  <h4 className="font-semibold text-sm mb-1 text-text-muted dark:text-text-muted-dark">USDA Results</h4>
+                <ul className="border-border-light border rounded-md divide-y dark:border-border-dark dark:divide-border-dark h-[250px] overflow-auto">
+                  {searching ? (<li className="p-2 text-text-muted">Searching...</li>) :
                     results.map(r => (
-                      <li key={r.fdcId} className={`p-2 cursor-pointer ${selected === r.fdcId ? 'bg-indigo-100 dark:bg-indigo-900' : 'hover:bg-gray-50 dark:hover:bg-gray-700'}`} onClick={() => setSelected(r.fdcId)}>
+                      <li key={r.fdcId} className={`p-2 cursor-pointer ${selected === r.fdcId ? 'bg-brand-primary/20 dark:bg-brand-primary/30' : 'hover:bg-surface-light dark:hover:bg-border-dark'}`} onClick={() => setSelected(r.fdcId)}>
                         <div className="font-medium text-sm">{r.description}</div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">{r.brandOwner || r.dataType}</div>
+                        <div className="text-xs text-text-muted dark:text-text-muted-dark">{r.brandOwner || r.dataType}</div>
                       </li>
                     ))}
                 </ul>
@@ -296,12 +296,12 @@ export function ControlPanel() {
           )}
           {tab === 'custom' && (
             <form onSubmit={handleSubmit(onCreateCustomFood)} className="space-y-4">
-              <div className="border-b pb-4 dark:border-gray-600">
-                <button type="button" className="text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:underline" onClick={() => setUseLabel(v => !v)}>
+              <div className="border-b border-border-light pb-4 dark:border-border-dark">
+                <button type="button" className="text-sm font-medium text-brand-primary dark:text-brand-primary hover:underline" onClick={() => setUseLabel(v => !v)}>
                   {useLabel ? '⏷ Hide Converter' : '⏵ Convert from a nutrition label'}
                 </button>
                 {useLabel && (
-                  <div className="mt-2 p-3 border rounded-md bg-gray-50 dark:bg-gray-700/50 dark:border-gray-600 space-y-3">
+                  <div className="mt-2 p-3 border border-border-light rounded-md bg-surface-light dark:bg-border-dark/50 dark:border-border-dark space-y-3">
                     <div className="grid grid-cols-2 gap-2">
                       <input className="form-input" type="number" step="0.01" placeholder="kcal / serv" {...register('labelKcal', { valueAsNumber: true })} />
                       <input className="form-input" type="number" step="0.01" placeholder="protein g" {...register('labelP', { valueAsNumber: true })} />
@@ -321,7 +321,7 @@ export function ControlPanel() {
                         <button className="btn btn-secondary btn-sm" type="button" onClick={applyConverterValues}>
                           Apply ↓
                         </button>
-                        <div className="text-xs text-gray-600 dark:text-gray-400">
+                        <div className="text-xs text-text-muted dark:text-text-muted-dark">
                           <b>Per 100g:</b> {labelPer100.kcal.toFixed(0)}kcal, {labelPer100.fat.toFixed(1)}F, {labelPer100.carb.toFixed(1)}C, {labelPer100.protein.toFixed(1)}P
                         </div>
                       </div>
@@ -330,10 +330,10 @@ export function ControlPanel() {
                 )}
               </div>
               <div className="space-y-2">
-                <h4 className="font-medium text-sm dark:text-gray-300">Create Food (values per 100g)</h4>
+                <h4 className="font-medium text-sm text-text dark:text-text-light">Create Food (values per 100g)</h4>
                 <div>
                   <input className="form-input" placeholder="Description (e.g., Pop-Tarts)" {...register('description', { required: 'Description is required' })} />
-                  {errors.description && <p className="text-xs text-red-500 mt-1">{errors.description.message}</p>}
+                  {errors.description && <p className="text-xs text-brand-danger mt-1">{errors.description.message}</p>}
                 </div>
                 <input className="form-input" placeholder="Brand / store (optional)" {...register('brand_owner')} />
                 <div className="grid grid-cols-2 gap-2">
@@ -360,15 +360,15 @@ export function ControlPanel() {
               </div>
               <div className="max-h-64 overflow-auto">
                 <table className="w-full text-sm">
-                  <thead className="bg-gray-50 dark:bg-gray-700/50"><tr><th className="text-left p-2">Name</th><th className="p-2 text-right">Actions</th></tr></thead>
+                  <thead className="bg-surface-light dark:bg-border-dark/50"><tr><th className="text-left p-2">Name</th><th className="p-2 text-right">Actions</th></tr></thead>
                   <tbody>
                     {presets.map((p) => (
-                      <tr key={p.id} className="border-t dark:border-gray-600">
+                      <tr key={p.id} className="border-t border-border-light dark:border-border-dark">
                         <td className="p-2">{p.name} ({p.item_count})</td>
                         <td className="p-2 text-right">
                           <div className="flex gap-1 justify-end">
                             <button className="btn btn-ghost btn-sm" onClick={() => applyPreset(p.id)}>Apply</button>
-                            <button className="btn btn-ghost btn-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/50" onClick={async () => {
+                            <button className="btn btn-ghost btn-sm text-brand-danger hover:bg-brand-danger/10 dark:hover:bg-brand-danger/30" onClick={async () => {
                               if (!confirm(`Delete preset \"${p.name}\"?`)) return;
                               await api.deletePreset(p.id);
                               await refreshPresets();

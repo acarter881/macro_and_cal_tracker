@@ -109,20 +109,20 @@ function MealCard({ meal, isCurrent, onSelect, onUpdateEntry, onDeleteEntry, onD
   };
   return (
     <div
-      className={`card ${isCurrent ? "ring-2 ring-indigo-500" : ""}`}
+      className={`card ${isCurrent ? "ring-2 ring-brand-primary" : ""}`}
       draggable
       onDragStart={onDragStart}
       onDragOver={e => e.preventDefault()}
       onDrop={onDrop}
     >
-      <div className="card-header bg-gray-100 dark:bg-gray-700 flex items-center relative py-3" onClick={!isRenaming ? onSelect : undefined}>
+      <div className="card-header bg-surface-light dark:bg-border-dark flex items-center relative py-3" onClick={!isRenaming ? onSelect : undefined}>
         {isRenaming ? (
           <form className="flex-1 flex items-center gap-2" onSubmit={e => { e.preventDefault(); submitRename(); }}>
             <input className="form-input flex-1 py-1" value={tempName} onChange={e => setTempName(e.target.value)} autoFocus />
             <button type="submit" className="btn btn-secondary btn-sm">Save</button>
           </form>
         ) : (
-          <h3 className="flex-1 text-center font-semibold text-lg dark:text-gray-200">{meal.name}</h3>
+          <h3 className="flex-1 text-center font-semibold text-lg dark:text-text-light">{meal.name}</h3>
         )}
         <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
             <button type="button" title="Rename meal" onClick={(e) => { e.stopPropagation(); setIsRenaming(true); }} className="btn btn-ghost btn-sm">✏️</button>
@@ -146,7 +146,7 @@ function MealCard({ meal, isCurrent, onSelect, onUpdateEntry, onDeleteEntry, onD
             <col className="w-36" />
           </colgroup>
           <thead>
-            <tr className="border-b dark:border-gray-600">
+            <tr className="border-b border-border-light dark:border-border-dark">
               <th className="text-left p-3 font-medium">Item</th>
               <th className="text-right p-3 font-medium">Qty (g)</th>
               <th className="text-right p-3 font-medium">kcal</th>
@@ -158,10 +158,10 @@ function MealCard({ meal, isCurrent, onSelect, onUpdateEntry, onDeleteEntry, onD
           </thead>
           <tbody>
             {meal.entries.length ? (meal.entries.map(e => (<Row key={e.id} e={e} onUpdate={onUpdateEntry} onDelete={onDeleteEntry} />))) :
-              (<tr><td className="p-4 text-gray-500 text-center" colSpan={7}>No entries yet.</td></tr>)}
+              (<tr><td className="p-4 text-text-muted text-center" colSpan={7}>No entries yet.</td></tr>)}
           </tbody>
           <tfoot>
-            <tr className="font-semibold border-t-2 border-gray-200 dark:border-gray-600">
+            <tr className="font-semibold border-t-2 border-border-light dark:border-border-dark">
                 <td className="p-3 text-right" colSpan={2}>Subtotal</td>
                 <td className="p-3 text-right subtotal-kcal">{meal.subtotal.kcal.toFixed(1)}</td>
                 <td className="p-3 text-right subtotal-fat">{meal.subtotal.fat.toFixed(1)}</td>
@@ -209,7 +209,7 @@ function Row({ e, onUpdate, onDelete }: RowProps) {
   }
 
   return (
-    <tr className="border-t dark:border-gray-700">
+    <tr className="border-t border-border-light dark:border-border-dark">
       <td className="p-2 text-left font-medium">{e.description}</td>
       <td className="p-2 text-right"><input className="form-input text-right w-20 py-1" type="number" min={1} step={1} value={g} onChange={ev=>setG(parseFloat(ev.target.value))} disabled={isMutating} /></td>
       <td className="p-2 text-right">{e.kcal.toFixed(1)}</td>
@@ -219,7 +219,7 @@ function Row({ e, onUpdate, onDelete }: RowProps) {
       <td className="p-2 text-right">
         <div className="flex gap-2 justify-end">
           <button className="btn btn-secondary btn-sm" disabled={!changed || isNaN(g) || g <= 0 || isMutating} onClick={handleUpdate}>{isMutating ? "..." : "Update"}</button>
-          <button className="btn btn-ghost btn-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/50" onClick={handleDelete} disabled={isMutating}>{isMutating ? "..." : "Delete"}</button>
+          <button className="btn btn-ghost btn-sm text-brand-danger hover:bg-brand-danger/10 dark:hover:bg-brand-danger/30" onClick={handleDelete} disabled={isMutating}>{isMutating ? "..." : "Delete"}</button>
         </div>
       </td>
     </tr>
