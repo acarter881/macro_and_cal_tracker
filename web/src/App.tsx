@@ -35,7 +35,7 @@ export default function App() {
         <Toaster position="bottom-center" toastOptions={{ style: { background: '#363636', color: '#fff' }, success: { duration: 3000 } }} />
 
         <header className="sticky top-0 z-10 bg-gray-100 dark:bg-gray-900">
-          <div className="max-w-screen-lg mx-auto flex items-center justify-between px-4 py-4 lg:px-6">
+          <div className="max-w-screen-xl mx-auto flex items-center justify-between px-4 py-4 lg:px-6">
             <div className="flex items-center gap-2">
               <button className="lg:hidden text-gray-800 dark:text-gray-100" onClick={() => setMenuOpen(true)}>
                 <Bars3Icon className="h-6 w-6" />
@@ -73,7 +73,7 @@ export default function App() {
           </div>
         </div>
 
-        <main className="max-w-screen-lg mx-auto px-4 py-6 lg:px-6">
+        <main className="max-w-screen-xl mx-auto px-4 py-6 lg:px-6">
           <Routes>
             <Route path="/" element={<TrackerPage />} />
             <Route path="/dashboard" element={<DashboardPage />} />
