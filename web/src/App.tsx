@@ -24,7 +24,7 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      <div className="p-4 lg:p-6 max-w-screen-2xl mx-auto bg-gray-100 dark:bg-gray-900 min-h-screen font-sans">
+      <div className="p-4 lg:p-6 w-full bg-gray-100 dark:bg-gray-900 min-h-screen font-sans">
         <Toaster position="bottom-center" toastOptions={{ style: { background: '#363636', color: '#fff' }, success: { duration: 3000 } }}/>
         
         <header className="relative mb-6 flex items-center justify-between">
