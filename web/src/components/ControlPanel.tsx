@@ -244,10 +244,18 @@ export function ControlPanel() {
             <>
               <input className="form-input" placeholder="Search foods…" value={query} onChange={e => setQuery(e.target.value)} />
               <div className="flex items-center gap-2">
-                <select className="form-input" value={typeFilter} onChange={(e) => setTypeFilter(e.target.value as DataTypeOpt)}>
+                <select
+                  className="form-input"
+                  value={typeFilter}
+                  onChange={(e) => setTypeFilter(e.target.value as DataTypeOpt)}
+                  title="Filter results by USDA data type"
+                >
                   {DATA_TYPE_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                 </select>
-                <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                <label
+                  className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap"
+                  title="Sort results to show unbranded foods before branded ones"
+                >
                   <input type="checkbox" className="rounded text-indigo-600 focus:ring-indigo-500" checked={unbrandedFirst} onChange={(e) => setUnbrandedFirst(e.target.checked)} />
                   Unbranded first
                 </label>
