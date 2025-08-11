@@ -8,14 +8,24 @@ import { ThemeToggle } from "./components/ThemeToggle";
 import { TrackerPage } from "./pages/TrackerPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { Bars3Icon, XMarkIcon, HomeIcon, ChartBarIcon } from "@heroicons/react/24/outline";
+import { LoadingSpinner } from "./components/LoadingSpinner";
 
 export default function App() {
   const init = useStore(state => state.init);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    init();
+    init().finally(() => setLoading(false));
   }, [init]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-surface-light dark:bg-surface-dark">
+        <LoadingSpinner />
+      </div>
+    );
+  }
 
   const navLinkClass = ({ isActive }: { isActive: boolean }) =>
     `flex items-center gap-2 px-4 py-2 rounded-md text-sm font-semibold transition-colors ${
