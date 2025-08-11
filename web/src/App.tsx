@@ -41,11 +41,11 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      <div className="min-h-screen bg-surface-light dark:bg-surface-dark font-sans">
+      <div className="min-h-screen bg-gradient-to-br from-surface-light to-gray-100 dark:from-surface-dark dark:to-gray-900 font-sans">
         <Toaster position="bottom-center" toastOptions={{ style: { background: '#363636', color: '#fff' }, success: { duration: 3000 } }} />
 
-        <header className="sticky top-0 z-10 bg-surface-light dark:bg-surface-dark">
-          <div className="mx-auto flex items-center justify-between px-4 py-4 lg:px-6">
+        <header className="sticky top-0 z-10 bg-surface-light dark:bg-surface-dark border-b border-border-light dark:border-border-dark shadow-sm">
+          <div className="max-w-screen-xl mx-auto flex items-center justify-between px-4 py-4 lg:px-6">
             <div className="flex items-center gap-2">
               <button className="lg:hidden text-text dark:text-text-light" onClick={() => setMenuOpen(true)}>
                 <Bars3Icon className="h-6 w-6" />
@@ -68,7 +68,7 @@ export default function App() {
 
         <div className={`fixed inset-0 z-20 transform transition-transform duration-200 lg:hidden ${menuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
           <div className="absolute inset-0 bg-black/50" onClick={() => setMenuOpen(false)}></div>
-          <div className="relative bg-surface-light dark:bg-surface-dark w-64 h-full p-4">
+          <div className="relative bg-surface-light dark:bg-surface-dark w-64 h-full p-4 shadow-lg">
             <button className="mb-4 text-text dark:text-text-light" onClick={() => setMenuOpen(false)}>
               <XMarkIcon className="h-6 w-6" />
             </button>
@@ -83,7 +83,7 @@ export default function App() {
           </div>
         </div>
 
-        <main className="mx-auto px-4 py-6 lg:px-6">
+        <main className="max-w-screen-xl mx-auto px-4 py-6 lg:px-6">
           <Routes>
             <Route path="/" element={<TrackerPage />} />
             <Route path="/dashboard" element={<DashboardPage />} />
