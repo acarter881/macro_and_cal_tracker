@@ -6,9 +6,14 @@ from sqlmodel import Session, select, delete
 from sqlalchemy import func
 from pydantic import BaseModel, field_validator
 
-from ..db import get_session
-from ..models import Food, FoodEntry, Favorite
-from ..utils import fetch_food_detail, ensure_food_cached, USDA_KEY, USDA_BASE
+try:
+    from ..db import get_session
+    from ..models import Food, FoodEntry, Favorite
+    from ..utils import fetch_food_detail, ensure_food_cached, USDA_KEY, USDA_BASE
+except ImportError:  # pragma: no cover
+    from db import get_session
+    from models import Food, FoodEntry, Favorite
+    from utils import fetch_food_detail, ensure_food_cached, USDA_KEY, USDA_BASE
 
 router = APIRouter()
 

@@ -7,7 +7,10 @@ from fastapi import HTTPException
 from sqlmodel import Session, select
 from sqlalchemy import func
 
-from .models import Food, Meal
+try:
+    from .models import Food, Meal
+except ImportError:  # pragma: no cover
+    from models import Food, Meal
 
 USDA_BASE = "https://api.nal.usda.gov/fdc/v1"
 from dotenv import load_dotenv, find_dotenv
