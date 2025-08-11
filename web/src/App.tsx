@@ -1,19 +1,15 @@
-// web/src/App.tsx (replace entire file)
-
 import { useEffect, useState } from "react";
-import { Toaster } from 'react-hot-toast';
-import { BrowserRouter, Routes, Route, NavLink } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useStore } from "./store";
-import { ThemeToggle } from "./components/ThemeToggle";
 import { TrackerPage } from "./pages/TrackerPage";
 import { DashboardPage } from "./pages/DashboardPage";
-import { Bars3Icon, XMarkIcon, HomeIcon, ChartBarIcon } from "@heroicons/react/24/outline";
+import { NotFoundPage } from "./pages/NotFoundPage";
+import { Layout } from "./components/Layout";
 import { LoadingSpinner } from "./components/LoadingSpinner";
 import { Button } from "./components/ui/Button";
 
 export default function App() {
   const init = useStore(state => state.init);
-  const [menuOpen, setMenuOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -27,18 +23,6 @@ export default function App() {
       </div>
     );
   }
-
-  const navLinkClass = ({ isActive }: { isActive: boolean }) =>
-    `flex items-center gap-2 px-4 py-2 rounded-md text-sm font-semibold transition-colors ${
-      isActive
-        ? 'bg-brand-primary text-text-light'
-        : 'text-text dark:text-text-light hover:bg-surface-light dark:hover:bg-border-dark'
-    }`;
-
-  const navItems = [
-    { to: '/', label: 'Tracker', icon: HomeIcon },
-    { to: '/dashboard', label: 'Dashboard', icon: ChartBarIcon }
-  ];
 
   return (
     <BrowserRouter>
@@ -66,7 +50,6 @@ export default function App() {
             </div>
           </div>
         </header>
-
         <div className={`fixed inset-0 z-20 transform transition-transform duration-200 lg:hidden ${menuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
           <div className="absolute inset-0 bg-black/50" onClick={() => setMenuOpen(false)}></div>
           <div className="relative bg-surface-light dark:bg-surface-dark w-64 h-full p-4">
@@ -83,14 +66,13 @@ export default function App() {
             </nav>
           </div>
         </div>
-
-        <main className="mx-auto px-4 py-6 lg:px-6">
-          <Routes>
-            <Route path="/" element={<TrackerPage />} />
-            <Route path="/dashboard" element={<DashboardPage />} />
-          </Routes>
-        </main>
-      </div>
+      <Layout>
+        <Routes>
+          <Route path="/" element={<TrackerPage />} />
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="*" element={<NotFoundPage />} />
+        </Routes>
+      </Layout>
     </BrowserRouter>
   );
 }
