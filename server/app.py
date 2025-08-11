@@ -3,9 +3,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import SQLModel, Session, select
 from sqlalchemy import text
 
-from .db import get_session, get_engine
-from .models import Meal, Food
-from .routers import foods, meals, presets
+try:
+    from .db import get_session, get_engine
+    from .models import Meal, Food
+    from .routers import foods, meals, presets
+except ImportError:  # pragma: no cover
+    from db import get_session, get_engine
+    from models import Meal, Food
+    from routers import foods, meals, presets
 
 app = FastAPI(title="Macro Tracker API")
 app.add_middleware(
