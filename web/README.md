@@ -1,5 +1,10 @@
 # React + TypeScript + Vite
 
+## Environment Variables
+
+The frontend uses the `VITE_API_BASE_URL` environment variable to determine the
+API host. If unset, requests default to the current window origin.
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:

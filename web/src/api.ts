@@ -1,7 +1,9 @@
 import axios from "axios";
 import type { HistoryDay } from "./types";
 
-const api = axios.create({ baseURL: "http://localhost:8000/api" });
+const api = axios.create({
+  baseURL: `${import.meta.env.VITE_API_BASE_URL || window.location.origin}/api`,
+});
 
 // --- Food & Search ---
 export async function searchFoods(query: string, dataType: string) {
