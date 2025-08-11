@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { useStore } from "../store";
 import RadialProgress from "./RadialProgress";
+import { Button } from "./ui/Button";
+import { Input } from "./ui/Input";
 
 export function Summary() {
     const totals = useStore(state => state.day?.totals);
@@ -46,19 +48,19 @@ export function Summary() {
                     <div className="mt-6">
                         <label htmlFor="body-weight" className="block mb-1 text-sm text-text dark:text-text-light">Body Weight (lb)</label>
                         <div className="flex gap-2">
-                            <input
+                            <Input
                                 id="body-weight"
-                                className="form-input flex-1"
+                                className="flex-1"
                                 value={input}
                                 onChange={e => setInput(e.target.value)}
                             />
-                            <button
-                                className="btn btn-primary"
+                            <Button
+                                className="btn-primary"
                                 aria-label="Save weight"
                                 onClick={() => { const v = parseFloat(input); if(!isNaN(v)) saveWeight(v); }}
                             >
                                 Save
-                            </button>
+                            </Button>
                         </div>
                     </div>
                     <div className="text-xs text-text-muted mt-4 text-center">Calories for custom foods use the label; USDA items use 4/4/9.</div>

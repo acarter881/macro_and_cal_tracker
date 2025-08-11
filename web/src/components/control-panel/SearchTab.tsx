@@ -4,6 +4,8 @@ import { useStore } from "../../store";
 import * as api from "../../api";
 import { DATA_TYPE_OPTIONS } from "../../types";
 import type { DataTypeOpt, SimpleFood } from "../../types";
+import { Button } from "../ui/Button";
+import { Input } from "../ui/Input";
 
 export function SearchTab() {
   const { mealName, allMyFoods, setAllMyFoods, addFood } = useStore();
@@ -80,7 +82,7 @@ export function SearchTab() {
   return (
     <>
       <label htmlFor={idQuery} className="sr-only">Search foods</label>
-      <input id={idQuery} className="form-input" placeholder="Search foods…" value={query} onChange={e => setQuery(e.target.value)} />
+      <Input id={idQuery} placeholder="Search foods…" value={query} onChange={e => setQuery(e.target.value)} />
       <div className="flex items-center gap-2">
         <div className="flex flex-col">
           <label htmlFor={idTypeFilter} className="text-sm">Data type</label>
@@ -95,7 +97,7 @@ export function SearchTab() {
           </select>
         </div>
         <div className="flex items-center gap-2 text-sm text-text dark:text-text-light whitespace-nowrap">
-          <input
+          <Input
             id={idUnbranded}
             type="checkbox"
             className="rounded text-brand-primary focus:ring-brand-primary"
@@ -116,12 +118,12 @@ export function SearchTab() {
                 onClick={() => setSelected(f.fdcId)}
               >
                 <div className="font-medium truncate text-sm">{f.description}</div>
-                <button
-                  className="btn btn-ghost btn-sm text-brand-danger hover:bg-brand-danger/10 dark:hover:bg-brand-danger/30"
+                <Button
+                  className="btn-ghost btn-sm text-brand-danger hover:bg-brand-danger/10 dark:hover:bg-brand-danger/30"
                   title="Delete custom food"
                   aria-label="Delete custom food"
                   onClick={(e) => { e.stopPropagation(); handleDeleteCustomFood(f.fdcId); }}
-                >🗑️</button>
+                >🗑️</Button>
               </li>
             ))}
           </ul>
@@ -145,10 +147,10 @@ export function SearchTab() {
       </div>
       <div className="flex items-center gap-2">
         <label htmlFor={idGrams} className="text-sm">Grams</label>
-        <input id={idGrams} className="form-input w-24" type="number" min={1} step={1} value={grams} onChange={e => setGrams(parseFloat(e.target.value))} />
-        <button className="btn btn-primary w-full" onClick={handleAddSelectedFood} disabled={!selected || isAddingFood}>
+        <Input id={idGrams} className="w-24" type="number" min={1} step={1} value={grams} onChange={e => setGrams(parseFloat(e.target.value))} />
+        <Button className="btn-primary w-full" onClick={handleAddSelectedFood} disabled={!selected || isAddingFood}>
           {isAddingFood ? 'Adding…' : `Add to ${mealName}`}
-        </button>
+        </Button>
       </div>
     </>
   );

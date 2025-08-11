@@ -9,6 +9,7 @@ import { TrackerPage } from "./pages/TrackerPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { Bars3Icon, XMarkIcon, HomeIcon, ChartBarIcon } from "@heroicons/react/24/outline";
 import { LoadingSpinner } from "./components/LoadingSpinner";
+import { Button } from "./components/ui/Button";
 
 export default function App() {
   const init = useStore(state => state.init);
@@ -47,9 +48,9 @@ export default function App() {
         <header className="sticky top-0 z-10 bg-surface-light dark:bg-surface-dark">
           <div className="mx-auto flex items-center justify-between px-4 py-4 lg:px-6">
             <div className="flex items-center gap-2">
-              <button className="lg:hidden text-text dark:text-text-light" onClick={() => setMenuOpen(true)}>
+              <Button className="btn-ghost lg:hidden text-text dark:text-text-light" onClick={() => setMenuOpen(true)}>
                 <Bars3Icon className="h-6 w-6" />
-              </button>
+              </Button>
               <h1 className="text-xl lg:text-3xl font-bold text-text dark:text-text-light">Macro Tracker</h1>
             </div>
             <div className="flex items-center gap-4">
@@ -69,9 +70,9 @@ export default function App() {
         <div className={`fixed inset-0 z-20 transform transition-transform duration-200 lg:hidden ${menuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
           <div className="absolute inset-0 bg-black/50" onClick={() => setMenuOpen(false)}></div>
           <div className="relative bg-surface-light dark:bg-surface-dark w-64 h-full p-4">
-            <button className="mb-4 text-text dark:text-text-light" onClick={() => setMenuOpen(false)}>
+            <Button className="btn-ghost mb-4 text-text dark:text-text-light" onClick={() => setMenuOpen(false)}>
               <XMarkIcon className="h-6 w-6" />
-            </button>
+            </Button>
             <nav className="flex flex-col gap-2">
               {navItems.map(({ to, label, icon: Icon }) => (
                 <NavLink key={to} to={to} className={navLinkClass} onClick={() => setMenuOpen(false)}>

@@ -4,6 +4,7 @@ import { CustomFoodTab } from "./CustomFoodTab";
 import { PresetsTab } from "./PresetsTab";
 import { GoalsTab } from "./GoalsTab";
 import { ExportTab } from "./ExportTab";
+import { Button } from "../ui/Button";
 
 type TabKey = 'search' | 'custom' | 'presets' | 'goals' | 'export';
 const tabs: { key: TabKey; label: string }[] = [
@@ -23,17 +24,17 @@ export function ControlPanel() {
         <div className="card-header p-0">
           <div className="flex">
             {tabs.map(t => (
-              <button
+              <Button
                 key={t.key}
                 onClick={() => setTab(t.key)}
-                className={`flex-1 px-3 py-2 text-sm font-medium border-b-2 ${
+                className={`btn-ghost flex-1 px-3 py-2 text-sm font-medium border-b-2 ${
                   tab === t.key
                     ? 'border-brand-primary text-brand-primary'
                     : 'border-transparent text-text-muted hover:text-text dark:hover:text-text-light'
                 }`}
               >
                 {t.label}
-              </button>
+              </Button>
             ))}
           </div>
         </div>

@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import toast from 'react-hot-toast';
 import { useStore } from "../../store";
+import { Button } from "../ui/Button";
+import { Input } from "../ui/Input";
 
 export function GoalsTab() {
   const { goals, setGoals } = useStore();
@@ -40,18 +42,18 @@ export function GoalsTab() {
       <div className="grid grid-cols-2 gap-2">
         <div className="flex flex-col">
           <label htmlFor={ids.fat} className="sr-only">Fat grams</label>
-          <input id={ids.fat} className="form-input" type="number" step="0.1" placeholder="Fat g" value={goalInput.fat} onChange={e=>setGoalInput({ ...goalInput, fat: e.target.value })} />
+          <Input id={ids.fat} type="number" step="0.1" placeholder="Fat g" value={goalInput.fat} onChange={e=>setGoalInput({ ...goalInput, fat: e.target.value })} />
         </div>
         <div className="flex flex-col">
           <label htmlFor={ids.carb} className="sr-only">Carb grams</label>
-          <input id={ids.carb} className="form-input" type="number" step="0.1" placeholder="Carb g" value={goalInput.carb} onChange={e=>setGoalInput({ ...goalInput, carb: e.target.value })} />
+          <Input id={ids.carb} type="number" step="0.1" placeholder="Carb g" value={goalInput.carb} onChange={e=>setGoalInput({ ...goalInput, carb: e.target.value })} />
         </div>
         <div className="flex flex-col">
           <label htmlFor={ids.protein} className="sr-only">Protein grams</label>
-          <input id={ids.protein} className="form-input" type="number" step="0.1" placeholder="Protein g" value={goalInput.protein} onChange={e=>setGoalInput({ ...goalInput, protein: e.target.value })} />
+          <Input id={ids.protein} type="number" step="0.1" placeholder="Protein g" value={goalInput.protein} onChange={e=>setGoalInput({ ...goalInput, protein: e.target.value })} />
         </div>
       </div>
-      <button className="btn btn-secondary w-full" onClick={handleSaveGoals}>Save Goals</button>
+      <Button className="btn-secondary w-full" onClick={handleSaveGoals}>Save Goals</Button>
     </div>
   );
 }
