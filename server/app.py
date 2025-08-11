@@ -6,11 +6,11 @@ from sqlalchemy import text
 try:
     from .db import get_session, get_engine
     from .models import Meal, Food
-    from .routers import foods, meals, presets
+    from .routers import foods, meals, presets, history
 except ImportError:  # pragma: no cover
     from db import get_session, get_engine
     from models import Meal, Food
-    from routers import foods, meals, presets
+    from routers import foods, meals, presets, history
 
 app = FastAPI(title="Macro Tracker API")
 app.add_middleware(
@@ -24,6 +24,7 @@ app.add_middleware(
 app.include_router(foods.router)
 app.include_router(meals.router)
 app.include_router(presets.router)
+app.include_router(history.router)
 
 def ensure_meal_sort_order_column(session: Session):
     tbl = session.exec(text("SELECT name FROM sqlite_master WHERE type='table' AND name='meal'")).first()
