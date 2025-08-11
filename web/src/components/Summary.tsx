@@ -44,10 +44,21 @@ export function Summary() {
                         </div>
                     </div>
                     <div className="mt-6">
-                        <label className="block mb-1 text-sm text-text dark:text-text-light">Body Weight (lb)</label>
+                        <label htmlFor="body-weight" className="block mb-1 text-sm text-text dark:text-text-light">Body Weight (lb)</label>
                         <div className="flex gap-2">
-                            <input className="form-input flex-1" value={input} onChange={e => setInput(e.target.value)} />
-                            <button className="btn btn-primary" onClick={() => { const v = parseFloat(input); if(!isNaN(v)) saveWeight(v); }}>Save</button>
+                            <input
+                                id="body-weight"
+                                className="form-input flex-1"
+                                value={input}
+                                onChange={e => setInput(e.target.value)}
+                            />
+                            <button
+                                className="btn btn-primary"
+                                aria-label="Save weight"
+                                onClick={() => { const v = parseFloat(input); if(!isNaN(v)) saveWeight(v); }}
+                            >
+                                Save
+                            </button>
                         </div>
                     </div>
                     <div className="text-xs text-text-muted mt-4 text-center">Calories for custom foods use the label; USDA items use 4/4/9.</div>
