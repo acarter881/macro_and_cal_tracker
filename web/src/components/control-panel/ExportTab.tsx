@@ -13,7 +13,18 @@ export function ExportTab() {
   async function handleExport() {
     setIsExporting(true);
     try {
-      await api.exportCSV(exportStart, exportEnd);
+      const response = await api.exportCSV(exportStart, exportEnd);
+      const blob = new Blob([response.data], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download =
+        response.headers['content-disposition']?.split('filename=')[1]?.replace(/"/g, '') ||
+        `macro_export_${exportStart}_to_${exportEnd}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
     } catch (err: any) {
       toast.error("Export failed. Please try again.");
     } finally {
