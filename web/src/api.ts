@@ -122,3 +122,14 @@ export async function setWeight(date: string, weight: number) {
   const response = await api.put(`/weight/${date}`, { weight });
   return response.data;
 }
+
+// --- Configuration ---
+export async function getUsdaKey(): Promise<string | null> {
+  const response = await api.get("/config/usda-key");
+  return response.data.key || null;
+}
+
+export async function updateUsdaKey(key: string) {
+  const response = await api.post("/config/usda-key", { key });
+  return response.data;
+}

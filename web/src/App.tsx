@@ -6,13 +6,22 @@ import { DashboardPage } from "./pages/DashboardPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { Layout } from "./components/Layout";
 import { LoadingSpinner } from "./components/LoadingSpinner";
+import { UsdaKeyDialog } from "./components/UsdaKeyDialog";
+import * as api from "./api";
 
 export default function App() {
-  const init = useStore(state => state.init);
+  const init = useStore((state) => state.init);
   const [loading, setLoading] = useState(true);
+  const [needsKey, setNeedsKey] = useState(false);
 
   useEffect(() => {
-    init().finally(() => setLoading(false));
+    const run = async () => {
+      await init();
+      const key = await api.getUsdaKey();
+      setNeedsKey(!key);
+      setLoading(false);
+    };
+    run();
   }, [init]);
 
   if (loading) {
@@ -23,15 +32,16 @@ export default function App() {
     );
   }
 
-    return (
-      <BrowserRouter>
-        <Layout>
-          <Routes>
-            <Route path="/" element={<TrackerPage />} />
-            <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="*" element={<NotFoundPage />} />
-          </Routes>
-        </Layout>
-      </BrowserRouter>
-    );
-  }
+  return (
+    <BrowserRouter>
+      {needsKey && <UsdaKeyDialog onSaved={() => setNeedsKey(false)} />}
+      <Layout>
+        <Routes>
+          <Route path="/" element={<TrackerPage />} />
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="*" element={<NotFoundPage />} />
+        </Routes>
+      </Layout>
+    </BrowserRouter>
+  );
+}

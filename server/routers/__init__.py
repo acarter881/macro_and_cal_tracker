@@ -1,2 +1,2 @@
-from . import foods, meals, presets, history, weight
-__all__ = ["foods", "meals", "presets", "history", "weight"]
+from . import foods, meals, presets, history, weight, config
+__all__ = ["foods", "meals", "presets", "history", "weight", "config"]
