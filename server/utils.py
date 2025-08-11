@@ -1,5 +1,7 @@
 import os
+import json
 import asyncio
+from pathlib import Path
 from typing import Dict
 
 import httpx
@@ -15,9 +17,33 @@ except ImportError:  # pragma: no cover
 USDA_BASE = "https://api.nal.usda.gov/fdc/v1"
 from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv())
-USDA_KEY = os.getenv("USDA_KEY")
-if not USDA_KEY:
-    raise RuntimeError("USDA_KEY not set — add it to your system env or a .env file.")
+
+# Location for storing USDA API key between runs
+CONFIG_PATH = Path(os.getenv("USDA_CONFIG_PATH") or Path.home() / ".macro_tracker_config.json")
+
+def _load_config() -> Dict:
+    try:
+        with open(CONFIG_PATH, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+def _save_config(cfg: Dict) -> None:
+    CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
+    with open(CONFIG_PATH, "w", encoding="utf-8") as f:
+        json.dump(cfg, f)
+
+_config = _load_config()
+
+# USDA_KEY is loaded from config file first, then environment
+USDA_KEY = _config.get("usda_key") or os.getenv("USDA_KEY")
+
+def update_usda_key(new_key: str) -> None:
+    """Persist a new USDA API key and update global reference."""
+    global USDA_KEY, _config
+    USDA_KEY = new_key
+    _config["usda_key"] = new_key
+    _save_config(_config)
 
 def _to_float(x):
     try:

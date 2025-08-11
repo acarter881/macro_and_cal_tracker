@@ -9,20 +9,24 @@ from pydantic import BaseModel, field_validator
 try:
     from ..db import get_session
     from ..models import Food, FoodEntry, Favorite
-    from ..utils import fetch_food_detail, ensure_food_cached, USDA_KEY, USDA_BASE
+    from .. import utils
 except ImportError:  # pragma: no cover
     from db import get_session
     from models import Food, FoodEntry, Favorite
-    from utils import fetch_food_detail, ensure_food_cached, USDA_KEY, USDA_BASE
+    import utils
+
+USDA_BASE = utils.USDA_BASE
+fetch_food_detail = utils.fetch_food_detail
+ensure_food_cached = utils.ensure_food_cached
 
 router = APIRouter()
 
 @router.get("/api/foods/search")
 async def foods_search(q: str, dataType: Optional[str] = None):
-    if not USDA_KEY:
+    if not utils.USDA_KEY:
         raise HTTPException(status_code=500, detail="USDA_KEY not set")
     params: dict = {
-        "api_key": USDA_KEY,
+        "api_key": utils.USDA_KEY,
         "query": q,
         "pageSize": 50,
         "requireAllWords": True,
@@ -51,7 +55,7 @@ async def foods_get(fdc_id: int, session: Session = Depends(get_session), refres
         raise HTTPException(status_code=404, detail="Custom food not found")
     data = await fetch_food_detail(fdc_id)
     try:
-        abridge_url = (f"https://api.nal.usda.gov/fdc/v1/foods?api_key={USDA_KEY}&format=abridged&fdcIds={fdc_id}&nutrients=1008,1004,1003,1005")
+        abridge_url = (f"https://api.nal.usda.gov/fdc/v1/foods?api_key={utils.USDA_KEY}&format=abridged&fdcIds={fdc_id}&nutrients=1008,1004,1003,1005")
         async with httpx.AsyncClient() as client:
             resp = await client.get(abridge_url)
             resp.raise_for_status()
