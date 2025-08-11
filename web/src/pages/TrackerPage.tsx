@@ -1,4 +1,4 @@
-import { ControlPanel } from "../components/ControlPanel";
+import { ControlPanel } from "../components/control-panel/ControlPanel";
 import { DailyLog } from "../components/DailyLog";
 import { Summary } from "../components/Summary";
 
