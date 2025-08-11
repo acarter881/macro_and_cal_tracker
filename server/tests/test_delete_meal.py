@@ -4,15 +4,15 @@ from pathlib import Path
 
 os.environ['USDA_KEY'] = 'test'
 
-# Allow importing the server's main module
-sys.path.append(str(Path(__file__).resolve().parents[1]))
+# Allow importing the server modules
+sys.path.append(str(Path(__file__).resolve().parents[2]))
 
 from fastapi.testclient import TestClient
 from sqlmodel import SQLModel, Session, create_engine, select
 from sqlalchemy.pool import StaticPool
 
-import main
-from main import Meal
+from server import app, db
+from server.models import Meal
 
 
 def get_test_engine():
@@ -32,10 +32,10 @@ def override_get_session(engine):
 
 def test_delete_meal_renumbers():
     engine = get_test_engine()
-    main.engine = engine
-    main.app.dependency_overrides[main.get_session] = override_get_session(engine)
+    db.engine = engine
+    app.app.dependency_overrides[db.get_session] = override_get_session(engine)
 
-    with TestClient(main.app) as client:
+    with TestClient(app.app) as client:
         SQLModel.metadata.create_all(engine)
         with Session(engine) as session:
             meals = [
