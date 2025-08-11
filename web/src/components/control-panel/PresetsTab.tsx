@@ -2,6 +2,8 @@ import { useState } from "react";
 import toast from 'react-hot-toast';
 import { useStore } from "../../store";
 import * as api from "../../api";
+import { Button } from "../ui/Button";
+import { Input } from "../ui/Input";
 
 export function PresetsTab() {
   const { date, presets, refreshPresets, applyPreset } = useStore();
@@ -30,10 +32,10 @@ export function PresetsTab() {
     <div className="space-y-4">
       <div className="space-y-2">
         <label htmlFor={idPreset} className="sr-only">Preset name</label>
-        <input id={idPreset} className="form-input" placeholder="Save current meal as..." value={newPresetName} onChange={(e) => setNewPresetName(e.target.value)} />
-        <button className="btn btn-secondary w-full" onClick={handleSavePreset} disabled={isSavingPreset || !currentMeal?.entries?.length || !newPresetName.trim()}>
+        <Input id={idPreset} placeholder="Save current meal as..." value={newPresetName} onChange={(e) => setNewPresetName(e.target.value)} />
+        <Button className="btn-secondary w-full" onClick={handleSavePreset} disabled={isSavingPreset || !currentMeal?.entries?.length || !newPresetName.trim()}>
           {isSavingPreset ? 'Saving...' : 'Save Preset'}
-        </button>
+        </Button>
       </div>
       <div className="max-h-64 overflow-auto">
         <table className="w-full text-sm">
@@ -44,12 +46,12 @@ export function PresetsTab() {
                 <td className="p-2">{p.name} ({p.item_count})</td>
                 <td className="p-2 text-right">
                   <div className="flex gap-1 justify-end">
-                    <button className="btn btn-ghost btn-sm" onClick={() => applyPreset(p.id)}>Apply</button>
-                    <button className="btn btn-ghost btn-sm text-brand-danger hover:bg-brand-danger/10 dark:hover:bg-brand-danger/30" onClick={async () => {
+                    <Button className="btn-ghost btn-sm" onClick={() => applyPreset(p.id)}>Apply</Button>
+                    <Button className="btn-ghost btn-sm text-brand-danger hover:bg-brand-danger/10 dark:hover:bg-brand-danger/30" onClick={async () => {
                       if (!confirm(`Delete preset \"${p.name}\"?`)) return;
                       await api.deletePreset(p.id);
                       await refreshPresets();
-                    }}>Delete</button>
+                    }}>Delete</Button>
                   </div>
                 </td>
               </tr>

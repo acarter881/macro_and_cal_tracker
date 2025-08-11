@@ -5,6 +5,7 @@ import { getHistory } from "../api";
 import type { HistoryDay } from "../types";
 import { LoadingSpinner } from "../components/LoadingSpinner";
 import { useStore } from "../store";
+import { Button } from "../components/ui/Button";
 
 const palettes = {
     light: {
@@ -68,13 +69,13 @@ export function DashboardPage() {
         <div className="space-y-8">
             <div className="flex gap-2">
                 {[7, 30, 90].map(opt => (
-                    <button
+                    <Button
                         key={opt}
                         onClick={() => setDays(opt)}
-                        className={`px-3 py-1 rounded ${days === opt ? 'bg-brand-primary text-text-light' : 'bg-surface-light dark:bg-border-dark'}`}
+                        className={`btn-ghost px-3 py-1 rounded ${days === opt ? 'bg-brand-primary text-text-light' : 'bg-surface-light dark:bg-border-dark'}`}
                     >
                         Last {opt} Days
-                    </button>
+                    </Button>
                 ))}
             </div>
             <div className="card">
