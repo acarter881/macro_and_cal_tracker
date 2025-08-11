@@ -1,3 +1,6 @@
+import asyncio
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import SQLModel, Session, select
@@ -11,22 +14,6 @@ except ImportError:  # pragma: no cover
     from db import get_session, get_engine
     from models import Meal, Food
     from routers import foods, meals, presets, history, weight, config
-
-app = FastAPI(title="Macro Tracker API")
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-app.include_router(foods.router)
-app.include_router(meals.router)
-app.include_router(presets.router)
-app.include_router(history.router)
-app.include_router(weight.router)
-app.include_router(config.router)
 
 def ensure_meal_sort_order_column(session: Session):
     tbl = session.exec(text("SELECT name FROM sqlite_master WHERE type='table' AND name='meal'")).first()
@@ -57,10 +44,33 @@ def ensure_food_archived_column(session: Session):
         session.exec(text("ALTER TABLE food ADD COLUMN archived INTEGER NOT NULL DEFAULT 0"))
         session.commit()
 
-@app.on_event("startup")
-def on_startup():
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Initialize database tables and handle graceful shutdown."""
     engine = get_engine()
     SQLModel.metadata.create_all(engine)
     with Session(engine) as s:
         ensure_food_archived_column(s)
         ensure_meal_sort_order_column(s)
+    try:
+        yield
+    except asyncio.CancelledError:
+        # Swallow cancellation so reloads or Ctrl+C don't raise a stack trace
+        pass
+
+
+app = FastAPI(title="Macro Tracker API", lifespan=lifespan)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(foods.router)
+app.include_router(meals.router)
+app.include_router(presets.router)
+app.include_router(history.router)
+app.include_router(weight.router)
+app.include_router(config.router)
