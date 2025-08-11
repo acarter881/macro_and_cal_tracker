@@ -4,11 +4,43 @@ import { format, subDays, parseISO } from 'date-fns';
 import { getHistory } from "../api";
 import type { HistoryDay } from "../types";
 import { LoadingSpinner } from "../components/LoadingSpinner";
+import { useStore } from "../store";
+
+const palettes = {
+    light: {
+        grid: 'rgba(0, 0, 0, 0.1)',
+        axis: '#333',
+        tooltipBg: '#fff',
+        tooltipColor: '#000',
+        lines: {
+            kcal: '#8884d8',
+            protein: '#82ca9d',
+            fat: '#ffc658',
+            carb: '#ff8042',
+            weight: '#8884d8',
+        },
+    },
+    dark: {
+        grid: 'rgba(255, 255, 255, 0.2)',
+        axis: '#ddd',
+        tooltipBg: '#333',
+        tooltipColor: '#fff',
+        lines: {
+            kcal: '#8884d8',
+            protein: '#82ca9d',
+            fat: '#ffc658',
+            carb: '#ff8042',
+            weight: '#8884d8',
+        },
+    },
+} as const;
 
 export function DashboardPage() {
     const [data, setData] = useState<HistoryDay[]>([]);
     const [days, setDays] = useState(7);
     const [loading, setLoading] = useState(true);
+    const theme = useStore(state => state.theme);
+    const palette = palettes[theme];
 
     useEffect(() => {
         const fetchHistory = async () => {
@@ -53,15 +85,16 @@ export function DashboardPage() {
                     ) : (
                         <ResponsiveContainer width="100%" height="100%">
                             <LineChart data={formattedData}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(128, 128, 128, 0.2)" />
-                                <XAxis dataKey="date" tick={{ fill: 'currentColor' }} />
-                                <YAxis tick={{ fill: 'currentColor' }} />
+                                <CartesianGrid strokeDasharray="3 3" stroke={palette.grid} />
+                                <XAxis dataKey="date" tick={{ fill: palette.axis }} stroke={palette.axis} />
+                                <YAxis tick={{ fill: palette.axis }} stroke={palette.axis} />
                                 <Tooltip
-                                    contentStyle={{ backgroundColor: '#333', border: 'none' }}
-                                    labelStyle={{ color: '#fff' }}
+                                    contentStyle={{ backgroundColor: palette.tooltipBg, border: 'none' }}
+                                    labelStyle={{ color: palette.tooltipColor }}
+                                    itemStyle={{ color: palette.tooltipColor }}
                                 />
-                                <Legend />
-                                <Line type="monotone" dataKey="kcal" stroke="#8884d8" strokeWidth={2} activeDot={{ r: 8 }} />
+                                <Legend wrapperStyle={{ color: palette.axis }} />
+                                <Line type="monotone" dataKey="kcal" stroke={palette.lines.kcal} strokeWidth={2} activeDot={{ r: 8 }} />
                             </LineChart>
                         </ResponsiveContainer>
                     )}
@@ -75,17 +108,18 @@ export function DashboardPage() {
                     ) : (
                         <ResponsiveContainer width="100%" height="100%">
                             <LineChart data={formattedData}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(128, 128, 128, 0.2)" />
-                                <XAxis dataKey="date" tick={{ fill: 'currentColor' }} />
-                                <YAxis tick={{ fill: 'currentColor' }} />
+                                <CartesianGrid strokeDasharray="3 3" stroke={palette.grid} />
+                                <XAxis dataKey="date" tick={{ fill: palette.axis }} stroke={palette.axis} />
+                                <YAxis tick={{ fill: palette.axis }} stroke={palette.axis} />
                                 <Tooltip
-                                    contentStyle={{ backgroundColor: '#333', border: 'none' }}
-                                    labelStyle={{ color: '#fff' }}
+                                    contentStyle={{ backgroundColor: palette.tooltipBg, border: 'none' }}
+                                    labelStyle={{ color: palette.tooltipColor }}
+                                    itemStyle={{ color: palette.tooltipColor }}
                                 />
-                                <Legend />
-                                <Line type="monotone" dataKey="protein" name="Protein (g)" stroke="#82ca9d" strokeWidth={2} activeDot={{ r: 8 }} />
-                                <Line type="monotone" dataKey="fat" name="Fat (g)" stroke="#ffc658" strokeWidth={2} activeDot={{ r: 8 }} />
-                                <Line type="monotone" dataKey="carb" name="Carbs (g)" stroke="#ff8042" strokeWidth={2} activeDot={{ r: 8 }} />
+                                <Legend wrapperStyle={{ color: palette.axis }} />
+                                <Line type="monotone" dataKey="protein" name="Protein (g)" stroke={palette.lines.protein} strokeWidth={2} activeDot={{ r: 8 }} />
+                                <Line type="monotone" dataKey="fat" name="Fat (g)" stroke={palette.lines.fat} strokeWidth={2} activeDot={{ r: 8 }} />
+                                <Line type="monotone" dataKey="carb" name="Carbs (g)" stroke={palette.lines.carb} strokeWidth={2} activeDot={{ r: 8 }} />
                             </LineChart>
                         </ResponsiveContainer>
                     )}
@@ -99,15 +133,16 @@ export function DashboardPage() {
                     ) : (
                         <ResponsiveContainer width="100%" height="100%">
                             <LineChart data={formattedData}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(128, 128, 128, 0.2)" />
-                                <XAxis dataKey="date" tick={{ fill: 'currentColor' }} />
-                                <YAxis tick={{ fill: 'currentColor' }} />
+                                <CartesianGrid strokeDasharray="3 3" stroke={palette.grid} />
+                                <XAxis dataKey="date" tick={{ fill: palette.axis }} stroke={palette.axis} />
+                                <YAxis tick={{ fill: palette.axis }} stroke={palette.axis} />
                                 <Tooltip
-                                    contentStyle={{ backgroundColor: '#333', border: 'none' }}
-                                    labelStyle={{ color: '#fff' }}
+                                    contentStyle={{ backgroundColor: palette.tooltipBg, border: 'none' }}
+                                    labelStyle={{ color: palette.tooltipColor }}
+                                    itemStyle={{ color: palette.tooltipColor }}
                                 />
-                                <Legend />
-                                <Line type="monotone" dataKey="weight" name="Weight" stroke="#8884d8" strokeWidth={2} activeDot={{ r: 8 }} />
+                                <Legend wrapperStyle={{ color: palette.axis }} />
+                                <Line type="monotone" dataKey="weight" name="Weight" stroke={palette.lines.weight} strokeWidth={2} activeDot={{ r: 8 }} />
                             </LineChart>
                         </ResponsiveContainer>
                     )}
