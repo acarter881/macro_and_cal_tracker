@@ -118,6 +118,8 @@ export function SearchTab() {
                 <div className="font-medium truncate text-sm">{f.description}</div>
                 <button
                   className="btn btn-ghost btn-sm text-brand-danger hover:bg-brand-danger/10 dark:hover:bg-brand-danger/30"
+                  title="Delete custom food"
+                  aria-label="Delete custom food"
                   onClick={(e) => { e.stopPropagation(); handleDeleteCustomFood(f.fdcId); }}
                 >🗑️</button>
               </li>

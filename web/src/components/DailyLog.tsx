@@ -125,12 +125,34 @@ function MealCard({ meal, isCurrent, onSelect, onUpdateEntry, onDeleteEntry, onD
           <h3 className="flex-1 text-center font-semibold text-lg dark:text-text-light">{meal.name}</h3>
         )}
         <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-            <button type="button" title="Rename meal" onClick={(e) => { e.stopPropagation(); setIsRenaming(true); }} className="btn btn-ghost btn-sm">✏️</button>
-            <button type="button" title="Copy meal" onClick={(e) => { e.stopPropagation(); onCopyMeal(meal.id); }} className="btn btn-ghost btn-sm">
+            <button
+              type="button"
+              title="Rename meal"
+              aria-label="Rename meal"
+              onClick={(e) => { e.stopPropagation(); setIsRenaming(true); }}
+              className="btn btn-ghost btn-sm"
+            >
+              ✏️
+            </button>
+            <button
+              type="button"
+              title="Copy meal"
+              aria-label="Copy meal"
+              onClick={(e) => { e.stopPropagation(); onCopyMeal(meal.id); }}
+              className="btn btn-ghost btn-sm"
+            >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
             </button>
             {meal.entries.length === 0 && (
-              <button type="button" title="Delete empty meal" onClick={(e) => { e.stopPropagation(); onDeleteMeal(meal.id); }} className="btn btn-ghost btn-sm">🗑️</button>
+              <button
+                type="button"
+                title="Delete empty meal"
+                aria-label="Delete empty meal"
+                onClick={(e) => { e.stopPropagation(); onDeleteMeal(meal.id); }}
+                className="btn btn-ghost btn-sm"
+              >
+                🗑️
+              </button>
             )}
         </div>
       </div>
@@ -211,7 +233,26 @@ function Row({ e, onUpdate, onDelete }: RowProps) {
   return (
     <tr className="border-t border-border-light dark:border-border-dark">
       <td className="p-2 text-left font-medium">{e.description}</td>
-      <td className="p-2 text-right"><input className="form-input text-right w-20 py-1" type="number" min={1} step={1} value={g} onChange={ev=>setG(parseFloat(ev.target.value))} disabled={isMutating} /></td>
+      <td className="p-2 text-right">
+        {(() => {
+          const id = `entry-${e.id}-qty`;
+          return (
+            <>
+              <label htmlFor={id} className="sr-only">Quantity in grams</label>
+              <input
+                id={id}
+                className="form-input text-right w-20 py-1"
+                type="number"
+                min={1}
+                step={1}
+                value={g}
+                onChange={ev=>setG(parseFloat(ev.target.value))}
+                disabled={isMutating}
+              />
+            </>
+          );
+        })()}
+      </td>
       <td className="p-2 text-right">{e.kcal.toFixed(1)}</td>
       <td className="p-2 text-right">{e.fat.toFixed(1)}</td>
       <td className="p-2 text-right">{e.carb.toFixed(1)}</td>
