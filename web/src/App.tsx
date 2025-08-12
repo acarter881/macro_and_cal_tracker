@@ -8,6 +8,7 @@ import { Layout } from "./components/Layout";
 import { LoadingSpinner } from "./components/LoadingSpinner";
 import { UsdaKeyDialog } from "./components/UsdaKeyDialog";
 import * as api from "./api";
+import toast from "react-hot-toast";
 
 export default function App() {
   const init = useStore((state) => state.init);
@@ -15,6 +16,8 @@ export default function App() {
   const [needsKey, setNeedsKey] = useState(false);
 
   useEffect(() => {
+    // Safeguard in case network requests hang indefinitely.
+    const timeout = setTimeout(() => setLoading(false), 5000);
     const run = async () => {
       try {
         await init();
@@ -25,7 +28,9 @@ export default function App() {
         // previously hang on the loading screen leaving users with a blank
         // page.  Log the error and continue so the UI can render.
         console.error("Failed to initialize application", err);
+        toast.error("Failed to reach backend. Some features may not work.");
       } finally {
+        clearTimeout(timeout);
         setLoading(false);
       }
     };
