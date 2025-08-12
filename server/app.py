@@ -45,7 +45,7 @@ def ensure_entry_sort_order_column(session: Session):
         session.commit()
         # initialize existing entries sequentially per meal
         meals = session.exec(select(Meal.id).order_by(Meal.id)).all()
-        for (meal_id,) in meals:
+        for meal_id in meals:
             ents = session.exec(select(FoodEntry).where(FoodEntry.meal_id == meal_id).order_by(FoodEntry.id)).all()
             for idx, e in enumerate(ents, start=1):
                 e.sort_order = idx
