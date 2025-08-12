@@ -1,5 +1,4 @@
 fastapi
 sqlmodel
-platformdirs
 httpx
 python-dotenv

@@ -1,7 +1,13 @@
 from pathlib import Path
 import shutil
 
-from platformdirs import user_data_dir
+try:
+    from platformdirs import user_data_dir
+except ModuleNotFoundError:  # pragma: no cover
+    def user_data_dir(appname: str, appauthor: str) -> str:
+        """Fallback implementation if platformdirs is unavailable."""
+        return str(Path.home() / f".{appname}")
+
 from sqlmodel import Session, create_engine
 
 
