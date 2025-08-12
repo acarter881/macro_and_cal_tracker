@@ -1,6 +1,7 @@
 import { useMemo, useState, useEffect } from "react";
 import toast from 'react-hot-toast';
-import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
+import type { DropResult } from "@hello-pangea/dnd";
 import { useStore } from "../store";
 import type { MealType, EntryType } from "../types";
 import { Button } from "./ui/Button";
@@ -85,7 +86,6 @@ export function DailyLog() {
                       isCurrent={m.name === mealName}
                       onSelect={() => setMealName(m.name)}
                       onUpdateEntry={updateEntry}
-                      onMoveEntry={moveEntry}
                       onDeleteEntry={deleteEntry}
                       onDeleteMeal={deleteMeal}
                       onCopyMeal={copyMeal}
@@ -109,7 +109,6 @@ export function DailyLog() {
 type MealCardProps = {
   meal: MealType; isCurrent: boolean; onSelect: () => void;
   onUpdateEntry: (entryId: number, grams: number) => Promise<void>;
-  onMoveEntry: (entryId: number, newOrder: number) => Promise<void>;
   onDeleteEntry: (entryId: number) => Promise<void>;
   onDeleteMeal: (mealId: number) => Promise<void>;
   onCopyMeal: (mealId: number) => void;
@@ -117,7 +116,7 @@ type MealCardProps = {
   provided: any;
 };
 
-function MealCard({ meal, isCurrent, onSelect, onUpdateEntry, onMoveEntry, onDeleteEntry, onDeleteMeal, onCopyMeal, onRenameMeal, provided }: MealCardProps) {
+function MealCard({ meal, isCurrent, onSelect, onUpdateEntry, onDeleteEntry, onDeleteMeal, onCopyMeal, onRenameMeal, provided }: MealCardProps) {
   const [isRenaming, setIsRenaming] = useState(false);
   const [tempName, setTempName] = useState(meal.name);
   useEffect(() => setTempName(meal.name), [meal.name]);
