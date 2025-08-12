@@ -1,8 +1,21 @@
 import axios from "axios";
 import type { HistoryDay } from "./types";
 
+// Determine the API base URL.  In production the frontend is typically served
+// from the same origin as the API so ``window.location.origin`` works.  During
+// local development the frontend runs on the Vite dev server (usually port
+// 5173) while the API runs on port 8000.  Previously we defaulted to the
+// current origin which caused the app to attempt API calls against the dev
+// server, resulting in a blank white screen on load.  To avoid this we fall
+// back to ``http://localhost:8000`` whenever the origin appears to be the Vite
+// dev server or is otherwise unavailable.
+const origin = typeof window !== "undefined" ? window.location.origin : "";
+const inferredBase =
+  import.meta.env.VITE_API_BASE_URL ||
+  (origin && !origin.includes("5173") ? origin : "http://localhost:8000");
+
 const api = axios.create({
-  baseURL: `${import.meta.env.VITE_API_BASE_URL || window.location.origin}/api`,
+  baseURL: `${inferredBase}/api`,
 });
 
 // --- Food & Search ---
