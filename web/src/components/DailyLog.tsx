@@ -1,45 +1,51 @@
 import { useMemo, useState, useEffect } from "react";
 import toast from 'react-hot-toast';
+import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 import { useStore } from "../store";
-import type { MealType } from "../types";
+import type { MealType, EntryType } from "../types";
 import { Button } from "./ui/Button";
 import { Input } from "./ui/Input";
 
 export function DailyLog() {
-  const { day, mealName, setDate, setMealName, addMeal, updateEntry, deleteEntry, deleteMeal, renameMeal, moveMeal, copiedMealId, copyMeal, pasteMeal } = useStore();
+  const { day, mealName, setDate, setMealName, addMeal, updateEntry, moveEntry, deleteEntry, deleteMeal, renameMeal, moveMeal, copiedMealId, copyMeal, pasteMeal } = useStore();
 
   const [isAddingMeal, setIsAddingMeal] = useState(false);
   const [isPasting, setIsPasting] = useState(false);
-  const [draggedMealId, setDraggedMealId] = useState<number | null>(null);
 
   const handleAddMeal = async () => {
     setIsAddingMeal(true);
     await addMeal();
     setIsAddingMeal(false);
-  }
+  };
 
   const handlePasteMeal = async () => {
     setIsPasting(true);
     await pasteMeal();
     setIsPasting(false);
-  }
-
-  const handleDragStart = (id: number) => setDraggedMealId(id);
-
-  const handleDrop = (id: number) => {
-    if (draggedMealId == null || draggedMealId === id) return;
-    const target = pickerMeals.find(m => m.id === id);
-    if (!target) return;
-    moveMeal(draggedMealId, target.sort_order);
-    setDraggedMealId(null);
   };
-  
+
   const pickerMeals = useMemo(() => {
     if ((day?.meals?.length ?? 0) > 0) {
       return [...day!.meals].sort((a, b) => a.sort_order - b.sort_order);
     }
     return [];
   }, [day]);
+
+  const handleDragEnd = (result: DropResult) => {
+    const { destination, source, draggableId, type } = result;
+    if (!destination) return;
+    if (type === "MEAL") {
+      const meal = pickerMeals[source.index];
+      if (!meal) return;
+      const newOrder = destination.index + 1;
+      moveMeal(meal.id, newOrder);
+    } else if (type === "ENTRY") {
+      if (destination.droppableId !== source.droppableId) return;
+      const entryId = parseInt(draggableId.replace("entry-", ""), 10);
+      const newOrder = destination.index + 1;
+      moveEntry(entryId, newOrder);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -53,7 +59,7 @@ export function DailyLog() {
             <select className="form-input" value={mealName} onChange={e => setMealName(e.target.value)}>
               {pickerMeals.map(m => (<option key={m.id}>{m.name}</option>))}
             </select>
-            
+
             {copiedMealId && (
               <Button type="button" className="btn-secondary whitespace-nowrap" onClick={handlePasteMeal} disabled={isPasting}>
                 {isPasting ? "Pasting..." : `Paste to ${mealName}`}
@@ -66,24 +72,34 @@ export function DailyLog() {
           </div>
         </div>
       </div>
-      {(day?.meals ?? [])
-        .slice()
-        .sort((a, b) => a.sort_order - b.sort_order)
-        .map(m => (
-          <MealCard
-            key={m.id}
-            meal={m}
-            isCurrent={m.name === mealName}
-            onSelect={() => setMealName(m.name)}
-            onUpdateEntry={updateEntry}
-            onDeleteEntry={deleteEntry}
-            onDeleteMeal={deleteMeal}
-            onCopyMeal={copyMeal}
-            onRenameMeal={renameMeal}
-            onDragStart={() => handleDragStart(m.id)}
-            onDrop={() => handleDrop(m.id)}
-          />
-        ))}
+
+      <DragDropContext onDragEnd={handleDragEnd}>
+        <Droppable droppableId="meals" type="MEAL">
+          {provided => (
+            <div ref={provided.innerRef} {...provided.droppableProps} className="space-y-6">
+              {pickerMeals.map((m, index) => (
+                <Draggable key={m.id} draggableId={`meal-${m.id}`} index={index}>
+                  {providedMeal => (
+                    <MealCard
+                      meal={m}
+                      isCurrent={m.name === mealName}
+                      onSelect={() => setMealName(m.name)}
+                      onUpdateEntry={updateEntry}
+                      onMoveEntry={moveEntry}
+                      onDeleteEntry={deleteEntry}
+                      onDeleteMeal={deleteMeal}
+                      onCopyMeal={copyMeal}
+                      onRenameMeal={renameMeal}
+                      provided={providedMeal}
+                    />
+                  )}
+                </Draggable>
+              ))}
+              {provided.placeholder}
+            </div>
+          )}
+        </Droppable>
+      </DragDropContext>
     </div>
   );
 }
@@ -93,15 +109,15 @@ export function DailyLog() {
 type MealCardProps = {
   meal: MealType; isCurrent: boolean; onSelect: () => void;
   onUpdateEntry: (entryId: number, grams: number) => Promise<void>;
+  onMoveEntry: (entryId: number, newOrder: number) => Promise<void>;
   onDeleteEntry: (entryId: number) => Promise<void>;
   onDeleteMeal: (mealId: number) => Promise<void>;
   onCopyMeal: (mealId: number) => void;
   onRenameMeal: (mealId: number, newName: string) => Promise<void>;
-  onDragStart: () => void;
-  onDrop: () => void;
+  provided: any;
 };
 
-function MealCard({ meal, isCurrent, onSelect, onUpdateEntry, onDeleteEntry, onDeleteMeal, onCopyMeal, onRenameMeal, onDragStart, onDrop }: MealCardProps) {
+function MealCard({ meal, isCurrent, onSelect, onUpdateEntry, onMoveEntry, onDeleteEntry, onDeleteMeal, onCopyMeal, onRenameMeal, provided }: MealCardProps) {
   const [isRenaming, setIsRenaming] = useState(false);
   const [tempName, setTempName] = useState(meal.name);
   useEffect(() => setTempName(meal.name), [meal.name]);
@@ -112,10 +128,9 @@ function MealCard({ meal, isCurrent, onSelect, onUpdateEntry, onDeleteEntry, onD
   return (
     <div
       className={`card ${isCurrent ? "ring-2 ring-brand-primary" : ""}`}
-      draggable
-      onDragStart={onDragStart}
-      onDragOver={e => e.preventDefault()}
-      onDrop={onDrop}
+      ref={provided.innerRef}
+      {...provided.draggableProps}
+      {...provided.dragHandleProps}
     >
       <div className="card-header bg-surface-light dark:bg-border-dark flex items-center relative py-3" onClick={!isRenaming ? onSelect : undefined}>
         {isRenaming ? (
@@ -180,10 +195,27 @@ function MealCard({ meal, isCurrent, onSelect, onUpdateEntry, onDeleteEntry, onD
               <th className="p-3 text-right"></th>
             </tr>
           </thead>
-          <tbody>
-            {meal.entries.length ? (meal.entries.map(e => (<Row key={e.id} e={e} onUpdate={onUpdateEntry} onDelete={onDeleteEntry} />))) :
-              (<tr><td className="p-4 text-text-muted text-center" colSpan={7}>No entries yet.</td></tr>)}
-          </tbody>
+          <Droppable droppableId={`entries-${meal.id}`} type="ENTRY">
+            {providedEntries => (
+              <tbody ref={providedEntries.innerRef} {...providedEntries.droppableProps}>
+                {meal.entries.length ? (
+                  meal.entries
+                    .slice()
+                    .sort((a, b) => a.sort_order - b.sort_order)
+                    .map((e, idx) => (
+                      <Draggable key={e.id} draggableId={`entry-${e.id}`} index={idx}>
+                        {providedRow => (
+                          <Row e={e} onUpdate={onUpdateEntry} onDelete={onDeleteEntry} provided={providedRow} />
+                        )}
+                      </Draggable>
+                    ))
+                ) : (
+                  <tr><td className="p-4 text-text-muted text-center" colSpan={7}>No entries yet.</td></tr>
+                )}
+                {providedEntries.placeholder}
+              </tbody>
+            )}
+          </Droppable>
           <tfoot>
             <tr className="font-semibold border-t-2 border-border-light dark:border-border-dark">
                 <td className="p-3 text-right" colSpan={2}>Subtotal</td>
@@ -200,14 +232,13 @@ function MealCard({ meal, isCurrent, onSelect, onUpdateEntry, onDeleteEntry, onD
   );
 }
 
-type EntryType = { id: number; description: string; quantity_g: number; kcal: number; protein: number; carb: number; fat: number };
-type RowProps = { e: EntryType, onUpdate: (id: number, grams: number) => Promise<void>, onDelete: (id: number) => Promise<void> };
+type RowProps = { e: EntryType, onUpdate: (id: number, grams: number) => Promise<void>, onDelete: (id: number) => Promise<void>, provided: any };
 
-function Row({ e, onUpdate, onDelete }: RowProps) {
+function Row({ e, onUpdate, onDelete, provided }: RowProps) {
   const [g, setG] = useState<number>(e.quantity_g);
   const [isMutating, setIsMutating] = useState(false);
   const changed = g !== e.quantity_g;
-  
+
   useEffect(() => { setG(e.quantity_g); }, [e.quantity_g]);
 
   const handleUpdate = async () => {
@@ -233,7 +264,7 @@ function Row({ e, onUpdate, onDelete }: RowProps) {
   }
 
   return (
-    <tr className="border-t border-border-light dark:border-border-dark">
+    <tr className="border-t border-border-light dark:border-border-dark" ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}>
       <td className="p-2 text-left font-medium">{e.description}</td>
       <td className="p-2 text-right">
         {(() => {

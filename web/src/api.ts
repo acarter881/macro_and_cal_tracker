@@ -47,6 +47,11 @@ export async function updateEntry(entryId: number, newGrams: number) {
   return response.data;
 }
 
+export async function moveEntry(entryId: number, newOrder: number) {
+  const response = await api.patch(`/entries/${entryId}`, { sort_order: newOrder });
+  return response.data;
+}
+
 export async function deleteEntry(entryId: number) {
   const response = await api.delete(`/entries/${entryId}`);
   return response.data;

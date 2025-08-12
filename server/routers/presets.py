@@ -2,6 +2,7 @@ from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select, delete
+from sqlalchemy import func
 from pydantic import BaseModel
 
 try:
@@ -94,7 +95,8 @@ async def apply_preset(preset_id: int, payload: PresetApply, session: Session = 
     mult = float(payload.multiplier or 1.0)
     for it in items:
         await ensure_food_cached(it.fdc_id, session)
-        session.add(FoodEntry(meal_id=m.id, fdc_id=it.fdc_id, quantity_g=it.grams * mult))
+        max_order = session.exec(select(func.max(FoodEntry.sort_order)).where(FoodEntry.meal_id == m.id)).first() or 0
+        session.add(FoodEntry(meal_id=m.id, fdc_id=it.fdc_id, quantity_g=it.grams * mult, sort_order=max_order + 1))
     session.commit()
     return {"ok": True, "meal_id": m.id, "added": len(items)}
 

@@ -8,11 +8,11 @@ from sqlalchemy import text
 
 try:
     from .db import get_session, get_engine
-    from .models import Meal, Food
+    from .models import Meal, Food, FoodEntry
     from .routers import foods, meals, presets, history, weight, config
 except ImportError:  # pragma: no cover
     from db import get_session, get_engine
-    from models import Meal, Food
+    from models import Meal, Food, FoodEntry
     from routers import foods, meals, presets, history, weight, config
 
 def ensure_meal_sort_order_column(session: Session):
@@ -34,6 +34,24 @@ def ensure_meal_sort_order_column(session: Session):
             session.add(m)
         session.commit()
 
+def ensure_entry_sort_order_column(session: Session):
+    tbl = session.exec(text("SELECT name FROM sqlite_master WHERE type='table' AND name='foodentry'")).first()
+    if not tbl:
+        return
+    cols = session.exec(text("PRAGMA table_info(foodentry)")).all()
+    names = {row[1] for row in cols}
+    if "sort_order" not in names:
+        session.exec(text("ALTER TABLE foodentry ADD COLUMN sort_order INTEGER"))
+        session.commit()
+        # initialize existing entries sequentially per meal
+        meals = session.exec(select(Meal.id).order_by(Meal.id)).all()
+        for (meal_id,) in meals:
+            ents = session.exec(select(FoodEntry).where(FoodEntry.meal_id == meal_id).order_by(FoodEntry.id)).all()
+            for idx, e in enumerate(ents, start=1):
+                e.sort_order = idx
+                session.add(e)
+        session.commit()
+
 def ensure_food_archived_column(session: Session):
     tbl = session.exec(text("SELECT name FROM sqlite_master WHERE type='table' AND name='food'")).first()
     if not tbl:
@@ -52,6 +70,7 @@ async def lifespan(app: FastAPI):
     with Session(engine) as s:
         ensure_food_archived_column(s)
         ensure_meal_sort_order_column(s)
+        ensure_entry_sort_order_column(s)
     try:
         yield
     except asyncio.CancelledError:

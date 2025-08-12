@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import toast from 'react-hot-toast';
 import { useStore } from "../store";
 import RadialProgress from "./RadialProgress";
 import { Button } from "./ui/Button";
@@ -10,10 +11,23 @@ export function Summary() {
     const goals = useStore(state => state.goals);
     const saveWeight = useStore(state => state.saveWeight);
     const [input, setInput] = useState("");
+    const [achieved, setAchieved] = useState({kcal:false,fat:false,carb:false,protein:false});
 
     useEffect(() => {
         setInput(weight != null ? weight.toString() : "");
     }, [weight]);
+
+    useEffect(() => {
+        if (!totals) return;
+        (['kcal','fat','carb','protein'] as const).forEach(k => {
+            const goal = (goals as any)[k];
+            const val = (totals as any)[k];
+            if (!achieved[k] && goal > 0 && val >= goal) {
+                toast.success(`${k} goal reached!`);
+                setAchieved(prev => ({...prev, [k]: true}));
+            }
+        });
+    }, [totals, goals, achieved]);
 
     return (
         <div>
