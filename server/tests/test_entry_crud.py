@@ -56,21 +56,31 @@ def test_entry_crud_flow():
         entry_id = resp.json()['id']
         assert resp.json()['quantity_g'] == 100
 
+        # create second entry
+        resp_extra = client.post('/api/entries', json={'meal_id': meal_id, 'fdc_id': 1, 'quantity_g': 50})
+        assert resp_extra.status_code == 200
+        entry_id2 = resp_extra.json()['id']
+
         resp2 = client.patch(f'/api/entries/{entry_id}', json={'quantity_g': 150})
         assert resp2.status_code == 200
         assert resp2.json()['quantity_g'] == 150.0
 
+        # move second entry to top
+        resp_move = client.patch(f'/api/entries/{entry_id2}', json={'sort_order': 1})
+        assert resp_move.status_code == 200
+
         resp3 = client.get('/api/days/2024-01-01')
         assert resp3.status_code == 200
         data = resp3.json()
-        assert data['entries'][0]['fdc_id'] == 1
-        assert data['entries'][0]['quantity_g'] == 150.0
-        assert data['totals'] == {'kcal': 150.0, 'protein': 15.0, 'carb': 7.5, 'fat': 3.0}
+        assert data['entries'][0]['id'] == entry_id2
+        assert data['entries'][1]['id'] == entry_id
+        assert data['entries'][1]['quantity_g'] == 150.0
+        assert data['totals'] == {'kcal': 200.0, 'protein': 20.0, 'carb': 10.0, 'fat': 4.0}
 
-        resp4 = client.delete(f'/api/entries/{entry_id}')
+        resp4 = client.delete(f'/api/entries/{entry_id2}')
         assert resp4.status_code == 200
 
         resp5 = client.get('/api/days/2024-01-01')
         assert resp5.status_code == 200
-        assert resp5.json()['entries'] == []
-        assert resp5.json()['totals'] == {'kcal': 0.0, 'protein': 0.0, 'carb': 0.0, 'fat': 0.0}
+        assert len(resp5.json()['entries']) == 1
+        assert resp5.json()['totals'] == {'kcal': 150.0, 'protein': 15.0, 'carb': 7.5, 'fat': 3.0}

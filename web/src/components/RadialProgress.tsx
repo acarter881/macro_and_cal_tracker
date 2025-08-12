@@ -36,6 +36,7 @@ export function RadialProgress({ value, goal, color, decimals = 0, unit = "" }: 
                         cy="32"
                         strokeDasharray={circumference}
                         strokeDashoffset={offset}
+                        style={{ transition: 'stroke-dashoffset 0.4s ease' }}
                         transform="rotate(-90 32 32)"
                     />
                 </svg>

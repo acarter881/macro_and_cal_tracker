@@ -22,10 +22,12 @@ class Meal(SQLModel, table=True):
     sort_order: int = Field(index=True)
 
 class FoodEntry(SQLModel, table=True):
+    __table_args__ = (UniqueConstraint("meal_id", "sort_order", name="uq_entry_meal_order"),)
     id: Optional[int] = Field(default=None, primary_key=True)
     meal_id: int = Field(foreign_key="meal.id")
     fdc_id: int = Field(foreign_key="food.fdc_id")
     quantity_g: float
+    sort_order: int = Field(index=True)
 
 class Favorite(SQLModel, table=True):
     fdc_id: int = Field(primary_key=True)

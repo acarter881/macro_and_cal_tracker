@@ -25,6 +25,11 @@ class MealUpdate(BaseModel):
     name: Optional[str] = None
     sort_order: Optional[int] = None
 
+class FoodEntryCreate(BaseModel):
+    meal_id: int
+    fdc_id: int
+    quantity_g: float
+
 @router.post("/api/meals", response_model=Meal)
 def create_meal(payload: MealCreate, session: Session = Depends(get_session)):
     max_sort_order = session.exec(
@@ -97,10 +102,19 @@ def update_meal(meal_id: int, payload: MealUpdate, session: Session = Depends(ge
     return meal
 
 @router.post("/api/entries", response_model=FoodEntry)
-def create_entry(entry: FoodEntry, session: Session = Depends(get_session)):
-    food = session.get(Food, entry.fdc_id)
+def create_entry(payload: FoodEntryCreate, session: Session = Depends(get_session)):
+    food = session.get(Food, payload.fdc_id)
     if not food or food.archived:
         raise HTTPException(status_code=404, detail="Food not available")
+    max_order = session.exec(
+        select(func.max(FoodEntry.sort_order)).where(FoodEntry.meal_id == payload.meal_id)
+    ).first() or 0
+    entry = FoodEntry(
+        meal_id=payload.meal_id,
+        fdc_id=payload.fdc_id,
+        quantity_g=payload.quantity_g,
+        sort_order=max_order + 1,
+    )
     session.add(entry)
     session.commit()
     session.refresh(entry)
@@ -121,7 +135,9 @@ def get_day(date: str, session: Session = Depends(get_session)):
     meal_ids = [m.id for m in meals]
     if not meal_ids:
         return {"meals": [], "entries": [], "totals": {"kcal": 0, "protein": 0, "fat": 0, "carb": 0}}
-    entries = session.exec(select(FoodEntry).where(FoodEntry.meal_id.in_(meal_ids))).all()
+    entries = session.exec(
+        select(FoodEntry).where(FoodEntry.meal_id.in_(meal_ids)).order_by(FoodEntry.sort_order)
+    ).all()
     foods = {f.fdc_id: f for f in session.exec(select(Food).where(Food.fdc_id.in_({e.fdc_id for e in entries}))).all()}
     totals = {"kcal": 0.0, "protein": 0.0, "carb": 0.0, "fat": 0.0}
     for e in entries:
@@ -137,12 +153,52 @@ def get_day(date: str, session: Session = Depends(get_session)):
 
 class EntryUpdate(BaseModel):
     quantity_g: Optional[float] = None
+    sort_order: Optional[int] = None
 
 @router.patch("/api/entries/{entry_id}", response_model=FoodEntry)
 def update_entry(entry_id: int, payload: EntryUpdate, session: Session = Depends(get_session)):
     e = session.get(FoodEntry, entry_id)
     if not e:
         raise HTTPException(status_code=404, detail="Entry not found")
+    if payload.sort_order is not None and payload.sort_order != e.sort_order:
+        new_order = max(1, payload.sort_order)
+        entries_same_meal = session.exec(
+            select(FoodEntry).where(FoodEntry.meal_id == e.meal_id).order_by(FoodEntry.sort_order)
+        ).all()
+        max_order = len(entries_same_meal)
+        if new_order > max_order:
+            new_order = max_order
+        old_order = e.sort_order
+        e.sort_order = 0
+        session.add(e)
+        session.flush()
+        if new_order < old_order:
+            affected = session.exec(
+                select(FoodEntry)
+                .where(
+                    FoodEntry.meal_id == e.meal_id,
+                    FoodEntry.sort_order >= new_order,
+                    FoodEntry.sort_order < old_order,
+                )
+                .order_by(FoodEntry.sort_order)
+            ).all()
+            for item in affected:
+                item.sort_order += 1
+                session.add(item)
+        elif new_order > old_order:
+            affected = session.exec(
+                select(FoodEntry)
+                .where(
+                    FoodEntry.meal_id == e.meal_id,
+                    FoodEntry.sort_order <= new_order,
+                    FoodEntry.sort_order > old_order,
+                )
+                .order_by(FoodEntry.sort_order)
+            ).all()
+            for item in affected:
+                item.sort_order -= 1
+                session.add(item)
+        e.sort_order = new_order
     if payload.quantity_g is not None:
         e.quantity_g = float(payload.quantity_g)
     session.add(e)
@@ -155,7 +211,18 @@ def delete_entry(entry_id: int, session: Session = Depends(get_session)):
     e = session.get(FoodEntry, entry_id)
     if not e:
         raise HTTPException(status_code=404, detail="Entry not found")
+    deleted_order = e.sort_order
+    meal_id = e.meal_id
     session.delete(e)
+    session.commit()
+    remaining = session.exec(
+        select(FoodEntry)
+        .where(FoodEntry.meal_id == meal_id, FoodEntry.sort_order > deleted_order)
+        .order_by(FoodEntry.sort_order)
+    ).all()
+    for idx, item in enumerate(remaining, start=deleted_order):
+        item.sort_order = idx
+        session.add(item)
     session.commit()
     return {"ok": True}
 
@@ -165,7 +232,9 @@ async def get_day_full(date: str, session: Session = Depends(get_session)):
     meal_ids = [m.id for m in meals]
     if not meal_ids:
         return {"date": date, "meals": [], "totals": {"kcal": 0, "protein": 0, "fat": 0, "carb": 0}}
-    entries = session.exec(select(FoodEntry).where(FoodEntry.meal_id.in_(meal_ids)).order_by(FoodEntry.id)).all()
+    entries = session.exec(
+        select(FoodEntry).where(FoodEntry.meal_id.in_(meal_ids)).order_by(FoodEntry.sort_order)
+    ).all()
     fdc_ids = list({e.fdc_id for e in entries if e.fdc_id is not None})
     foods: Dict[int, Food] = {}
     if fdc_ids:
@@ -179,7 +248,7 @@ async def get_day_full(date: str, session: Session = Depends(get_session)):
                     "quantity_g": e.quantity_g, "kcal": 0.0, "protein": 0.0, "carb": 0.0, "fat": 0.0}
         kcal, p, c, fat = _scaled_from_food(f, e.quantity_g)
         return {"id": e.id, "fdc_id": e.fdc_id, "description": f.description, "quantity_g": e.quantity_g,
-                "kcal": kcal, "protein": p, "carb": c, "fat": fat}
+                "kcal": kcal, "protein": p, "carb": c, "fat": fat, "sort_order": e.sort_order}
     by_meal: Dict[int, List[Dict]] = {m.id: [] for m in meals}
     for e in entries:
         by_meal[e.meal_id].append(row_for_entry(e))

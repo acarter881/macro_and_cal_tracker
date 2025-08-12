@@ -3,11 +3,12 @@
 // **FIXED**: Removed unused import of `getDayFull`
 
 // Basic food object used for search results and lists
-export type SimpleFood = { 
+export type SimpleFood = {
   fdcId: number;
   description: string;
   brandOwner?: string;
   dataType?: string;
+  defaultGrams?: number;
 };
 
 // --- MEAL & DAY ---
@@ -17,13 +18,24 @@ export interface MealType {
   name: string;
   date: string;
   sort_order: number;
-  entries: any[];
+  entries: EntryType[];
   subtotal: {
     kcal: number;
     protein: number;
     fat: number;
     carb: number;
   };
+}
+
+export interface EntryType {
+  id: number;
+  description: string;
+  quantity_g: number;
+  kcal: number;
+  protein: number;
+  carb: number;
+  fat: number;
+  sort_order: number;
 }
 
 // The full data structure for a day's meals and totals

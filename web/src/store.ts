@@ -28,6 +28,7 @@ interface AppActions {
   fetchDay: () => Promise<void>;
   addFood: (foodId: number, grams: number) => Promise<void>;
   updateEntry: (entryId: number, grams: number) => Promise<void>;
+  moveEntry: (entryId: number, newOrder: number) => Promise<void>;
   deleteEntry: (entryId: number) => Promise<void>;
   addMeal: () => Promise<void>;
   deleteMeal: (mealId: number) => Promise<void>;
@@ -184,12 +185,17 @@ export const useStore = create<AppState & AppActions>((set, get) => ({
     await api.updateMeal(mealId, { sort_order: newOrder });
     await get().fetchDay();
   },
-  
+
   updateEntry: async (entryId, grams) => {
     await api.updateEntry(entryId, grams);
     await get().fetchDay();
   },
-  
+
+  moveEntry: async (entryId, newOrder) => {
+    await api.moveEntry(entryId, newOrder);
+    await get().fetchDay();
+  },
+
   deleteEntry: async (entryId) => {
     await api.deleteEntry(entryId);
     await get().fetchDay();
