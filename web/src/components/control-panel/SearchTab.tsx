@@ -17,6 +17,7 @@ export function SearchTab() {
   const [typeFilter, setTypeFilter] = useState<DataTypeOpt>("Foundation");
   const [unbrandedFirst, setUnbrandedFirst] = useState<boolean>(true);
   const [searching, setSearching] = useState(false);
+  const [showMyFoods, setShowMyFoods] = useState(false);
 
   const myFoodsFiltered = useMemo(() => {
     if (!query.trim()) return allMyFoods;
@@ -109,24 +110,34 @@ export function SearchTab() {
       </div>
       {allMyFoods.length > 0 && (
         <div>
-          <h4 className="font-semibold text-sm mb-1 text-text-muted dark:text-text-muted-dark">My Foods</h4>
-          <ul className="border-border-light border rounded-md divide-y dark:border-border-dark dark:divide-border-dark max-h-40 overflow-auto">
-            {myFoodsFiltered.map((f) => (
-              <li
-                key={f.fdcId}
-                className={`p-2 flex justify-between items-center cursor-pointer ${selected === f.fdcId ? 'bg-brand-primary/20 dark:bg-brand-primary/30' : 'hover:bg-surface-light dark:hover:bg-border-dark'}`}
-                onClick={() => setSelected(f.fdcId)}
-              >
-                <div className="font-medium truncate text-sm">{f.description}</div>
-                <Button
-                  className="btn-ghost btn-sm text-brand-danger hover:bg-brand-danger/10 dark:hover:bg-brand-danger/30"
-                  title="Delete custom food"
-                  aria-label="Delete custom food"
-                  onClick={(e) => { e.stopPropagation(); handleDeleteCustomFood(f.fdcId); }}
-                >🗑️</Button>
-              </li>
-            ))}
-          </ul>
+          <button
+            type="button"
+            className="w-full flex justify-between items-center font-semibold text-sm mb-1 text-text-muted dark:text-text-muted-dark"
+            onClick={() => setShowMyFoods(!showMyFoods)}
+            aria-expanded={showMyFoods}
+          >
+            <span>My Foods</span>
+            <span className={`transform transition-transform duration-200 ${showMyFoods ? 'rotate-180' : 'rotate-90'}`}>›</span>
+          </button>
+          {showMyFoods && (
+            <ul className="border-border-light border rounded-md divide-y dark:border-border-dark dark:divide-border-dark max-h-40 overflow-auto">
+              {myFoodsFiltered.map((f) => (
+                <li
+                  key={f.fdcId}
+                  className={`p-2 flex justify-between items-center cursor-pointer ${selected === f.fdcId ? 'bg-brand-primary/20 dark:bg-brand-primary/30' : 'hover:bg-surface-light dark:hover:bg-border-dark'}`}
+                  onClick={() => setSelected(f.fdcId)}
+                >
+                  <div className="font-medium truncate text-sm">{f.description}</div>
+                  <Button
+                    className="btn-ghost btn-sm text-brand-danger hover:bg-brand-danger/10 dark:hover:bg-brand-danger/30"
+                    title="Delete custom food"
+                    aria-label="Delete custom food"
+                    onClick={(e) => { e.stopPropagation(); handleDeleteCustomFood(f.fdcId); }}
+                  >🗑️</Button>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       )}
       <div>
