@@ -16,10 +16,18 @@ export default function App() {
 
   useEffect(() => {
     const run = async () => {
-      await init();
-      const key = await api.getUsdaKey();
-      setNeedsKey(!key);
-      setLoading(false);
+      try {
+        await init();
+        const key = await api.getUsdaKey();
+        setNeedsKey(!key);
+      } catch (err) {
+        // If the API call fails (e.g. backend is not running) the app would
+        // previously hang on the loading screen leaving users with a blank
+        // page.  Log the error and continue so the UI can render.
+        console.error("Failed to initialize application", err);
+      } finally {
+        setLoading(false);
+      }
     };
     run();
   }, [init]);
