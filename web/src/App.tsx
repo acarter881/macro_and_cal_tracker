@@ -7,6 +7,7 @@ import { NotFoundPage } from "./pages/NotFoundPage";
 import { Layout } from "./components/Layout";
 import { LoadingSpinner } from "./components/LoadingSpinner";
 import { UsdaKeyDialog } from "./components/UsdaKeyDialog";
+import { Onboarding } from "./components/Onboarding";
 import * as api from "./api";
 import toast from "react-hot-toast";
 
@@ -14,8 +15,17 @@ export default function App() {
   const init = useStore((state) => state.init);
   const [loading, setLoading] = useState(true);
   const [needsKey, setNeedsKey] = useState(false);
+  const [onboarded, setOnboarded] = useState(
+    () => !!localStorage.getItem("onboarding-complete")
+  );
+
+  const completeOnboarding = () => {
+    localStorage.setItem("onboarding-complete", "true");
+    setOnboarded(true);
+  };
 
   useEffect(() => {
+    if (!onboarded) return;
     // Safeguard in case network requests hang indefinitely.
     const timeout = setTimeout(() => setLoading(false), 5000);
     const run = async () => {
@@ -34,8 +44,12 @@ export default function App() {
         setLoading(false);
       }
     };
+    setLoading(true);
     run();
-  }, [init]);
+  }, [init, onboarded]);
+  if (!onboarded) {
+    return <Onboarding onComplete={completeOnboarding} />;
+  }
 
   if (loading) {
     return (
