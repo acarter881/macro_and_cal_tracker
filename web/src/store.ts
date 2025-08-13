@@ -13,6 +13,7 @@ interface AppState {
   day: DayFull | null;
   // busy: boolean; // <-- REMOVED
   allMyFoods: SimpleFood[];
+  favorites: SimpleFood[];
   presets: Preset[];
   weight: number | null;
   goals: Goals;
@@ -37,6 +38,7 @@ interface AppActions {
   refreshPresets: () => Promise<void>;
   applyPreset: (presetId: number) => Promise<void>;
   setAllMyFoods: (foods: SimpleFood[]) => void;
+  toggleFavorite: (food: SimpleFood) => void;
   saveWeight: (w: number) => Promise<void>;
   setGoals: (g: Goals) => void;
 }
@@ -69,6 +71,16 @@ const getGoalsForDate = (d: string): Goals => {
   return all[d] || { ...EMPTY_GOALS };
 };
 
+// --- Favorites helpers ---------------------------------------------------
+const loadFavorites = (): SimpleFood[] => {
+  if (typeof window === 'undefined') return [];
+  try {
+    return JSON.parse(localStorage.getItem('favorites') || '[]');
+  } catch {
+    return [];
+  }
+};
+
 const initialDate = new Date().toISOString().slice(0, 10);
 
 export const useStore = create<AppState & AppActions>((set, get) => ({
@@ -78,6 +90,7 @@ export const useStore = create<AppState & AppActions>((set, get) => ({
   mealName: "Meal 1",
   day: null,
   allMyFoods: [],
+  favorites: loadFavorites(),
   presets: [],
   weight: null,
   goals: getGoalsForDate(initialDate),
@@ -121,6 +134,19 @@ export const useStore = create<AppState & AppActions>((set, get) => ({
   setDate: (newDate) => { set({ date: newDate, goals: getGoalsForDate(newDate) }); get().fetchDay(); },
   setMealName: (newName) => set({ mealName: newName }),
   setAllMyFoods: (foods) => set({ allMyFoods: foods }),
+
+  toggleFavorite: (food) => {
+    set((state) => {
+      const exists = state.favorites.some(f => f.fdcId === food.fdcId);
+      const favorites = exists
+        ? state.favorites.filter(f => f.fdcId !== food.fdcId)
+        : [...state.favorites, food];
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('favorites', JSON.stringify(favorites));
+      }
+      return { favorites };
+    });
+  },
 
   saveWeight: async (w) => {
     try {
