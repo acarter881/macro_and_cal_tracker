@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import toast from 'react-hot-toast';
 import { useStore } from "../../store";
 import * as api from "../../api";
@@ -13,11 +13,13 @@ export function SearchTab() {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SimpleFood[]>([]);
   const [selected, setSelected] = useState<number | null>(null);
+  const [highlightIndex, setHighlightIndex] = useState<number>(-1);
   const [grams, setGrams] = useState<number>(100);
   const [typeFilter, setTypeFilter] = useState<DataTypeOpt>("Foundation");
   const [unbrandedFirst, setUnbrandedFirst] = useState<boolean>(true);
   const [searching, setSearching] = useState(false);
   const [showMyFoods, setShowMyFoods] = useState(false);
+  const queryRef = useRef<HTMLInputElement>(null);
 
   const myFoodsFiltered = useMemo(() => {
     if (!query.trim()) return allMyFoods;
@@ -57,12 +59,50 @@ export function SearchTab() {
     return () => clearTimeout(handler);
   }, [query, typeFilter, unbrandedFirst]);
 
-  async function handleAddSelectedFood() {
-    if (!selected) return;
+  const handleAddSelectedFood = useCallback(async (fdcId?: number) => {
+    const id = fdcId ?? selected;
+    if (!id) return;
     setIsAddingFood(true);
-    await addFood(selected, grams);
+    await addFood(id, grams);
     setIsAddingFood(false);
-  }
+  }, [addFood, grams, selected]);
+
+  useEffect(() => {
+    if (results.length > 0) {
+      setHighlightIndex(0);
+      setSelected(results[0].fdcId);
+    } else {
+      setHighlightIndex(-1);
+      setSelected(null);
+    }
+  }, [results]);
+
+  useEffect(() => {
+    const el = queryRef.current;
+    if (!el) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setHighlightIndex(i => {
+          const next = Math.min(results.length - 1, i + 1);
+          setSelected(results[next]?.fdcId ?? null);
+          return next;
+        });
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setHighlightIndex(i => {
+          const next = Math.max(0, i - 1);
+          setSelected(results[next]?.fdcId ?? null);
+          return next;
+        });
+      } else if (e.key === 'Enter' && highlightIndex >= 0) {
+        e.preventDefault();
+        handleAddSelectedFood(results[highlightIndex].fdcId);
+      }
+    };
+    el.addEventListener('keydown', onKeyDown);
+    return () => el.removeEventListener('keydown', onKeyDown);
+  }, [results, highlightIndex, handleAddSelectedFood]);
 
   async function handleDeleteCustomFood(foodId: number) {
     if (!confirm("Delete this custom food?")) return;
@@ -83,7 +123,18 @@ export function SearchTab() {
   return (
     <>
       <label htmlFor={idQuery} className="sr-only">Search foods</label>
-      <Input id={idQuery} placeholder="Search foods…" value={query} onChange={e => setQuery(e.target.value)} />
+      <Input
+        id={idQuery}
+        ref={queryRef}
+        placeholder="Search foods…"
+        value={query}
+        onChange={e => setQuery(e.target.value)}
+        role="combobox"
+        aria-autocomplete="list"
+        aria-controls="search-results"
+        aria-activedescendant={highlightIndex >= 0 ? `search-result-${results[highlightIndex].fdcId}` : undefined}
+        aria-expanded={results.length > 0}
+      />
       <div className="flex items-center gap-2">
         <div className="flex flex-col">
           <label htmlFor={idTypeFilter} className="text-sm">Data type</label>
@@ -150,34 +201,47 @@ export function SearchTab() {
           )}
         </div>
       )}
-      <div>
-        <h4 className="font-semibold text-sm mb-1 text-text-muted dark:text-text-muted-dark">USDA Results</h4>
-        <ul className="border-border-light border rounded-md divide-y dark:border-border-dark dark:divide-border-dark h-[250px] overflow-auto">
-          {searching ? (<li className="p-2 text-text-muted">Searching...</li>) :
-            results.map(r => (
-              <li
-                key={r.fdcId}
-                className={`p-2 flex justify-between items-center cursor-pointer ${selected === r.fdcId ? 'bg-brand-primary/20 dark:bg-brand-primary/30' : 'hover:bg-surface-light dark:hover:bg-border-dark'}`}
-                onClick={() => setSelected(r.fdcId)}
-              >
-                <div>
-                  <div className="font-medium text-sm">{r.description}</div>
-                  <div className="text-xs text-text-muted dark:text-text-muted-dark">{r.brandOwner || r.dataType}</div>
-                </div>
-                <Button
-                  className="btn-ghost btn-sm"
-                  title={favorites.some(f => f.fdcId === r.fdcId) ? 'Remove favorite' : 'Add favorite'}
-                  aria-label={favorites.some(f => f.fdcId === r.fdcId) ? 'Remove favorite' : 'Add favorite'}
-                  onClick={(e) => { e.stopPropagation(); toggleFavorite(r); }}
-                >{favorites.some(f => f.fdcId === r.fdcId) ? '⭐' : '☆'}</Button>
-              </li>
-            ))}
-        </ul>
-      </div>
+        <div>
+          <h4 className="font-semibold text-sm mb-1 text-text-muted dark:text-text-muted-dark">USDA Results</h4>
+          <ul
+            id="search-results"
+            role="listbox"
+            className="border-border-light border rounded-md divide-y dark:border-border-dark dark:divide-border-dark h-[250px] overflow-auto"
+          >
+            {searching ? (
+              <li className="p-2 text-text-muted">Searching...</li>
+            ) : (
+              results.map((r, idx) => (
+                <li
+                  key={r.fdcId}
+                  id={`search-result-${r.fdcId}`}
+                  role="option"
+                  aria-selected={highlightIndex === idx}
+                  className={`p-2 flex justify-between items-center cursor-pointer ${highlightIndex === idx ? 'bg-brand-primary/20 dark:bg-brand-primary/30' : 'hover:bg-surface-light dark:hover:bg-border-dark'}`}
+                  onClick={() => {
+                    setSelected(r.fdcId);
+                    setHighlightIndex(idx);
+                  }}
+                >
+                  <div>
+                    <div className="font-medium text-sm">{r.description}</div>
+                    <div className="text-xs text-text-muted dark:text-text-muted-dark">{r.brandOwner || r.dataType}</div>
+                  </div>
+                  <Button
+                    className="btn-ghost btn-sm"
+                    title={favorites.some(f => f.fdcId === r.fdcId) ? 'Remove favorite' : 'Add favorite'}
+                    aria-label={favorites.some(f => f.fdcId === r.fdcId) ? 'Remove favorite' : 'Add favorite'}
+                    onClick={(e) => { e.stopPropagation(); toggleFavorite(r); }}
+                  >{favorites.some(f => f.fdcId === r.fdcId) ? '⭐' : '☆'}</Button>
+                </li>
+              ))
+            )}
+          </ul>
+        </div>
       <div className="flex items-center gap-2">
         <label htmlFor={idGrams} className="text-sm">Grams</label>
         <Input id={idGrams} className="w-24" type="number" min={1} step={1} value={grams} onChange={e => setGrams(parseFloat(e.target.value))} />
-        <Button className="btn-primary w-full" onClick={handleAddSelectedFood} disabled={!selected || isAddingFood}>
+        <Button className="btn-primary w-full" onClick={() => handleAddSelectedFood()} disabled={!selected || isAddingFood}>
           {isAddingFood ? 'Adding…' : `Add to ${mealName}`}
         </Button>
       </div>
