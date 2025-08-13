@@ -26,7 +26,7 @@ export function Hotkeys() {
         } else if (key === "f") {
           e.preventDefault();
           focusSearch();
-        } else if (key === "t") {
+        } else if (e.shiftKey && key === "l") {
           e.preventDefault();
           toggleTheme();
         }
@@ -52,7 +52,8 @@ export function Hotkeys() {
           <li><kbd className="px-1 py-0.5 rounded bg-border-light dark:bg-border-dark font-mono text-xs">Ctrl</kbd>+
               <kbd className="px-1 py-0.5 rounded bg-border-light dark:bg-border-dark font-mono text-xs">F</kbd> Focus search</li>
           <li><kbd className="px-1 py-0.5 rounded bg-border-light dark:bg-border-dark font-mono text-xs">Ctrl</kbd>+
-              <kbd className="px-1 py-0.5 rounded bg-border-light dark:bg-border-dark font-mono text-xs">T</kbd> Toggle theme</li>
+              <kbd className="px-1 py-0.5 rounded bg-border-light dark:bg-border-dark font-mono text-xs">Shift</kbd>+
+              <kbd className="px-1 py-0.5 rounded bg-border-light dark:bg-border-dark font-mono text-xs">L</kbd> Toggle theme</li>
           <li><kbd className="px-1 py-0.5 rounded bg-border-light dark:bg-border-dark font-mono text-xs">?</kbd> Toggle this help</li>
         </ul>
         <Button className="btn-primary mt-4" onClick={() => setShowHelp(false)}>Close</Button>
