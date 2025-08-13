@@ -2,6 +2,7 @@ import { useMemo, useState, useEffect } from "react";
 import toast from 'react-hot-toast';
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import type { DropResult } from "@hello-pangea/dnd";
+import { addDays, subDays } from "date-fns";
 import { useStore } from "../store";
 import type { MealType, EntryType } from "../types";
 import { Button } from "./ui/Button";
@@ -12,6 +13,8 @@ export function DailyLog() {
 
   const [isAddingMeal, setIsAddingMeal] = useState(false);
   const [isPasting, setIsPasting] = useState(false);
+
+  const currentDate = day?.date ?? new Date().toISOString().slice(0, 10);
 
   const handleAddMeal = async () => {
     setIsAddingMeal(true);
@@ -54,7 +57,30 @@ export function DailyLog() {
         <div className="card-body flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <label htmlFor="date-picker" className="font-semibold text-sm">Date:</label>
-            <Input id="date-picker" type="date" value={day?.date ?? new Date().toISOString().slice(0, 10)} onChange={e => setDate(e.target.value)} />
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                aria-label="Previous day"
+                className="btn-ghost btn-sm"
+                onClick={() => setDate(subDays(new Date(currentDate), 1).toISOString().slice(0, 10))}
+              >
+                ←
+              </Button>
+              <Input
+                id="date-picker"
+                type="date"
+                value={currentDate}
+                onChange={e => setDate(e.target.value)}
+              />
+              <Button
+                type="button"
+                aria-label="Next day"
+                className="btn-ghost btn-sm"
+                onClick={() => setDate(addDays(new Date(currentDate), 1).toISOString().slice(0, 10))}
+              >
+                →
+              </Button>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <select className="form-input" value={mealName} onChange={e => setMealName(e.target.value)}>
