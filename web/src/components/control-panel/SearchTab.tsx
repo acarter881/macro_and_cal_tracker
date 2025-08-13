@@ -46,7 +46,13 @@ export function SearchTab() {
   }
 
   async function doSearch() {
-    if (!query.trim() || query.trim().length < 2) { setResults([]); return; }
+    if (!query.trim() || query.trim().length < 2) {
+      // Reset results and selection when the query is too short
+      setResults([]);
+      setHighlightIndex(-1);
+      setSelected(null);
+      return;
+    }
     try {
       setSearching(true);
       const r = await api.searchFoods(query, typeFilter);
@@ -95,7 +101,7 @@ export function SearchTab() {
           setSelected(results[next]?.fdcId ?? null);
           return next;
         });
-      } else if (e.key === 'Enter' && highlightIndex >= 0) {
+      } else if (e.key === 'Enter' && highlightIndex >= 0 && results[highlightIndex]) {
         e.preventDefault();
         handleAddSelectedFood(results[highlightIndex].fdcId);
       }
@@ -132,7 +138,7 @@ export function SearchTab() {
         role="combobox"
         aria-autocomplete="list"
         aria-controls="search-results"
-        aria-activedescendant={highlightIndex >= 0 ? `search-result-${results[highlightIndex].fdcId}` : undefined}
+        aria-activedescendant={highlightIndex >= 0 && results[highlightIndex] ? `search-result-${results[highlightIndex].fdcId}` : undefined}
         aria-expanded={results.length > 0}
       />
       <div className="flex items-center gap-2">
