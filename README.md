@@ -28,5 +28,5 @@ The application supports a few global shortcuts:
 
 - `Ctrl+M` — add a new meal.
 - `Ctrl+F` — focus the food search box.
-- `Ctrl+T` — toggle between light and dark themes.
+- `Ctrl+Shift+L` — toggle between light and dark themes.
 - `?` — show the in-app shortcuts help.
