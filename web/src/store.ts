@@ -41,6 +41,7 @@ interface AppActions {
   toggleFavorite: (food: SimpleFood) => void;
   saveWeight: (w: number) => Promise<void>;
   setGoals: (g: Goals) => void;
+  syncOffline: () => Promise<void>;
 }
 
 const getInitialTheme = (): Theme => {
@@ -125,6 +126,7 @@ export const useStore = create<AppState & AppActions>((set, get) => ({
   init: async () => {
     const initialTheme = get().theme;
     document.documentElement.classList.add(initialTheme);
+    await get().syncOffline();
     await get().fetchDay();
     await get().refreshPresets();
     const foods = await api.searchMyFoods();
@@ -249,5 +251,20 @@ export const useStore = create<AppState & AppActions>((set, get) => ({
       localStorage.setItem('goalsByDate', JSON.stringify(all));
     }
     set({ goals: g });
+  },
+
+  syncOffline: async () => {
+    await api.syncQueue();
+    await get().fetchDay();
+    const foods = await api.searchMyFoods();
+    set({ allMyFoods: foods });
+    const w = await api.getWeight(get().date);
+    set({ weight: w?.weight ?? null });
   }
 }));
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('online', () => {
+    useStore.getState().syncOffline();
+  });
+}
