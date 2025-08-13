@@ -8,7 +8,7 @@ import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
 
 export function SearchTab() {
-  const { mealName, allMyFoods, setAllMyFoods, addFood } = useStore();
+  const { mealName, allMyFoods, setAllMyFoods, addFood, favorites, toggleFavorite } = useStore();
   const [isAddingFood, setIsAddingFood] = useState(false);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SimpleFood[]>([]);
@@ -128,12 +128,22 @@ export function SearchTab() {
                   onClick={() => setSelected(f.fdcId)}
                 >
                   <div className="font-medium truncate text-sm">{f.description}</div>
-                  <Button
-                    className="btn-ghost btn-sm text-brand-danger hover:bg-brand-danger/10 dark:hover:bg-brand-danger/30"
-                    title="Delete custom food"
-                    aria-label="Delete custom food"
-                    onClick={(e) => { e.stopPropagation(); handleDeleteCustomFood(f.fdcId); }}
-                  >🗑️</Button>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      className="btn-ghost btn-sm"
+                      title={favorites.some(fav => fav.fdcId === f.fdcId) ? 'Remove favorite' : 'Add favorite'}
+                      aria-label={favorites.some(fav => fav.fdcId === f.fdcId) ? 'Remove favorite' : 'Add favorite'}
+                      onClick={(e) => { e.stopPropagation(); toggleFavorite(f); }}
+                    >{favorites.some(fav => fav.fdcId === f.fdcId) ? '⭐' : '☆'}</Button>
+                    {f.dataType === 'Custom' && (
+                      <Button
+                        className="btn-ghost btn-sm text-brand-danger hover:bg-brand-danger/10 dark:hover:bg-brand-danger/30"
+                        title="Delete custom food"
+                        aria-label="Delete custom food"
+                        onClick={(e) => { e.stopPropagation(); handleDeleteCustomFood(f.fdcId); }}
+                      >🗑️</Button>
+                    )}
+                  </div>
                 </li>
               ))}
             </ul>
@@ -147,11 +157,19 @@ export function SearchTab() {
             results.map(r => (
               <li
                 key={r.fdcId}
-                className={`p-2 cursor-pointer ${selected === r.fdcId ? 'bg-brand-primary/20 dark:bg-brand-primary/30' : 'hover:bg-surface-light dark:hover:bg-border-dark'}`}
+                className={`p-2 flex justify-between items-center cursor-pointer ${selected === r.fdcId ? 'bg-brand-primary/20 dark:bg-brand-primary/30' : 'hover:bg-surface-light dark:hover:bg-border-dark'}`}
                 onClick={() => setSelected(r.fdcId)}
               >
-                <div className="font-medium text-sm">{r.description}</div>
-                <div className="text-xs text-text-muted dark:text-text-muted-dark">{r.brandOwner || r.dataType}</div>
+                <div>
+                  <div className="font-medium text-sm">{r.description}</div>
+                  <div className="text-xs text-text-muted dark:text-text-muted-dark">{r.brandOwner || r.dataType}</div>
+                </div>
+                <Button
+                  className="btn-ghost btn-sm"
+                  title={favorites.some(f => f.fdcId === r.fdcId) ? 'Remove favorite' : 'Add favorite'}
+                  aria-label={favorites.some(f => f.fdcId === r.fdcId) ? 'Remove favorite' : 'Add favorite'}
+                  onClick={(e) => { e.stopPropagation(); toggleFavorite(r); }}
+                >{favorites.some(f => f.fdcId === r.fdcId) ? '⭐' : '☆'}</Button>
               </li>
             ))}
         </ul>
