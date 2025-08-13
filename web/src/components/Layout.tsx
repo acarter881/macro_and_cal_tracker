@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
 import { Toaster } from 'react-hot-toast';
 import { ThemeToggle } from "./ThemeToggle";
+import { Hotkeys } from "./Hotkeys";
 import { Bars3Icon, XMarkIcon, HomeIcon, ChartBarIcon } from "@heroicons/react/24/outline";
 
 interface LayoutProps {
@@ -46,6 +47,7 @@ export function Layout({ children }: LayoutProps) {
   return (
     <div className="min-h-screen bg-surface-light dark:bg-surface-dark font-sans">
       <Toaster position="bottom-center" toastOptions={{ style: { background: '#363636', color: '#fff' }, success: { duration: 3000 } }} />
+      <Hotkeys />
 
       <header className="sticky top-0 z-10 bg-surface-light dark:bg-surface-dark">
         <div className="mx-auto flex items-center justify-between px-4 py-4 lg:px-6">

@@ -23,6 +23,7 @@ interface AppActions {
   copyMeal: (mealId: number) => void;
   pasteMeal: () => Promise<void>;
   toggleTheme: () => void;
+  focusSearch: () => void;
   init: () => Promise<void>;
   setDate: (newDate: string) => void;
   setMealName: (newName: string) => void;
@@ -121,6 +122,15 @@ export const useStore = create<AppState & AppActions>((set, get) => ({
     document.documentElement.classList.add(newTheme);
     localStorage.setItem('theme', newTheme);
     set({ theme: newTheme });
+  },
+
+  focusSearch: () => {
+    if (typeof document === 'undefined') return;
+    const el = document.getElementById('search-query') as HTMLInputElement | null;
+    if (el) {
+      el.focus();
+      el.select();
+    }
   },
 
   init: async () => {

@@ -21,3 +21,12 @@ VITE_API_BASE_URL=https://example.com
 ```
 
 Production builds use `npm run build` and desktop builds use `npm run build:desktop`.
+
+## Keyboard Shortcuts
+
+The application supports a few global shortcuts:
+
+- `Ctrl+M` — add a new meal.
+- `Ctrl+F` — focus the food search box.
+- `Ctrl+T` — toggle between light and dark themes.
+- `?` — show the in-app shortcuts help.
