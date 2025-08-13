@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { format, subDays, parseISO } from 'date-fns';
 import { getHistory } from "../api";
@@ -65,6 +65,31 @@ export function DashboardPage() {
 
     const formattedData = data.map(d => ({ ...d, date: format(parseISO(d.date), days > 7 ? 'MMM dd' : 'E dd') }));
 
+    const stats = useMemo(() => {
+        if (!data.length) return null;
+
+        const totals = data.reduce((acc, curr) => {
+            acc.kcal += curr.kcal;
+            acc.protein += curr.protein;
+            acc.fat += curr.fat;
+            acc.carb += curr.carb;
+            return acc;
+        }, { kcal: 0, protein: 0, fat: 0, carb: 0 });
+
+        const count = data.length;
+        const firstWeight = data[0]?.weight;
+        const lastWeight = data[count - 1]?.weight;
+        const weightChange = firstWeight != null && lastWeight != null ? lastWeight - firstWeight : null;
+
+        return {
+            avgKcal: totals.kcal / count,
+            avgProtein: totals.protein / count,
+            avgFat: totals.fat / count,
+            avgCarb: totals.carb / count,
+            weightChange,
+        };
+    }, [data]);
+
     return (
         <div className="space-y-8">
             <div className="flex gap-2">
@@ -78,6 +103,42 @@ export function DashboardPage() {
                     </Button>
                 ))}
             </div>
+            {stats && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                    <div className="card">
+                        <div className="card-body text-center">
+                            <div className="text-sm text-text-muted dark:text-text-light">Avg kcal</div>
+                            <div className="text-2xl font-semibold dark:text-text-light">{stats.avgKcal.toFixed(0)}</div>
+                        </div>
+                    </div>
+                    <div className="card">
+                        <div className="card-body text-center">
+                            <div className="text-sm text-text-muted dark:text-text-light">Avg Protein</div>
+                            <div className="text-2xl font-semibold dark:text-text-light">{stats.avgProtein.toFixed(1)} g</div>
+                        </div>
+                    </div>
+                    <div className="card">
+                        <div className="card-body text-center">
+                            <div className="text-sm text-text-muted dark:text-text-light">Avg Fat</div>
+                            <div className="text-2xl font-semibold dark:text-text-light">{stats.avgFat.toFixed(1)} g</div>
+                        </div>
+                    </div>
+                    <div className="card">
+                        <div className="card-body text-center">
+                            <div className="text-sm text-text-muted dark:text-text-light">Avg Carbs</div>
+                            <div className="text-2xl font-semibold dark:text-text-light">{stats.avgCarb.toFixed(1)} g</div>
+                        </div>
+                    </div>
+                    <div className="card">
+                        <div className="card-body text-center">
+                            <div className="text-sm text-text-muted dark:text-text-light">Weight Change</div>
+                            <div className="text-2xl font-semibold dark:text-text-light">
+                                {stats.weightChange != null ? `${stats.weightChange >= 0 ? '+' : ''}${stats.weightChange.toFixed(1)} lb` : 'N/A'}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
             <div className="card">
                 <div className="card-header"><h2 className="font-semibold text-lg dark:text-text-light">Calorie Trend (Last {days} Days)</h2></div>
                 <div className="card-body h-80">
