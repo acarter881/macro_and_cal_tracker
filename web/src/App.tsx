@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useStore } from "./store";
 import { TrackerPage } from "./pages/TrackerPage";
@@ -10,6 +10,7 @@ import { UsdaKeyDialog } from "./components/UsdaKeyDialog";
 import { Onboarding } from "./components/Onboarding";
 import * as api from "./api";
 import toast from "react-hot-toast";
+import { Button } from "./components/ui/Button";
 
 export default function App() {
   const init = useStore((state) => state.init);
@@ -18,35 +19,43 @@ export default function App() {
   const [onboarded, setOnboarded] = useState(
     () => !!localStorage.getItem("onboarding-complete")
   );
+  const [initError, setInitError] = useState<string | null>(null);
 
   const completeOnboarding = () => {
     localStorage.setItem("onboarding-complete", "true");
     setOnboarded(true);
   };
 
+  const initialize = useCallback(async () => {
+    setLoading(true);
+    setInitError(null);
+    try {
+      await init();
+      const key = await api.getUsdaKey();
+      setNeedsKey(!key);
+    } catch (err) {
+      console.error("Failed to initialize application", err);
+      toast.error("Failed to reach backend. Some features may not work.");
+      setInitError("Failed to reach backend.");
+    } finally {
+      setLoading(false);
+    }
+  }, [init]);
+
   useEffect(() => {
     if (!onboarded) return;
-    // Safeguard in case network requests hang indefinitely.
-    const timeout = setTimeout(() => setLoading(false), 5000);
-    const run = async () => {
-      try {
-        await init();
-        const key = await api.getUsdaKey();
-        setNeedsKey(!key);
-      } catch (err) {
-        // If the API call fails (e.g. backend is not running) the app would
-        // previously hang on the loading screen leaving users with a blank
-        // page.  Log the error and continue so the UI can render.
-        console.error("Failed to initialize application", err);
-        toast.error("Failed to reach backend. Some features may not work.");
-      } finally {
-        clearTimeout(timeout);
-        setLoading(false);
+    initialize();
+  }, [initialize, onboarded]);
+
+  useEffect(() => {
+    const handleOnline = () => {
+      if (initError) {
+        initialize();
       }
     };
-    setLoading(true);
-    run();
-  }, [init, onboarded]);
+    window.addEventListener("online", handleOnline);
+    return () => window.removeEventListener("online", handleOnline);
+  }, [initError, initialize]);
   if (!onboarded) {
     return <Onboarding onComplete={completeOnboarding} />;
   }
@@ -55,6 +64,19 @@ export default function App() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-surface-light dark:bg-surface-dark">
         <LoadingSpinner />
+      </div>
+    );
+  }
+
+  if (initError) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center space-y-4 bg-surface-light dark:bg-surface-dark">
+        <p className="text-center text-text dark:text-text-light">
+          Failed to reach backend.
+        </p>
+        <Button className="btn-primary" onClick={initialize}>
+          Retry
+        </Button>
       </div>
     );
   }
