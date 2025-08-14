@@ -384,58 +384,114 @@ export async function syncQueue() {
     const item = store.queue.shift()!;
     switch (item.kind) {
       case "createMeal": {
-        const res = await api.post("/meals", { date: item.payload.date });
-        const newId = res.data.id;
-        idMap[item.payload.tempId] = newId;
-        const day = store.days[item.payload.date];
-        const meal = day?.meals.find((m: any) => m.id === item.payload.tempId);
-        if (meal) meal.id = newId;
+        try {
+          const res = await api.post("/meals", { date: item.payload.date });
+          const newId = res.data.id;
+          idMap[item.payload.tempId] = newId;
+          const day = store.days[item.payload.date];
+          const meal = day?.meals.find((m: any) => m.id === item.payload.tempId);
+          if (meal) meal.id = newId;
+        } catch {
+          store.queue.unshift(item);
+          saveStore(store);
+          emitQueueSize();
+          return;
+        }
         break;
       }
       case "deleteMeal": {
-        const mealId = idMap[item.payload.mealId] ?? item.payload.mealId;
-        await api.delete(`/meals/${mealId}`);
+        try {
+          const mealId = idMap[item.payload.mealId] ?? item.payload.mealId;
+          await api.delete(`/meals/${mealId}`);
+        } catch {
+          store.queue.unshift(item);
+          saveStore(store);
+          emitQueueSize();
+          return;
+        }
         break;
       }
       case "updateMeal": {
-        const mealId = idMap[item.payload.mealId] ?? item.payload.mealId;
-        await api.patch(`/meals/${mealId}`, item.payload.data);
+        try {
+          const mealId = idMap[item.payload.mealId] ?? item.payload.mealId;
+          await api.patch(`/meals/${mealId}`, item.payload.data);
+        } catch {
+          store.queue.unshift(item);
+          saveStore(store);
+          emitQueueSize();
+          return;
+        }
         break;
       }
       case "addEntry": {
-        const mealId = idMap[item.payload.meal_id] ?? item.payload.meal_id;
-        const res = await api.post("/entries", {
-          meal_id: mealId,
-          fdc_id: item.payload.fdc_id,
-          quantity_g: item.payload.quantity_g,
-        });
-        const newId = res.data.id;
-        idMap[item.payload.tempId] = newId;
-        for (const day of Object.values(store.days)) {
-          for (const meal of day.meals) {
-            const entry = (meal as any).entries.find((e: any) => e.id === item.payload.tempId);
-            if (entry) entry.id = newId;
+        try {
+          const mealId = idMap[item.payload.meal_id] ?? item.payload.meal_id;
+          const res = await api.post("/entries", {
+            meal_id: mealId,
+            fdc_id: item.payload.fdc_id,
+            quantity_g: item.payload.quantity_g,
+          });
+          const newId = res.data.id;
+          idMap[item.payload.tempId] = newId;
+          for (const day of Object.values(store.days)) {
+            for (const meal of day.meals) {
+              const entry = (meal as any).entries.find((e: any) => e.id === item.payload.tempId);
+              if (entry) entry.id = newId;
+            }
           }
+        } catch {
+          store.queue.unshift(item);
+          saveStore(store);
+          emitQueueSize();
+          return;
         }
         break;
       }
       case "updateEntry": {
-        const entryId = idMap[item.payload.entryId] ?? item.payload.entryId;
-        await api.patch(`/entries/${entryId}`, { quantity_g: item.payload.newGrams });
+        try {
+          const entryId = idMap[item.payload.entryId] ?? item.payload.entryId;
+          await api.patch(`/entries/${entryId}`, { quantity_g: item.payload.newGrams });
+        } catch {
+          store.queue.unshift(item);
+          saveStore(store);
+          emitQueueSize();
+          return;
+        }
         break;
       }
       case "moveEntry": {
-        const entryId = idMap[item.payload.entryId] ?? item.payload.entryId;
-        await api.patch(`/entries/${entryId}`, { sort_order: item.payload.newOrder });
+        try {
+          const entryId = idMap[item.payload.entryId] ?? item.payload.entryId;
+          await api.patch(`/entries/${entryId}`, { sort_order: item.payload.newOrder });
+        } catch {
+          store.queue.unshift(item);
+          saveStore(store);
+          emitQueueSize();
+          return;
+        }
         break;
       }
       case "deleteEntry": {
-        const entryId = idMap[item.payload.entryId] ?? item.payload.entryId;
-        await api.delete(`/entries/${entryId}`);
+        try {
+          const entryId = idMap[item.payload.entryId] ?? item.payload.entryId;
+          await api.delete(`/entries/${entryId}`);
+        } catch {
+          store.queue.unshift(item);
+          saveStore(store);
+          emitQueueSize();
+          return;
+        }
         break;
       }
       case "setWeight": {
-        await api.put(`/weight/${item.payload.date}`, { weight: item.payload.weight });
+        try {
+          await api.put(`/weight/${item.payload.date}`, { weight: item.payload.weight });
+        } catch {
+          store.queue.unshift(item);
+          saveStore(store);
+          emitQueueSize();
+          return;
+        }
         break;
       }
     }
