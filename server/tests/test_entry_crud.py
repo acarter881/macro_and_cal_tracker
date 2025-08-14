@@ -80,3 +80,36 @@ def test_entry_crud_flow():
         assert resp5.status_code == 200
         assert len(resp5.json()['entries']) == 1
         assert resp5.json()['totals'] == {'kcal': 150.0, 'protein': 15.0, 'carb': 7.5, 'fat': 3.0}
+
+
+def test_negative_quantity_rejected():
+    engine = get_test_engine()
+    db.engine = engine
+    app.app.dependency_overrides[db.get_session] = override_get_session(engine)
+
+    with TestClient(app.app) as client:
+        SQLModel.metadata.create_all(engine)
+        with Session(engine) as session:
+            food = Food(
+                fdc_id=1,
+                description='Test Food',
+                kcal_per_100g=100,
+                protein_g_per_100g=10,
+                carb_g_per_100g=5,
+                fat_g_per_100g=2,
+            )
+            meal = Meal(date='2024-01-01', name='Meal 1', sort_order=1)
+            session.add(food)
+            session.add(meal)
+            session.commit()
+            meal_id = meal.id
+
+        resp_neg = client.post('/api/entries', json={'meal_id': meal_id, 'fdc_id': 1, 'quantity_g': -10})
+        assert resp_neg.status_code == 422
+
+        resp_pos = client.post('/api/entries', json={'meal_id': meal_id, 'fdc_id': 1, 'quantity_g': 10})
+        assert resp_pos.status_code == 200
+        entry_id = resp_pos.json()['id']
+
+        resp_update_neg = client.patch(f'/api/entries/{entry_id}', json={'quantity_g': -5})
+        assert resp_update_neg.status_code == 422
