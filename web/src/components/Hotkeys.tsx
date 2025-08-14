@@ -19,6 +19,11 @@ export function Hotkeys() {
       if (e.key === "Escape") {
         setShowHelp(false);
       }
+      if (key === "/" && !e.ctrlKey && !e.metaKey && !(e.target instanceof HTMLInputElement) && !(e.target instanceof HTMLTextAreaElement)) {
+        e.preventDefault();
+        focusSearch();
+        return;
+      }
       if (e.ctrlKey || e.metaKey) {
         if (key === "m") {
           e.preventDefault();
