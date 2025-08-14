@@ -22,6 +22,18 @@ VITE_API_BASE_URL=https://example.com
 
 Production builds use `npm run build` and desktop builds use `npm run build:desktop`.
 
+## Database Migrations
+
+The backend uses Alembic for database migrations. When the API starts it will
+automatically run any pending migrations. To apply migrations manually, run:
+
+```
+alembic upgrade head
+```
+
+This ensures the database has the latest columns, such as `sort_order` on meals
+and food entries and the `archived` flag on foods.
+
 ## Keyboard Shortcuts
 
 The application supports a few global shortcuts:
