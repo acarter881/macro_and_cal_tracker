@@ -199,8 +199,8 @@ function MealCard({ meal, isCurrent, onSelect, onUpdateEntry, onDeleteEntry, onD
         </div>
       </div>
       <div className="overflow-x-auto">
-        <table className="w-full text-sm table-fixed table-zebra">
-          <colgroup>
+        <table className="w-full text-sm table-fixed table-zebra block sm:table">
+          <colgroup className="hidden sm:table-column-group">
             <col />
             <col className="w-24" />
             <col className="w-20" />
@@ -209,7 +209,7 @@ function MealCard({ meal, isCurrent, onSelect, onUpdateEntry, onDeleteEntry, onD
             <col className="w-16" />
             <col className="w-36" />
           </colgroup>
-          <thead>
+          <thead className="hidden sm:table-header-group">
             <tr className="border-b border-border-light dark:border-border-dark">
               <th className="text-left p-3 font-medium">Item</th>
               <th className="text-right p-3 font-medium">Qty (g)</th>
@@ -222,7 +222,11 @@ function MealCard({ meal, isCurrent, onSelect, onUpdateEntry, onDeleteEntry, onD
           </thead>
           <Droppable droppableId={`entries-${meal.id}`} type="ENTRY">
             {providedEntries => (
-              <tbody ref={providedEntries.innerRef} {...providedEntries.droppableProps}>
+              <tbody
+                ref={providedEntries.innerRef}
+                {...providedEntries.droppableProps}
+                className="block sm:table-row-group"
+              >
                 {meal.entries.length ? (
                   meal.entries
                     .slice()
@@ -235,19 +239,35 @@ function MealCard({ meal, isCurrent, onSelect, onUpdateEntry, onDeleteEntry, onD
                       </Draggable>
                     ))
                 ) : (
-                  <tr><td className="p-4 text-text-muted text-center" colSpan={7}>No entries yet.</td></tr>
+                  <tr className="block sm:table-row">
+                    <td className="p-4 text-text-muted text-center" colSpan={7}>No entries yet.</td>
+                  </tr>
                 )}
                 {providedEntries.placeholder}
               </tbody>
             )}
           </Droppable>
-          <tfoot>
-            <tr className="font-semibold border-t-2 border-border-light dark:border-border-dark">
-                <td className="p-3 text-right" colSpan={2}>Subtotal</td>
-                <td className="p-3 text-right subtotal-kcal">{meal.subtotal.kcal.toFixed(1)}</td>
-                <td className="p-3 text-right subtotal-fat">{meal.subtotal.fat.toFixed(1)}</td>
-                <td className="p-3 text-right subtotal-carb">{meal.subtotal.carb.toFixed(1)}</td>
-                <td className="p-3 text-right subtotal-protein">{meal.subtotal.protein.toFixed(1)}</td>
+          <tfoot className="block sm:table-footer-group">
+            <tr className="font-semibold border-t-2 border-border-light dark:border-border-dark block sm:table-row">
+                <td className="p-3 flex justify-between sm:block sm:text-right" colSpan={2}>
+                  <span className="sm:hidden">Subtotal</span>
+                </td>
+                <td className="p-3 subtotal-kcal flex justify-between sm:block sm:text-right">
+                  <span className="sm:hidden">kcal</span>
+                  <span>{meal.subtotal.kcal.toFixed(1)}</span>
+                </td>
+                <td className="p-3 subtotal-fat flex justify-between sm:block sm:text-right">
+                  <span className="sm:hidden">F</span>
+                  <span>{meal.subtotal.fat.toFixed(1)}</span>
+                </td>
+                <td className="p-3 subtotal-carb flex justify-between sm:block sm:text-right">
+                  <span className="sm:hidden">C</span>
+                  <span>{meal.subtotal.carb.toFixed(1)}</span>
+                </td>
+                <td className="p-3 subtotal-protein flex justify-between sm:block sm:text-right">
+                  <span className="sm:hidden">P</span>
+                  <span>{meal.subtotal.protein.toFixed(1)}</span>
+                </td>
                 <td className="p-3 text-right"></td>
             </tr>
           </tfoot>
@@ -256,6 +276,7 @@ function MealCard({ meal, isCurrent, onSelect, onUpdateEntry, onDeleteEntry, onD
     </div>
   );
 }
+
 
 type RowProps = { e: EntryType, onUpdate: (id: number, grams: number) => Promise<void>, onDelete: (id: number) => Promise<void>, provided: any };
 
@@ -275,7 +296,7 @@ function Row({ e, onUpdate, onDelete, provided }: RowProps) {
     } finally {
       setIsMutating(false);
     }
-  }
+  };
 
   const handleDelete = async () => {
     setIsMutating(true);
@@ -286,12 +307,18 @@ function Row({ e, onUpdate, onDelete, provided }: RowProps) {
     } finally {
       setIsMutating(false);
     }
-  }
+  };
 
   return (
-    <tr className="border-t border-border-light dark:border-border-dark" ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}>
-      <td className="p-2 text-left font-medium">{e.description}</td>
-      <td className="p-2 text-right">
+    <tr
+      className="border-t border-border-light dark:border-border-dark block sm:table-row"
+      ref={provided.innerRef}
+      {...provided.draggableProps}
+      {...provided.dragHandleProps}
+    >
+      <td className="p-2 text-left font-medium block sm:table-cell">{e.description}</td>
+      <td className="p-2 flex items-center justify-between sm:table-cell sm:text-right">
+        <span className="sm:hidden mr-2">Qty (g)</span>
         {(() => {
           const id = `entry-${e.id}-qty`;
           return (
@@ -304,23 +331,48 @@ function Row({ e, onUpdate, onDelete, provided }: RowProps) {
                 min={1}
                 step={1}
                 value={g}
-                onChange={ev=>setG(parseFloat(ev.target.value))}
+                onChange={ev => setG(parseFloat(ev.target.value))}
                 disabled={isMutating}
               />
             </>
           );
         })()}
       </td>
-      <td className="p-2 text-right">{e.kcal.toFixed(1)}</td>
-      <td className="p-2 text-right">{e.fat.toFixed(1)}</td>
-      <td className="p-2 text-right">{e.carb.toFixed(1)}</td>
-      <td className="p-2 text-right">{e.protein.toFixed(1)}</td>
-      <td className="p-2 text-right">
+      <td className="p-2 flex justify-between sm:table-cell sm:text-right">
+        <span className="sm:hidden">kcal</span>
+        <span>{e.kcal.toFixed(1)}</span>
+      </td>
+      <td className="p-2 flex justify-between sm:table-cell sm:text-right">
+        <span className="sm:hidden">F</span>
+        <span>{e.fat.toFixed(1)}</span>
+      </td>
+      <td className="p-2 flex justify-between sm:table-cell sm:text-right">
+        <span className="sm:hidden">C</span>
+        <span>{e.carb.toFixed(1)}</span>
+      </td>
+      <td className="p-2 flex justify-between sm:table-cell sm:text-right">
+        <span className="sm:hidden">P</span>
+        <span>{e.protein.toFixed(1)}</span>
+      </td>
+      <td className="p-2 sm:table-cell">
         <div className="flex gap-2 justify-end">
-          <Button className="btn-secondary btn-sm" disabled={!changed || isNaN(g) || g <= 0 || isMutating} onClick={handleUpdate}>{isMutating ? "..." : "Update"}</Button>
-          <Button className="btn-ghost btn-sm text-brand-danger hover:bg-brand-danger/10 dark:hover:bg-brand-danger/30" onClick={handleDelete} disabled={isMutating}>{isMutating ? "..." : "Delete"}</Button>
+          <Button
+            className="btn-secondary btn-sm"
+            disabled={!changed || isNaN(g) || g <= 0 || isMutating}
+            onClick={handleUpdate}
+          >
+            {isMutating ? "..." : "Update"}
+          </Button>
+          <Button
+            className="btn-ghost btn-sm text-brand-danger hover:bg-brand-danger/10 dark:hover:bg-brand-danger/30"
+            onClick={handleDelete}
+            disabled={isMutating}
+          >
+            {isMutating ? "..." : "Delete"}
+          </Button>
         </div>
       </td>
     </tr>
-  )
+  );
 }
+
