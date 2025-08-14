@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import toast from 'react-hot-toast';
 import * as api from './api';
 import type { DayFull, Preset, SimpleFood, MealType, Goals, EntryType } from "./types";
+import { loadJSON, saveJSON } from "./utils/storage";
 
 type Theme = 'light' | 'dark';
 
@@ -58,24 +59,12 @@ const getInitialTheme = (): Theme => {
 const EMPTY_GOALS: Goals = { kcal: 0, protein: 0, fat: 0, carb: 0 };
 
 // Return default goals saved in localStorage, or empty goals if none set
-const loadDefaultGoals = (): Goals => {
-  if (typeof window === 'undefined') return { ...EMPTY_GOALS };
-  try {
-    return JSON.parse(localStorage.getItem('defaultGoals') || JSON.stringify(EMPTY_GOALS));
-  } catch {
-    return { ...EMPTY_GOALS };
-  }
-};
+const loadDefaultGoals = (): Goals =>
+  loadJSON<Goals>('defaultGoals', { ...EMPTY_GOALS });
 
 // Return full mapping of date -> goals from localStorage
-const loadGoalsMap = (): Record<string, Goals> => {
-  if (typeof window === 'undefined') return {};
-  try {
-    return JSON.parse(localStorage.getItem('goalsByDate') || '{}');
-  } catch {
-    return {};
-  }
-};
+const loadGoalsMap = (): Record<string, Goals> =>
+  loadJSON<Record<string, Goals>>('goalsByDate', {});
 
 // Load goals for specific date, falling back to the most recently saved goals
 const getGoalsForDate = (d: string): Goals => {
@@ -88,14 +77,8 @@ const getGoalsForDate = (d: string): Goals => {
 };
 
 // --- Favorites helpers ---------------------------------------------------
-const loadFavorites = (): SimpleFood[] => {
-  if (typeof window === 'undefined') return [];
-  try {
-    return JSON.parse(localStorage.getItem('favorites') || '[]');
-  } catch {
-    return [];
-  }
-};
+const loadFavorites = (): SimpleFood[] =>
+  loadJSON<SimpleFood[]>('favorites', []);
 
 // --- Day mutation helpers -------------------------------------------------
 type MacroTotals = { kcal: number; protein: number; fat: number; carb: number };
@@ -198,7 +181,7 @@ export const useStore = create<AppState & AppActions>((set, get) => ({
         ? state.favorites.filter(f => f.fdcId !== food.fdcId)
         : [...state.favorites, food];
       if (typeof window !== 'undefined') {
-        localStorage.setItem('favorites', JSON.stringify(favorites));
+        saveJSON('favorites', favorites);
       }
       return { favorites };
     });
@@ -378,8 +361,8 @@ export const useStore = create<AppState & AppActions>((set, get) => ({
     if (typeof window !== 'undefined') {
       const all = loadGoalsMap();
       all[get().date] = g;
-      localStorage.setItem('goalsByDate', JSON.stringify(all));
-      localStorage.setItem('defaultGoals', JSON.stringify(g));
+      saveJSON('goalsByDate', all);
+      saveJSON('defaultGoals', g);
     }
     set({ goals: g });
   },
