@@ -249,22 +249,22 @@ function MealCard({ meal, isCurrent, onSelect, onUpdateEntry, onDeleteEntry, onD
           </Droppable>
           <tfoot className="block sm:table-footer-group">
             <tr className="font-semibold border-t-2 border-border-light dark:border-border-dark block sm:table-row">
-                <td className="p-3 flex justify-between sm:block sm:text-right" colSpan={2}>
+                <td className="p-3 flex justify-between sm:table-cell sm:text-right" colSpan={2}>
                   <span className="sm:hidden">Subtotal</span>
                 </td>
-                <td className="p-3 subtotal-kcal flex justify-between sm:block sm:text-right">
+                <td className="p-3 subtotal-kcal flex justify-between sm:table-cell sm:text-right">
                   <span className="sm:hidden">kcal</span>
                   <span>{meal.subtotal.kcal.toFixed(1)}</span>
                 </td>
-                <td className="p-3 subtotal-fat flex justify-between sm:block sm:text-right">
+                <td className="p-3 subtotal-fat flex justify-between sm:table-cell sm:text-right">
                   <span className="sm:hidden">F</span>
                   <span>{meal.subtotal.fat.toFixed(1)}</span>
                 </td>
-                <td className="p-3 subtotal-carb flex justify-between sm:block sm:text-right">
+                <td className="p-3 subtotal-carb flex justify-between sm:table-cell sm:text-right">
                   <span className="sm:hidden">C</span>
                   <span>{meal.subtotal.carb.toFixed(1)}</span>
                 </td>
-                <td className="p-3 subtotal-protein flex justify-between sm:block sm:text-right">
+                <td className="p-3 subtotal-protein flex justify-between sm:table-cell sm:text-right">
                   <span className="sm:hidden">P</span>
                   <span>{meal.subtotal.protein.toFixed(1)}</span>
                 </td>
