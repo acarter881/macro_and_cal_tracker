@@ -1,12 +1,6 @@
 import os
-import sys
-
-from pathlib import Path
 
 os.environ['USDA_KEY'] = 'test'
-
-# Allow importing the server modules
-sys.path.append(str(Path(__file__).resolve().parents[2]))
 
 from fastapi.testclient import TestClient
 from sqlmodel import SQLModel, Session, create_engine

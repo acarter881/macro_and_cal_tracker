@@ -4,12 +4,8 @@ from typing import Dict
 from fastapi import APIRouter, Depends
 from sqlmodel import Session, select
 
-try:
-    from ..db import get_session
-    from ..models import Meal, FoodEntry, Food, BodyWeight
-except ImportError:  # pragma: no cover
-    from db import get_session
-    from models import Meal, FoodEntry, Food, BodyWeight
+from server.db import get_session
+from server.models import Meal, FoodEntry, Food, BodyWeight
 
 router = APIRouter()
 

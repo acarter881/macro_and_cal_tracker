@@ -6,14 +6,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import SQLModel, Session, select
 from sqlalchemy import text
 
-try:
-    from .db import get_session, get_engine
-    from .models import Meal, Food, FoodEntry
-    from .routers import foods, meals, presets, history, weight, config
-except ImportError:  # pragma: no cover
-    from db import get_session, get_engine
-    from models import Meal, Food, FoodEntry
-    from routers import foods, meals, presets, history, weight, config
+from server.db import get_session, get_engine
+from server.models import Meal, Food, FoodEntry
+from server.routers import foods, meals, presets, history, weight, config
 
 def ensure_meal_sort_order_column(session: Session):
     tbl = session.exec(text("SELECT name FROM sqlite_master WHERE type='table' AND name='meal'")).first()

@@ -6,14 +6,9 @@ from sqlmodel import Session, select, delete
 from sqlalchemy import func
 from pydantic import BaseModel, field_validator
 
-try:
-    from ..db import get_session
-    from ..models import Food, FoodEntry, Favorite
-    from .. import utils
-except ImportError:  # pragma: no cover
-    from db import get_session
-    from models import Food, FoodEntry, Favorite
-    import utils
+from server.db import get_session
+from server.models import Food, FoodEntry, Favorite
+from server import utils
 
 USDA_BASE = utils.USDA_BASE
 fetch_food_detail = utils.fetch_food_detail

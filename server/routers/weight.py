@@ -4,12 +4,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlmodel import Session
 
-try:
-    from ..db import get_session
-    from ..models import BodyWeight
-except ImportError:  # pragma: no cover
-    from db import get_session
-    from models import BodyWeight
+from server.db import get_session
+from server.models import BodyWeight
 
 router = APIRouter()
 

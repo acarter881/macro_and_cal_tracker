@@ -5,14 +5,9 @@ from sqlmodel import Session, select, delete
 from sqlalchemy import func
 from pydantic import BaseModel
 
-try:
-    from ..db import get_session
-    from ..models import Preset, PresetItem, Food, Meal, FoodEntry
-    from ..utils import get_or_create_meal, ensure_food_cached
-except ImportError:  # pragma: no cover
-    from db import get_session
-    from models import Preset, PresetItem, Food, Meal, FoodEntry
-    from utils import get_or_create_meal, ensure_food_cached
+from server.db import get_session
+from server.models import Preset, PresetItem, Food, Meal, FoodEntry
+from server.utils import get_or_create_meal, ensure_food_cached
 
 router = APIRouter()
 

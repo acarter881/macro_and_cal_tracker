@@ -1,14 +1,10 @@
-import os
-import sys
 import json
-from pathlib import Path
 
 # ensure config path temporary
 
 def test_usda_key_update(tmp_path, monkeypatch):
     monkeypatch.setenv('USDA_CONFIG_PATH', str(tmp_path / 'cfg.json'))
     monkeypatch.setenv('USDA_KEY', 'envkey')
-    sys.path.append(str(Path(__file__).resolve().parents[2]))
     from importlib import reload
     import server.utils as utils
     reload(utils)
