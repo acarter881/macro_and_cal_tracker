@@ -20,7 +20,11 @@ if old_db_path.exists() and not new_db_path.exists():
     shutil.move(str(old_db_path), str(new_db_path))
 
 DATABASE_URL = f"sqlite:///{new_db_path}"
-engine = create_engine(DATABASE_URL, echo=False)
+engine = create_engine(
+    DATABASE_URL,
+    echo=False,
+    connect_args={"check_same_thread": False},
+)
 
 def get_engine():
     return engine
