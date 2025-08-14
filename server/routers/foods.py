@@ -19,7 +19,7 @@ router = APIRouter()
 @router.get("/api/foods/search")
 async def foods_search(q: str, dataType: Optional[str] = None):
     if not utils.USDA_KEY:
-        raise HTTPException(status_code=500, detail="USDA_KEY not set")
+        raise HTTPException(status_code=503, detail="USDA_KEY not set")
     params: dict = {
         "api_key": utils.USDA_KEY,
         "query": q,
@@ -28,10 +28,16 @@ async def foods_search(q: str, dataType: Optional[str] = None):
     }
     if dataType and dataType.lower() != "all":
         params["dataType"] = [s.strip() for s in dataType.split(",") if s.strip()]
-    async with httpx.AsyncClient(timeout=12.0) as client:
-        r = await client.get(f"{USDA_BASE}/foods/search", params=params)
-        r.raise_for_status()
-        data = r.json()
+    try:
+        async with httpx.AsyncClient(timeout=12.0) as client:
+            r = await client.get(f"{USDA_BASE}/foods/search", params=params)
+            r.raise_for_status()
+            data = r.json()
+    except httpx.HTTPStatusError as e:
+        raise HTTPException(status_code=e.response.status_code,
+                            detail=f"USDA error {e.response.status_code}: {e.response.text[:200]}")
+    except httpx.RequestError as e:
+        raise HTTPException(status_code=503, detail=f"USDA API request failed: {e!s}")
     return {"results": [
         {"fdcId": i.get("fdcId"), "description": i.get("description"),
          "brandOwner": i.get("brandOwner"), "dataType": i.get("dataType")}
