@@ -210,12 +210,15 @@ def delete_entry(entry_id: int, session: Session = Depends(get_session)):
     meal_id = e.meal_id
     session.delete(e)
     session.commit()
-    remaining = session.exec(
-        select(FoodEntry)
-        .where(FoodEntry.meal_id == meal_id, FoodEntry.sort_order > deleted_order)
-        .order_by(FoodEntry.sort_order)
-    ).all()
-    for idx, item in enumerate(remaining, start=deleted_order):
+
+    stmt = select(FoodEntry).where(FoodEntry.meal_id == meal_id)
+    if deleted_order is not None:
+        stmt = stmt.where(FoodEntry.sort_order > deleted_order)
+        start_order = deleted_order
+    else:
+        start_order = 1
+    remaining = session.exec(stmt.order_by(FoodEntry.sort_order)).all()
+    for idx, item in enumerate(remaining, start=start_order):
         item.sort_order = idx
         session.add(item)
     session.commit()
