@@ -1,10 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-try:
-    from .. import utils
-except ImportError:  # pragma: no cover
-    import utils
+from server import utils
 
 router = APIRouter()
 
