@@ -77,10 +77,14 @@ const loadGoalsMap = (): Record<string, Goals> => {
   }
 };
 
-// Load goals for specific date
+// Load goals for specific date, falling back to the most recently saved goals
 const getGoalsForDate = (d: string): Goals => {
   const all = loadGoalsMap();
-  return all[d] || loadDefaultGoals();
+  if (all[d]) return all[d];
+  const past = Object.keys(all).filter(date => date <= d).sort();
+  const latest = past[past.length - 1];
+  if (latest) return all[latest];
+  return loadDefaultGoals();
 };
 
 // --- Favorites helpers ---------------------------------------------------
