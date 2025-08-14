@@ -1,21 +1,38 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import axios from "axios";
 import type { DayFull, HistoryDay, SimpleFood } from "./types";
+import { loadJSON, saveJSON } from "./utils/storage";
 
 // --- Offline cache helpers -------------------------------------------------
 const isOnline = () =>
   typeof navigator === "undefined" ? true : navigator.onLine;
 
-type OfflineEntry = {
-  op: string;
-  payload: any;
-};
+type OfflineOp =
+  | { kind: "createMeal"; payload: { date: string; tempId: number } }
+  | { kind: "deleteMeal"; payload: { mealId: number } }
+  | {
+      kind: "updateMeal";
+      payload: { mealId: number; data: { name?: string; sort_order?: number } };
+    }
+  | {
+      kind: "addEntry";
+      payload: {
+        meal_id: number;
+        fdc_id: number;
+        quantity_g: number;
+        tempId: number;
+      };
+    }
+  | { kind: "updateEntry"; payload: { entryId: number; newGrams: number } }
+  | { kind: "moveEntry"; payload: { entryId: number; newOrder: number } }
+  | { kind: "deleteEntry"; payload: { entryId: number } }
+  | { kind: "setWeight"; payload: { date: string; weight: number } };
 
 type OfflineStore = {
   days: Record<string, DayFull>;
   foods: SimpleFood[];
   weights: Record<string, number>;
-  queue: OfflineEntry[];
+  queue: OfflineOp[];
   nextId: number;
 };
 
@@ -30,19 +47,11 @@ const defaultStore: OfflineStore = {
 };
 
 function loadStore(): OfflineStore {
-  if (typeof window === "undefined") return { ...defaultStore };
-  try {
-    return JSON.parse(localStorage.getItem(OFFLINE_KEY) || "") || {
-      ...defaultStore,
-    };
-  } catch {
-    return { ...defaultStore };
-  }
+  return loadJSON<OfflineStore>(OFFLINE_KEY, { ...defaultStore });
 }
 
 function saveStore(s: OfflineStore) {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(OFFLINE_KEY, JSON.stringify(s));
+  saveJSON(OFFLINE_KEY, s);
 }
 
 function nextTempId(): number {
@@ -52,9 +61,9 @@ function nextTempId(): number {
   return s.nextId;
 }
 
-function queue(op: string, payload: any) {
+function enqueue(op: OfflineOp) {
   const s = loadStore();
-  s.queue.push({ op, payload });
+  s.queue.push(op);
   saveStore(s);
 }
 
@@ -136,7 +145,7 @@ export async function createMeal(date: string) {
     const meal = { id, name: `Meal ${day.meals.length + 1}`, date, sort_order: day.meals.length, entries: [], subtotal: { kcal: 0, protein: 0, fat: 0, carb: 0 } };
     day.meals.push(meal as any);
     cacheDay(date, day);
-    queue("createMeal", { date, tempId: id });
+    enqueue({ kind: "createMeal", payload: { date, tempId: id } });
     return meal;
   }
   const response = await api.post("/meals", { date });
@@ -155,7 +164,7 @@ export async function deleteMeal(mealId: number) {
       const idx = day.meals.findIndex((m: any) => m.id === mealId);
       if (idx >= 0) day.meals.splice(idx, 1);
     }
-    queue("deleteMeal", { mealId });
+    enqueue({ kind: "deleteMeal", payload: { mealId } });
     saveStore(store);
     return { success: true };
   }
@@ -170,7 +179,7 @@ export async function updateMeal(mealId: number, payload: { name?: string; sort_
       const meal = day.meals.find((m: any) => m.id === mealId);
       if (meal) Object.assign(meal, payload);
     }
-    queue("updateMeal", { mealId, payload });
+    enqueue({ kind: "updateMeal", payload: { mealId, data: payload } });
     saveStore(store);
     return { success: true };
   }
@@ -188,7 +197,7 @@ export async function addEntry(meal_id: number, fdc_id: number, quantity_g: numb
       const id = nextTempId();
       meal.entries.push({ id, description: '', quantity_g, kcal: 0, protein: 0, carb: 0, fat: 0, sort_order: meal.entries.length });
       cacheDay(day.date, day);
-      queue("addEntry", { meal_id, fdc_id, quantity_g, tempId: id });
+      enqueue({ kind: "addEntry", payload: { meal_id, fdc_id, quantity_g, tempId: id } });
       return { id };
     }
     return null;
@@ -206,7 +215,7 @@ export async function updateEntry(entryId: number, newGrams: number) {
         if (entry) entry.quantity_g = newGrams;
       }
     }
-    queue("updateEntry", { entryId, newGrams });
+    enqueue({ kind: "updateEntry", payload: { entryId, newGrams } });
     saveStore(store);
     return { success: true };
   }
@@ -223,7 +232,7 @@ export async function moveEntry(entryId: number, newOrder: number) {
         if (entry) entry.sort_order = newOrder;
       }
     }
-    queue("moveEntry", { entryId, newOrder });
+    enqueue({ kind: "moveEntry", payload: { entryId, newOrder } });
     saveStore(store);
     return { success: true };
   }
@@ -240,7 +249,7 @@ export async function deleteEntry(entryId: number) {
         if (idx >= 0) (meal as any).entries.splice(idx, 1);
       }
     }
-    queue("deleteEntry", { entryId });
+    enqueue({ kind: "deleteEntry", payload: { entryId } });
     saveStore(store);
     return { success: true };
   }
@@ -328,7 +337,7 @@ export async function getWeight(date: string) {
 export async function setWeight(date: string, weight: number) {
   if (!isOnline()) {
     cacheWeight(date, weight);
-    queue("setWeight", { date, weight });
+    enqueue({ kind: "setWeight", payload: { date, weight } });
     return { weight };
   }
   const response = await api.put(`/weight/${date}`, { weight });
@@ -353,7 +362,7 @@ export async function syncQueue() {
   const idMap: Record<number, number> = {};
   while (store.queue.length) {
     const item = store.queue.shift()!;
-    switch (item.op) {
+    switch (item.kind) {
       case "createMeal": {
         const res = await api.post("/meals", { date: item.payload.date });
         const newId = res.data.id;
@@ -370,7 +379,7 @@ export async function syncQueue() {
       }
       case "updateMeal": {
         const mealId = idMap[item.payload.mealId] ?? item.payload.mealId;
-        await api.patch(`/meals/${mealId}`, item.payload.payload);
+        await api.patch(`/meals/${mealId}`, item.payload.data);
         break;
       }
       case "addEntry": {
