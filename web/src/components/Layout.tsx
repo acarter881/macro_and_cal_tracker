@@ -3,6 +3,7 @@ import { NavLink } from "react-router-dom";
 import { Toaster } from 'react-hot-toast';
 import { ThemeToggle } from "./ThemeToggle";
 import { Hotkeys } from "./Hotkeys";
+import { SearchBar } from "./SearchBar";
 import { Bars3Icon, XMarkIcon, HomeIcon, ChartBarIcon } from "@heroicons/react/24/outline";
 
 interface LayoutProps {
@@ -66,6 +67,9 @@ export function Layout({ children }: LayoutProps) {
                 </NavLink>
               ))}
             </nav>
+            <div className="hidden lg:block w-64">
+              <SearchBar />
+            </div>
             <ThemeToggle />
           </div>
         </div>
