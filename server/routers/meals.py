@@ -5,7 +5,7 @@ import io
 from fastapi import APIRouter, Depends, HTTPException, Response, Query
 from sqlmodel import Session, select
 from sqlalchemy import func, delete
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 from server.db import get_session
 from server.models import Meal, FoodEntry, Food
@@ -24,6 +24,13 @@ class FoodEntryCreate(BaseModel):
     meal_id: int
     fdc_id: int
     quantity_g: float
+
+    @field_validator("quantity_g")
+    @classmethod
+    def quantity_non_negative(cls, v: float) -> float:
+        if v < 0:
+            raise ValueError("quantity_g must be ≥ 0")
+        return v
 
 @router.post("/api/meals", response_model=Meal)
 def create_meal(payload: MealCreate, session: Session = Depends(get_session)):
@@ -149,6 +156,13 @@ def get_day(date: str, session: Session = Depends(get_session)):
 class EntryUpdate(BaseModel):
     quantity_g: Optional[float] = None
     sort_order: Optional[int] = None
+
+    @field_validator("quantity_g")
+    @classmethod
+    def quantity_non_negative(cls, v: Optional[float]) -> Optional[float]:
+        if v is not None and v < 0:
+            raise ValueError("quantity_g must be ≥ 0")
+        return v
 
 @router.patch("/api/entries/{entry_id}", response_model=FoodEntry)
 def update_entry(entry_id: int, payload: EntryUpdate, session: Session = Depends(get_session)):
