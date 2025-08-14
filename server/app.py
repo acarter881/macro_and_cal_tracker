@@ -1,71 +1,21 @@
 import asyncio
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from sqlmodel import SQLModel, Session, select
-from sqlalchemy import text
+from sqlmodel import SQLModel
 
-from server.db import get_session, get_engine
-from server.models import Meal, Food, FoodEntry
+from server.db import get_engine
 from server.routers import foods, meals, presets, history, weight, config
-
-def ensure_meal_sort_order_column(session: Session):
-    tbl = session.exec(text("SELECT name FROM sqlite_master WHERE type='table' AND name='meal'")).first()
-    if not tbl:
-        return
-    cols = session.exec(text("PRAGMA table_info(meal)")).all()
-    names = {row[1] for row in cols}
-    if "sort_order" not in names:
-        session.exec(text("ALTER TABLE meal ADD COLUMN sort_order INTEGER"))
-        session.commit()
-        meals = session.exec(select(Meal).where(Meal.sort_order.is_(None))).all()
-        for m in meals:
-            try:
-                num = int(m.name.replace("Meal", "").strip())
-                m.sort_order = num
-            except:
-                m.sort_order = 99
-            session.add(m)
-        session.commit()
-
-def ensure_entry_sort_order_column(session: Session):
-    tbl = session.exec(text("SELECT name FROM sqlite_master WHERE type='table' AND name='foodentry'")).first()
-    if not tbl:
-        return
-    cols = session.exec(text("PRAGMA table_info(foodentry)")).all()
-    names = {row[1] for row in cols}
-    if "sort_order" not in names:
-        session.exec(text("ALTER TABLE foodentry ADD COLUMN sort_order INTEGER"))
-        session.commit()
-        # initialize existing entries sequentially per meal
-        meals = session.exec(select(Meal.id).order_by(Meal.id)).all()
-        for meal_id in meals:
-            ents = session.exec(select(FoodEntry).where(FoodEntry.meal_id == meal_id).order_by(FoodEntry.id)).all()
-            for idx, e in enumerate(ents, start=1):
-                e.sort_order = idx
-                session.add(e)
-        session.commit()
-
-def ensure_food_archived_column(session: Session):
-    tbl = session.exec(text("SELECT name FROM sqlite_master WHERE type='table' AND name='food'")).first()
-    if not tbl:
-        return
-    cols = session.exec(text("PRAGMA table_info(food)")).all()
-    names = {row[1] for row in cols}
-    if "archived" not in names:
-        session.exec(text("ALTER TABLE food ADD COLUMN archived INTEGER NOT NULL DEFAULT 0"))
-        session.commit()
+from server.run_migrations import run_migrations
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Initialize database tables and handle graceful shutdown."""
     engine = get_engine()
     SQLModel.metadata.create_all(engine)
-    with Session(engine) as s:
-        ensure_food_archived_column(s)
-        ensure_meal_sort_order_column(s)
-        ensure_entry_sort_order_column(s)
+    run_migrations(str(Path(__file__).resolve().parent.parent / "alembic.ini"), engine)
     try:
         yield
     except asyncio.CancelledError:

@@ -3,3 +3,4 @@ sqlmodel
 httpx
 python-dotenv
 platformdirs
+alembic

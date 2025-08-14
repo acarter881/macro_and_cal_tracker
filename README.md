@@ -31,6 +31,19 @@ The application supports a few global shortcuts:
 - `Ctrl+Shift+L` — toggle between light and dark themes.
 - `?` — show the in-app shortcuts help.
 
+## Database Migrations
+
+This project uses Alembic to manage database schema changes. Migrations run
+automatically when the API starts, ensuring the database is up to date. You can
+also apply them manually by executing:
+
+```
+python -m server.run_migrations
+```
+
+The initial migration adds the `sort_order` column to `meal` and `foodentry`
+tables and an `archived` column to `food`.
+
 ## Daily Goals
 
 When you save macro goals they are stored as the default for future days. New dates
