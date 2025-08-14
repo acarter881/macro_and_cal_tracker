@@ -37,6 +37,7 @@ type OfflineStore = {
 };
 
 const OFFLINE_KEY = "offline-cache";
+const MAX_QUEUE_LENGTH = 100;
 
 const defaultStore: OfflineStore = {
   days: {},
@@ -79,6 +80,9 @@ function nextTempId(): number {
 function enqueue(op: OfflineOp) {
   const s = loadStore();
   s.queue.push(op);
+  if (s.queue.length > MAX_QUEUE_LENGTH) {
+    s.queue.splice(0, s.queue.length - MAX_QUEUE_LENGTH);
+  }
   saveStore(s);
   emitQueueSize();
 }
