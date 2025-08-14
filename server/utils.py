@@ -2,7 +2,7 @@ import os
 import json
 import asyncio
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Optional, TypedDict
 
 import httpx
 from fastapi import HTTPException
@@ -48,21 +48,65 @@ def _to_float(x):
     except Exception:
         return 0.0
 
-def extract_macros_from_fdc(data: dict) -> dict[str, float]:
-    out = {"kcal": 0.0, "protein": 0.0, "carb": 0.0, "fat": 0.0}
+class MacroTotals(TypedDict):
+    kcal: float
+    protein: float
+    carb: float
+    fat: float
+
+
+def _parse_label_nutrients(lbl: dict, out: MacroTotals) -> tuple[Optional[float], Optional[float]]:
+    def lv(k):
+        v = lbl.get(k) or {}
+        return v.get("value")
+
+    fiber_total = sugars = None
+    if (v := lv("calories")) is not None:
+        out["kcal"] = _to_float(v)
+    if (v := lv("protein")) is not None:
+        out["protein"] = _to_float(v)
+    if (v := lv("fat")) is not None:
+        out["fat"] = _to_float(v)
+    if (v := lv("carbohydrates")) is not None:
+        out["carb"] = _to_float(v)
+    if (v := lv("fiber")) is not None:
+        fiber_total = _to_float(v)
+    if (v := lv("sugars")) is not None:
+        sugars = _to_float(v)
+    return fiber_total, sugars
+
+
+def _resolve_fiber(
+    fiber_total: Optional[float],
+    fiber_sol: Optional[float],
+    fiber_ins: Optional[float],
+    fiber_any: Optional[float],
+) -> Optional[float]:
+    if fiber_total is not None:
+        return fiber_total
+    if fiber_sol is not None or fiber_ins is not None:
+        return (fiber_sol or 0.0) + (fiber_ins or 0.0)
+    if fiber_any is not None:
+        return fiber_any
+    return None
+
+
+def _compute_calories(out: MacroTotals, fiber: Optional[float]) -> None:
+    c_total = out["carb"] or 0.0
+    f_total = fiber or 0.0
+    digestible = max(0.0, c_total - f_total)
+    out["kcal"] = round(
+        out["protein"] * 4 + digestible * 4 + f_total * 2 + out["fat"] * 9, 2
+    )
+
+
+def extract_macros_from_fdc(data: dict) -> MacroTotals:
+    out: MacroTotals = {"kcal": 0.0, "protein": 0.0, "carb": 0.0, "fat": 0.0}
     sugars = starch = fiber_total = fiber_sol = fiber_ins = fiber_any = None
     water = ash = alcohol = None
     lbl = (data or {}).get("labelNutrients") or None
     if lbl:
-        def lv(k):
-            v = lbl.get(k) or {}
-            return v.get("value")
-        if (v := lv("calories"))      is not None: out["kcal"]    = _to_float(v)
-        if (v := lv("protein"))       is not None: out["protein"] = _to_float(v)
-        if (v := lv("fat"))           is not None: out["fat"]     = _to_float(v)
-        if (v := lv("carbohydrates")) is not None: out["carb"]    = _to_float(v)
-        if (v := lv("fiber"))         is not None: fiber_total    = _to_float(v)
-        if (v := lv("sugars"))        is not None: sugars         = _to_float(v)
+        fiber_total, sugars = _parse_label_nutrients(lbl, out)
     for n in data.get("foodNutrients") or []:
         amt = n.get("amount")
         if amt is None:
@@ -109,13 +153,7 @@ def extract_macros_from_fdc(data: dict) -> dict[str, float]:
             ash = a
         elif num == 1005 or "alcohol" in name:
             alcohol = a
-    fiber = None
-    if fiber_total is not None:
-        fiber = fiber_total
-    elif fiber_sol is not None or fiber_ins is not None:
-        fiber = (fiber_sol or 0.0) + (fiber_ins or 0.0)
-    elif fiber_any is not None:
-        fiber = fiber_any
+    fiber = _resolve_fiber(fiber_total, fiber_sol, fiber_ins, fiber_any)
     if (out["carb"] or 0.0) == 0.0:
         comp_sum = sum(x for x in (sugars, starch, fiber) if x is not None)
         if comp_sum:
@@ -131,12 +169,7 @@ def extract_macros_from_fdc(data: dict) -> dict[str, float]:
             - (alcohol or 0.0),
         )
     if (out["kcal"] or 0.0) == 0.0:
-        c_total = out["carb"] or 0.0
-        f_total = fiber or 0.0
-        digestible = max(0.0, c_total - f_total)
-        out["kcal"] = round(
-            out["protein"] * 4 + digestible * 4 + f_total * 2 + out["fat"] * 9, 2
-        )
+        _compute_calories(out, fiber)
     for k in out:
         out[k] = _to_float(out[k])
     return out
