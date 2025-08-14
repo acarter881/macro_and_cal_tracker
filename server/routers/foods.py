@@ -81,7 +81,7 @@ async def foods_get(fdc_id: int, session: Session = Depends(get_session), refres
             amt = item["nutrient"].get("value")
         try:
             nut_map[nid] = float(amt or 0)
-        except:
+        except (ValueError, TypeError):
             nut_map[nid] = 0.0
     lbl = data.get("labelNutrients") or {}
     fat     = nut_map.get(1085) or nut_map.get(1004) or float(lbl.get("fat", {}).get("value", 0))
