@@ -57,6 +57,16 @@ const getInitialTheme = (): Theme => {
 // --- Daily Goals helpers -------------------------------------------------
 const EMPTY_GOALS: Goals = { kcal: 0, protein: 0, fat: 0, carb: 0 };
 
+// Return default goals saved in localStorage, or empty goals if none set
+const loadDefaultGoals = (): Goals => {
+  if (typeof window === 'undefined') return { ...EMPTY_GOALS };
+  try {
+    return JSON.parse(localStorage.getItem('defaultGoals') || JSON.stringify(EMPTY_GOALS));
+  } catch {
+    return { ...EMPTY_GOALS };
+  }
+};
+
 // Return full mapping of date -> goals from localStorage
 const loadGoalsMap = (): Record<string, Goals> => {
   if (typeof window === 'undefined') return {};
@@ -70,7 +80,7 @@ const loadGoalsMap = (): Record<string, Goals> => {
 // Load goals for specific date
 const getGoalsForDate = (d: string): Goals => {
   const all = loadGoalsMap();
-  return all[d] || { ...EMPTY_GOALS };
+  return all[d] || loadDefaultGoals();
 };
 
 // --- Favorites helpers ---------------------------------------------------
@@ -259,6 +269,7 @@ export const useStore = create<AppState & AppActions>((set, get) => ({
       const all = loadGoalsMap();
       all[get().date] = g;
       localStorage.setItem('goalsByDate', JSON.stringify(all));
+      localStorage.setItem('defaultGoals', JSON.stringify(g));
     }
     set({ goals: g });
   },

@@ -30,3 +30,9 @@ The application supports a few global shortcuts:
 - `Ctrl+F` — focus the food search box.
 - `Ctrl+Shift+L` — toggle between light and dark themes.
 - `?` — show the in-app shortcuts help.
+
+## Daily Goals
+
+When you save macro goals they are stored as the default for future days. New dates
+will automatically use the most recently saved goals unless you override them for
+that specific day.
