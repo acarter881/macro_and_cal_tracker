@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import toast from 'react-hot-toast';
 import * as api from './api';
-import type { DayFull, Preset, SimpleFood, MealType, Goals } from "./types";
+import type { DayFull, Preset, SimpleFood, MealType, Goals, EntryType } from "./types";
 
 type Theme = 'light' | 'dark';
 
@@ -95,6 +95,36 @@ const loadFavorites = (): SimpleFood[] => {
   } catch {
     return [];
   }
+};
+
+// --- Day mutation helpers -------------------------------------------------
+type MacroTotals = { kcal: number; protein: number; fat: number; carb: number };
+
+const applyDelta = (t: MacroTotals, d: MacroTotals) => {
+  t.kcal = +(t.kcal + d.kcal).toFixed(2);
+  t.protein = +(t.protein + d.protein).toFixed(2);
+  t.fat = +(t.fat + d.fat).toFixed(2);
+  t.carb = +(t.carb + d.carb).toFixed(2);
+};
+
+const macrosFromFood = (food: any, grams: number): MacroTotals => {
+  const f = grams / 100;
+  return {
+    kcal: +((food.kcal_per_100g || 0) * f).toFixed(2),
+    protein: +((food.protein_g_per_100g || 0) * f).toFixed(2),
+    fat: +((food.fat_g_per_100g || 0) * f).toFixed(2),
+    carb: +((food.carb_g_per_100g || 0) * f).toFixed(2),
+  };
+};
+
+const scaledMacros = (e: EntryType, grams: number): MacroTotals => {
+  const factor = grams / e.quantity_g;
+  return {
+    kcal: +(e.kcal * factor).toFixed(2),
+    protein: +(e.protein * factor).toFixed(2),
+    fat: +(e.fat * factor).toFixed(2),
+    carb: +(e.carb * factor).toFixed(2),
+  };
 };
 
 const initialDate = new Date().toISOString().slice(0, 10);
@@ -201,16 +231,34 @@ export const useStore = create<AppState & AppActions>((set, get) => ({
 
   addFood: async (foodId, grams) => {
     try {
-      let mealId = get().day?.meals.find(m => m.name === get().mealName)?.id;
-      if (!mealId) {
-        const newMeal = await api.createMeal(get().date);
-        mealId = newMeal.id;
+      const state = get();
+      let day = state.day;
+      if (!day) return;
+      let meal = day.meals.find(m => m.name === state.mealName);
+      if (!meal) {
+        const newMeal = await api.createMeal(state.date);
+        meal = { ...newMeal, entries: [], subtotal: { kcal: 0, protein: 0, fat: 0, carb: 0 } };
+        day.meals.push(meal);
       }
-      if (mealId === undefined) { throw new Error("Could not find a meal."); }
-      await api.getFood(foodId);
-      await api.addEntry(mealId, foodId, grams);
-      await get().fetchDay();
-    } catch (e) { 
+      const food = await api.getFood(foodId);
+      const entryRes = await api.addEntry(meal.id, foodId, grams);
+      const macros = macrosFromFood(food, grams);
+      const newEntry: EntryType = {
+        id: entryRes.id,
+        description: food.description,
+        quantity_g: grams,
+        kcal: macros.kcal,
+        protein: macros.protein,
+        carb: macros.carb,
+        fat: macros.fat,
+        sort_order: entryRes.sort_order,
+      };
+      meal.entries.push(newEntry);
+      meal.entries.sort((a, b) => a.sort_order - b.sort_order);
+      applyDelta(meal.subtotal, macros);
+      applyDelta(day.totals, macros);
+      set({ day });
+    } catch (e) {
       toast.error("Failed to add food entry.");
     }
   },
@@ -228,9 +276,14 @@ export const useStore = create<AppState & AppActions>((set, get) => ({
 
   renameMeal: async (mealId, newName) => {
     await api.updateMeal(mealId, { name: newName });
-    await get().fetchDay();
-    const updated = get().day?.meals.find(m => m.id === mealId);
-    if (updated) set({ mealName: updated.name });
+    set((state) => {
+      const day = state.day;
+      if (!day) return {};
+      const meal = day.meals.find(m => m.id === mealId);
+      const wasCurrent = meal ? state.mealName === meal.name : false;
+      if (meal) meal.name = newName;
+      return { day, mealName: wasCurrent ? newName : state.mealName };
+    });
   },
 
   moveMeal: async (mealId, newOrder) => {
@@ -240,17 +293,70 @@ export const useStore = create<AppState & AppActions>((set, get) => ({
 
   updateEntry: async (entryId, grams) => {
     await api.updateEntry(entryId, grams);
-    await get().fetchDay();
+    set((state) => {
+      const day = state.day;
+      if (!day) return {};
+      for (const meal of day.meals) {
+        const entry = meal.entries.find(e => e.id === entryId);
+        if (entry) {
+          const newTotals = scaledMacros(entry, grams);
+          const delta = {
+            kcal: newTotals.kcal - entry.kcal,
+            protein: newTotals.protein - entry.protein,
+            fat: newTotals.fat - entry.fat,
+            carb: newTotals.carb - entry.carb,
+          };
+          entry.quantity_g = grams;
+          entry.kcal = newTotals.kcal;
+          entry.protein = newTotals.protein;
+          entry.fat = newTotals.fat;
+          entry.carb = newTotals.carb;
+          applyDelta(meal.subtotal, delta);
+          applyDelta(day.totals, delta);
+          break;
+        }
+      }
+      return { day };
+    });
   },
 
   moveEntry: async (entryId, newOrder) => {
     await api.moveEntry(entryId, newOrder);
-    await get().fetchDay();
+    set((state) => {
+      const day = state.day;
+      if (!day) return {};
+      for (const meal of day.meals) {
+        const idx = meal.entries.findIndex(e => e.id === entryId);
+        if (idx >= 0) {
+          const [entry] = meal.entries.splice(idx, 1);
+          meal.entries.splice(Math.max(0, newOrder - 1), 0, entry);
+          meal.entries.forEach((e, i) => { e.sort_order = i + 1; });
+          break;
+        }
+      }
+      return { day };
+    });
   },
 
   deleteEntry: async (entryId) => {
     await api.deleteEntry(entryId);
-    await get().fetchDay();
+    set((state) => {
+      const day = state.day;
+      if (!day) return {};
+      for (const meal of day.meals) {
+        const idx = meal.entries.findIndex(e => e.id === entryId);
+        if (idx >= 0) {
+          const entry = meal.entries[idx];
+          meal.entries.splice(idx, 1);
+          meal.entries.forEach((e, i) => { e.sort_order = i + 1; });
+          const delta = { kcal: -entry.kcal, protein: -entry.protein, fat: -entry.fat, carb: -entry.carb };
+          applyDelta(meal.subtotal, delta);
+          applyDelta(day.totals, delta);
+          break;
+        }
+      }
+      return { day };
+    });
   },
   
   refreshPresets: async () => {
