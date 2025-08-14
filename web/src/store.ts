@@ -208,7 +208,17 @@ export const useStore = create<AppState & AppActions>((set, get) => ({
       set({ day: d, weight: w?.weight ?? null });
       const mealExists = d.meals.some((m: MealType) => m.name === get().mealName);
       if (!mealExists) set({ mealName: d.meals[0]?.name || "Meal 1" });
-    } catch (error) { console.error("Failed to fetch day:", error);
+    } catch (error) {
+      toast.error('Failed to fetch day. Please check your connection and try again.');
+      const state = get();
+      if (!state.day) {
+        const placeholder: DayFull = {
+          date: state.date,
+          meals: [],
+          totals: { kcal: 0, protein: 0, fat: 0, carb: 0 },
+        };
+        set({ day: placeholder });
+      }
     }
   },
 
