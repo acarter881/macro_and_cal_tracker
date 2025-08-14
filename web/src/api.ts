@@ -54,6 +54,21 @@ function saveStore(s: OfflineStore) {
   saveJSON(OFFLINE_KEY, s);
 }
 
+export function getOfflineQueueSize(): number {
+  const s = loadStore();
+  return s.queue.length;
+}
+
+function emitQueueSize() {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(
+      new CustomEvent("offline-queue-changed", {
+        detail: getOfflineQueueSize(),
+      })
+    );
+  }
+}
+
 function nextTempId(): number {
   const s = loadStore();
   s.nextId -= 1;
@@ -65,6 +80,7 @@ function enqueue(op: OfflineOp) {
   const s = loadStore();
   s.queue.push(op);
   saveStore(s);
+  emitQueueSize();
 }
 
 function cacheDay(date: string, day: DayFull) {
@@ -421,4 +437,5 @@ export async function syncQueue() {
     }
   }
   saveStore(store);
+  emitQueueSize();
 }

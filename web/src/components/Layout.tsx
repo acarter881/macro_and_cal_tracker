@@ -3,7 +3,15 @@ import { NavLink } from "react-router-dom";
 import { Toaster } from 'react-hot-toast';
 import { ThemeToggle } from "./ThemeToggle";
 import { Hotkeys } from "./Hotkeys";
-import { Bars3Icon, XMarkIcon, HomeIcon, ChartBarIcon } from "@heroicons/react/24/outline";
+import {
+  Bars3Icon,
+  XMarkIcon,
+  HomeIcon,
+  ChartBarIcon,
+  SignalIcon,
+  SignalSlashIcon,
+} from "@heroicons/react/24/outline";
+import { getOfflineQueueSize } from "../api";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -11,6 +19,10 @@ interface LayoutProps {
 
 export function Layout({ children }: LayoutProps) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [isOnline, setIsOnline] = useState(
+    typeof navigator === "undefined" ? true : navigator.onLine
+  );
+  const [queueSize, setQueueSize] = useState(getOfflineQueueSize());
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -31,6 +43,22 @@ export function Layout({ children }: LayoutProps) {
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, [menuOpen]);
+
+  useEffect(() => {
+    const updateOnline = () => setIsOnline(navigator.onLine);
+    const updateQueue = (e: Event) => {
+      const detail = (e as CustomEvent<number>).detail;
+      setQueueSize(typeof detail === "number" ? detail : getOfflineQueueSize());
+    };
+    window.addEventListener('online', updateOnline);
+    window.addEventListener('offline', updateOnline);
+    window.addEventListener('offline-queue-changed', updateQueue as EventListener);
+    return () => {
+      window.removeEventListener('online', updateOnline);
+      window.removeEventListener('offline', updateOnline);
+      window.removeEventListener('offline-queue-changed', updateQueue as EventListener);
+    };
+  }, []);
 
   const navLinkClass = ({ isActive }: { isActive: boolean }) =>
     `flex items-center gap-2 px-4 py-2 rounded-md text-sm font-semibold transition-colors ${
@@ -66,6 +94,18 @@ export function Layout({ children }: LayoutProps) {
                 </NavLink>
               ))}
             </nav>
+            <div className="relative" title={isOnline ? 'Online' : 'Offline'}>
+              {isOnline ? (
+                <SignalIcon className="h-5 w-5 text-green-500" />
+              ) : (
+                <SignalSlashIcon className="h-5 w-5 text-red-500" />
+              )}
+              {queueSize > 0 && (
+                <span className="absolute -top-1 -right-1 bg-brand-primary text-white text-xs rounded-full px-1">
+                  {queueSize}
+                </span>
+              )}
+            </div>
             <ThemeToggle />
           </div>
         </div>
