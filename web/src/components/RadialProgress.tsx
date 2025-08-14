@@ -1,3 +1,5 @@
+import { ExclamationTriangleIcon } from "@heroicons/react/24/outline";
+
 interface RadialProgressProps {
     value: number;
     goal: number;
@@ -11,6 +13,7 @@ export function RadialProgress({ value, goal, color, decimals = 0, unit = "" }: 
     const radius = 28;
     const circumference = 2 * Math.PI * radius;
     const offset = circumference - (pct / 100) * circumference;
+    const exceeded = goal > 0 && value > goal;
 
     return (
         <div className="flex flex-col items-center">
@@ -40,6 +43,12 @@ export function RadialProgress({ value, goal, color, decimals = 0, unit = "" }: 
                         transform="rotate(-90 32 32)"
                     />
                 </svg>
+                {exceeded && (
+                    <div className="absolute -top-1 -right-1">
+                        <ExclamationTriangleIcon className="h-5 w-5 text-brand-danger" aria-hidden="true" />
+                        <span className="sr-only">Goal exceeded</span>
+                    </div>
+                )}
                 <div className="absolute inset-0 flex items-center justify-center text-sm font-bold text-text dark:text-text-light">
                     {value.toFixed(decimals)}{unit}
                 </div>
