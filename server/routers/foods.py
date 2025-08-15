@@ -121,22 +121,54 @@ class FavoriteIn(BaseModel):
     alias: Optional[str] = None
     default_grams: Optional[float] = None
 
-@router.get("/api/favorites")
+
+class FavoriteItem(BaseModel):
+    fdc_id: int
+    alias: Optional[str] = None
+    default_grams: Optional[float] = None
+    description: str
+    brandOwner: Optional[str] = None
+    dataType: Optional[str] = None
+
+
+class FavoriteListResponse(BaseModel):
+    items: List[FavoriteItem]
+
+
+class RecentItem(BaseModel):
+    fdc_id: int
+    description: str
+    brandOwner: Optional[str] = None
+    dataType: Optional[str] = None
+
+
+class RecentsResponse(BaseModel):
+    items: List[RecentItem]
+
+@router.get("/api/favorites", response_model=FavoriteListResponse)
 def list_favorites(session: Session = Depends(get_session)):
     favs = session.exec(select(Favorite)).all()
-    if not favs:
-        return {"items": []}
-    food_map = {f.fdc_id: f for f in session.exec(select(Food).where(Food.fdc_id.in_([x.fdc_id for x in favs]))).all()}
-    items = []
-    for f in favs:
-        food = food_map.get(f.fdc_id)
-        items.append({
-            "fdc_id": f.fdc_id, "alias": f.alias, "default_grams": f.default_grams,
-            "description": food.description if food else f"FDC {f.fdc_id}",
-            "brandOwner": getattr(food, "brand_owner", None) if food else None,
-            "dataType": getattr(food, "data_type", None) if food else None,
-        })
-    return {"items": items}
+    items: List[FavoriteItem] = []
+    if favs:
+        food_map = {
+            f.fdc_id: f
+            for f in session.exec(
+                select(Food).where(Food.fdc_id.in_([x.fdc_id for x in favs]))
+            ).all()
+        }
+        for f in favs:
+            food = food_map.get(f.fdc_id)
+            items.append(
+                FavoriteItem(
+                    fdc_id=f.fdc_id,
+                    alias=f.alias,
+                    default_grams=f.default_grams,
+                    description=food.description if food else f"FDC {f.fdc_id}",
+                    brandOwner=getattr(food, "brand_owner", None) if food else None,
+                    dataType=getattr(food, "data_type", None) if food else None,
+                )
+            )
+    return FavoriteListResponse(items=items)
 
 @router.post("/api/favorites")
 async def add_favorite(payload: FavoriteIn, session: Session = Depends(get_session)):
@@ -163,7 +195,7 @@ def remove_favorite(fdc_id: int, session: Session = Depends(get_session)):
     session.commit()
     return {"ok": True}
 
-@router.get("/api/recents")
+@router.get("/api/recents", response_model=RecentsResponse)
 def list_recents(limit: int = 20, session: Session = Depends(get_session)):
     stmt = (
         select(
@@ -180,15 +212,15 @@ def list_recents(limit: int = 20, session: Session = Depends(get_session)):
     )
     rows = session.exec(stmt).all()
     items = [
-        {
-            "fdc_id": fid,
-            "description": desc,
-            "brandOwner": bo,
-            "dataType": dt,
-        }
+        RecentItem(
+            fdc_id=fid,
+            description=desc,
+            brandOwner=bo,
+            dataType=dt,
+        )
         for fid, desc, bo, dt in rows
     ]
-    return {"items": items}
+    return RecentsResponse(items=items)
 
 class CustomFoodIn(BaseModel):
     description: str
