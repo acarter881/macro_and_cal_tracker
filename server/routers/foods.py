@@ -165,23 +165,29 @@ def remove_favorite(fdc_id: int, session: Session = Depends(get_session)):
 
 @router.get("/api/recents")
 def list_recents(limit: int = 20, session: Session = Depends(get_session)):
-    entries = session.exec(select(FoodEntry).order_by(FoodEntry.id.desc())).all()
-    seen, out = set(), []
-    for e in entries:
-        if e.fdc_id in seen:
-            continue
-        seen.add(e.fdc_id)
-        out.append(e.fdc_id)
-        if len(out) >= limit:
-            break
-    if not out:
-        return {"items": []}
-    foods = {f.fdc_id: f for f in session.exec(select(Food).where(Food.fdc_id.in_(out))).all()}
-    items = []
-    for fid in out:
-        f = foods.get(fid)
-        if f:
-            items.append({"fdc_id": fid, "description": f.description, "brandOwner": f.brand_owner, "dataType": f.data_type})
+    stmt = (
+        select(
+            FoodEntry.fdc_id,
+            Food.description,
+            Food.brand_owner,
+            Food.data_type,
+        )
+        .select_from(FoodEntry)
+        .join(Food, FoodEntry.fdc_id == Food.fdc_id)
+        .distinct()
+        .order_by(FoodEntry.id.desc())
+        .limit(limit)
+    )
+    rows = session.exec(stmt).all()
+    items = [
+        {
+            "fdc_id": fid,
+            "description": desc,
+            "brandOwner": bo,
+            "dataType": dt,
+        }
+        for fid, desc, bo, dt in rows
+    ]
     return {"items": items}
 
 class CustomFoodIn(BaseModel):
