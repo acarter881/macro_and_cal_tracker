@@ -1,6 +1,15 @@
 # macro_and_cal_tracker
 Tracking macros and calories in an easy-to-use app
 
+## Installation
+
+The backend dependencies are pinned in `requirements.txt` for reproducible
+environment setup. Install them with:
+
+```
+pip install -r requirements.txt
+```
+
 ## Environment Variables
 
 The frontend reads `VITE_API_BASE_URL` to know where to send API requests. If this
