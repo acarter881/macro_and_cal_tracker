@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import axios from "axios";
+import toast from "react-hot-toast";
 import type { DayFull, HistoryDay, SimpleFood } from "./types";
 import { loadJSON, saveJSON } from "./utils/storage";
 
@@ -137,15 +138,36 @@ const api = axios.create({
   baseURL: `${inferredBase}/api`,
 });
 
+class ApiError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "ApiError";
+  }
+}
+
 // --- Food & Search ---
 export async function searchFoods(query: string, dataType: string) {
-  const response = await api.get("/foods/search", { params: { q: query, dataType } });
-  return response.data.results;
+  try {
+    const response = await api.get("/foods/search", {
+      params: { q: query, dataType },
+    });
+    return response.data.results;
+  } catch (err) {
+    console.error("Failed to search foods:", err);
+    toast.error("Food search failed.");
+    return [];
+  }
 }
 
 export async function getFood(fdcId: number) {
-  const response = await api.get(`/foods/${fdcId}`);
-  return response.data;
+  try {
+    const response = await api.get(`/foods/${fdcId}`);
+    return response.data;
+  } catch (err) {
+    console.error("Failed to fetch food:", err);
+    toast.error("Failed to fetch food.");
+    throw new ApiError("Failed to fetch food");
+  }
 }
 
 // --- Day, Meals, and Entries ---
