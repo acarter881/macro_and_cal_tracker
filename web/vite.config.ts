@@ -11,4 +11,8 @@ export default defineConfig(({ mode }) => ({
         })
       : undefined,
   ].filter(Boolean),
+  test: {
+    environment: 'jsdom',
+    setupFiles: './src/setupTests.ts',
+  },
 }))
