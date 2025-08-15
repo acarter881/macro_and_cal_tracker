@@ -1,6 +1,7 @@
 import asyncio
 from contextlib import asynccontextmanager
 from pathlib import Path
+import os
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -23,10 +24,16 @@ async def lifespan(app: FastAPI):
         pass
 
 
+allowed_origins_raw = os.getenv("ALLOWED_ORIGINS")
+if allowed_origins_raw:
+    allowed_origins = [origin.strip() for origin in allowed_origins_raw.split(",") if origin.strip()]
+else:
+    allowed_origins = ["*"]
+
 app = FastAPI(title="Macro Tracker API", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
