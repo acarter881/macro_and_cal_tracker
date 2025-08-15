@@ -12,6 +12,8 @@ pip install -r requirements.txt
 
 ## Environment Variables
 
+### Frontend
+
 The frontend reads `VITE_API_BASE_URL` to know where to send API requests. If this
 variable is not set, the app falls back to `window.location.origin`.
 
@@ -30,6 +32,23 @@ VITE_API_BASE_URL=https://example.com
 ```
 
 Production builds use `npm run build` and desktop builds use `npm run build:desktop`.
+
+### Backend
+
+The API reads `ALLOWED_ORIGINS` to configure CORS. Provide a comma-separated list of allowed
+origins. If the variable is not set, all origins are allowed.
+
+For development, allow any origin:
+
+```
+export ALLOWED_ORIGINS=*
+```
+
+For production, specify the permitted domains:
+
+```
+export ALLOWED_ORIGINS=https://example.com,https://app.example.com
+```
 
 ## Keyboard Shortcuts
 
