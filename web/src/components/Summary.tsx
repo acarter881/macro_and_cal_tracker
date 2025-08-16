@@ -25,7 +25,7 @@ export function Summary() {
                         {/* kcal */}
                         <div className="flex-1 bg-brand-primary/10 dark:bg-brand-primary/30 p-3 rounded-lg text-center transition-shadow hover:shadow-md">
                             <div className="text-sm text-brand-primary dark:text-brand-primary mb-2">kcal</div>
-                            <RadialProgress value={totals?.kcal ?? 0} goal={goals.kcal} color="text-brand-primary" decimals={0} />
+                            <RadialProgress value={totals?.kcal ?? 0} goal={goals.kcal} color="text-brand-primary" decimals={0} textColor="text-brand-primary" />
                         </div>
 
                         {/* fat */}

@@ -6,9 +6,10 @@ interface RadialProgressProps {
     color: string; // tailwind color class for stroke
     decimals?: number;
     unit?: string;
+    textColor?: string;
 }
 
-export function RadialProgress({ value, goal, color, decimals = 0, unit = "" }: RadialProgressProps) {
+export function RadialProgress({ value, goal, color, decimals = 0, unit = "", textColor }: RadialProgressProps) {
     const pct = goal > 0 ? Math.min(100, (value / goal) * 100) : 0;
     const radius = 28;
     const circumference = 2 * Math.PI * radius;
@@ -49,7 +50,9 @@ export function RadialProgress({ value, goal, color, decimals = 0, unit = "" }: 
                         <span className="sr-only">Goal exceeded</span>
                     </div>
                 )}
-                <div className="absolute inset-0 flex items-center justify-center text-sm font-bold text-text dark:text-text-light">
+                <div
+                    className={`absolute inset-0 flex items-center justify-center text-sm font-bold ${textColor ?? "text-text dark:text-text-light"}`}
+                >
                     {value.toFixed(decimals)}{unit}
                 </div>
             </div>
