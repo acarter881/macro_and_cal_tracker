@@ -191,3 +191,43 @@ def test_negative_quantity_rejected():
 
         resp_update_neg = client.patch(f'/api/entries/{entry_id}', json={'quantity_g': -5})
         assert resp_update_neg.status_code == 422
+
+
+def test_delete_middle_entry_reorders():
+    engine = get_test_engine()
+    db.engine = engine
+    app.app.dependency_overrides[db.get_session] = override_get_session(engine)
+
+    with TestClient(app.app) as client:
+        SQLModel.metadata.create_all(engine)
+        with Session(engine) as session:
+            food = Food(
+                fdc_id=1,
+                description='Test Food',
+                kcal_per_100g=100,
+                protein_g_per_100g=10,
+                carb_g_per_100g=5,
+                fat_g_per_100g=2,
+            )
+            meal = Meal(date=date(2024, 1, 1).isoformat(), name='Meal 1', sort_order=1)
+            session.add(food)
+            session.add(meal)
+            session.commit()
+            meal_id = meal.id
+
+        entry_ids = []
+        for qty in (100, 200, 300, 400):
+            resp = client.post('/api/entries', json={'meal_id': meal_id, 'fdc_id': 1, 'quantity_g': qty})
+            assert resp.status_code == 200
+            entry_ids.append(resp.json()['id'])
+
+        # delete the third entry (currently sort_order 3)
+        resp_del = client.delete(f'/api/entries/{entry_ids[2]}')
+        assert resp_del.status_code == 200
+
+        day = date(2024, 1, 1).isoformat()
+        resp_day = client.get(f'/api/days/{day}')
+        assert resp_day.status_code == 200
+        data = resp_day.json()
+        # remaining entries should have sequential sort_orders
+        assert [e['sort_order'] for e in data['entries']] == [1, 2, 3]
