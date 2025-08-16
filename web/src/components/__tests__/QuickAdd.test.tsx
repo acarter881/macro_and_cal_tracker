@@ -14,6 +14,7 @@ describe('QuickAdd', () => {
     mockStore.favorites = [];
     mockStore.addFood = vi.fn();
     mockStore.mealName = 'Breakfast';
+    mockStore.allMyFoods = [];
   });
 
   afterEach(() => {
@@ -55,6 +56,20 @@ describe('QuickAdd', () => {
     fireEvent.change(input, { target: { value: '2' } });
     fireEvent.click(screen.getByRole('button', { name: /ok/i }));
     expect(mockStore.addFood).toHaveBeenCalledWith(3, 2);
+  });
+
+  test('falls back to allMyFoods for unit', () => {
+    mockStore.allMyFoods = [
+      { fdcId: 4, description: 'Fish Oil', unit_name: 'softgel' },
+    ];
+    mockStore.favorites = [
+      { fdcId: 4, description: 'Fish Oil' },
+    ];
+    mockStore.mealName = 'Snack';
+    render(<QuickAdd />);
+    fireEvent.click(screen.getByRole('button', { name: /fish oil/i }));
+    const dialog = screen.getByRole('dialog');
+    expect(dialog).toHaveTextContent('Add to Snack: How many softgel of Fish Oil?');
   });
 
   test('still triggers addFood when offline', () => {

@@ -8,12 +8,16 @@ export function QuickAdd() {
   const addFood = useStore(s => s.addFood);
   const favorites = useStore(s => s.favorites);
   const mealName = useStore(s => s.mealName);
+  const allMyFoods = useStore(s => s.allMyFoods);
   const [current, setCurrent] = useState<SimpleFood | null>(null);
   const [qty, setQty] = useState("0");
   if (!favorites.length) return null;
 
   function handleClick(f: SimpleFood) {
-    const unit = f.unit_name || (f as any).unitName;
+    const unit =
+      f.unit_name ||
+      (f as any).unitName ||
+      allMyFoods.find(food => food.fdcId === f.fdcId)?.unit_name;
     const defaultAmount = f.defaultGrams ?? (unit ? 1 : 100);
     setQty(String(defaultAmount));
     setCurrent({ ...f, unit_name: unit });
