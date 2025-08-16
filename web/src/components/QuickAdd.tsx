@@ -13,9 +13,10 @@ export function QuickAdd() {
   if (!favorites.length) return null;
 
   function handleClick(f: SimpleFood) {
-    const defaultAmount = f.defaultGrams ?? (f.unit_name ? 1 : 100);
+    const unit = f.unit_name || (f as any).unitName;
+    const defaultAmount = f.defaultGrams ?? (unit ? 1 : 100);
     setQty(String(defaultAmount));
-    setCurrent(f);
+    setCurrent({ ...f, unit_name: unit });
   }
 
   function submit() {

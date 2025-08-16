@@ -42,8 +42,9 @@ describe('QuickAdd', () => {
   });
 
   test('uses custom unit in dialog', () => {
+    // Simulate legacy data where the unit was stored as `unitName`
     mockStore.favorites = [
-      { fdcId: 3, description: 'Fish Oil', unit_name: 'softgel', defaultGrams: 1 },
+      { fdcId: 3, description: 'Fish Oil', unitName: 'softgel', defaultGrams: 1 },
     ];
     mockStore.mealName = 'Dinner';
     render(<QuickAdd />);
