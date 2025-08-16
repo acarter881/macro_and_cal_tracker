@@ -50,6 +50,15 @@ For production, specify the permitted domains:
 export ALLOWED_ORIGINS=https://example.com,https://app.example.com
 ```
 
+Configuration endpoints require an authentication token. Set
+`CONFIG_AUTH_TOKEN` and include the same value in the `X-Config-Token`
+header when calling `/api/config/usda-key`:
+
+```
+export CONFIG_AUTH_TOKEN=secret-token
+curl -H "X-Config-Token: secret-token" http://localhost:8000/api/config/usda-key
+```
+
 ## Keyboard Shortcuts
 
 The application supports a few global shortcuts:
