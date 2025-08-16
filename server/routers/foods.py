@@ -1,5 +1,6 @@
 from typing import Optional, List
 
+import logging
 import httpx
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select, delete
@@ -9,6 +10,8 @@ from pydantic import BaseModel, field_validator
 from server.db import get_session
 from server.models import Food, FoodEntry, Favorite
 from server import utils
+
+logger = logging.getLogger(__name__)
 
 USDA_BASE = utils.USDA_BASE
 fetch_food_detail = utils.fetch_food_detail
@@ -63,7 +66,7 @@ async def foods_get(fdc_id: int, session: Session = Depends(get_session), refres
             abr = resp.json()[0]
         abr_fn = abr.get("foodNutrients") or []
     except Exception as e:
-        print(f"⚠️  Abridged fetch failed ({e}), falling back to full foodNutrients")
+        logger.warning("Abridged fetch failed (%s), falling back to full foodNutrients", e)
         abr_fn = []
     full_fn = data.get("foodNutrients") or []
     fn = abr_fn if abr_fn else full_fn
