@@ -16,6 +16,7 @@ type Theme = 'light' | 'dark';
 
 interface AppState {
   copiedMealId: number | null;
+  copiedEntry: EntryType | null;
   theme: Theme;
   date: string;
   mealName: string;
@@ -35,6 +36,8 @@ interface AppState {
 interface AppActions {
   copyMeal: (mealId: number) => void;
   pasteMeal: () => Promise<void>;
+  copyEntry: (entry: EntryType) => void;
+  pasteEntry: () => Promise<void>;
   toggleTheme: () => void;
   focusSearch: () => void;
   init: () => Promise<void>;
@@ -159,6 +162,7 @@ const initialDate = new Date().toISOString().slice(0, 10);
 
 export const useStore = create<AppState & AppActions>((set, get) => ({
   copiedMealId: null,
+  copiedEntry: null,
   theme: getInitialTheme(),
   date: initialDate,
   mealName: "Meal 1",
@@ -189,6 +193,51 @@ export const useStore = create<AppState & AppActions>((set, get) => ({
     await promise;
     set({ copiedMealId: null });
     await get().fetchDay();
+  },
+
+  copyEntry: (entry: EntryType) => {
+    set({ copiedEntry: entry });
+    toast.success('Entry copied!');
+  },
+
+  pasteEntry: async () => {
+    const entry = get().copiedEntry;
+    const state = get();
+    if (!entry || !state.day) return;
+    let meal = state.day.meals.find(m => m.name === state.mealName);
+    if (!meal) {
+      const newMeal = await api.createMeal(state.date);
+      meal = { ...newMeal, entries: [], subtotal: { kcal: 0, protein: 0, fat: 0, carb: 0 } };
+      state.day.meals.push(meal);
+    }
+    const promise = api.addEntry(meal.id, entry.fdc_id!, entry.quantity_g);
+    toast.promise(promise, {
+      loading: 'Pasting entry...',
+      success: 'Entry pasted successfully!',
+      error: 'Failed to paste entry.',
+    });
+    const res = await promise;
+    const sortOrder = res?.sort_order ?? (meal.entries[meal.entries.length - 1]?.sort_order ?? 0) + 1;
+    const newEntry: EntryType = {
+      ...entry,
+      id: res?.id ?? entry.id,
+      sort_order: sortOrder,
+    };
+    meal.entries.push(newEntry);
+    meal.entries.sort((a, b) => a.sort_order - b.sort_order);
+    meal.subtotal = applyDelta(meal.subtotal, {
+      kcal: entry.kcal,
+      protein: entry.protein,
+      fat: entry.fat,
+      carb: entry.carb,
+    });
+    state.day.totals = applyDelta(state.day.totals, {
+      kcal: entry.kcal,
+      protein: entry.protein,
+      fat: entry.fat,
+      carb: entry.carb,
+    });
+    set({ day: { ...state.day }, copiedEntry: null });
   },
 
   toggleTheme: () => {
