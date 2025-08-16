@@ -26,6 +26,10 @@ interface AppState {
   presets: Preset[];
   weight: number | null;
   goals: Goals;
+  /** Information about the most recently deleted entry for undo. */
+  lastDeleted: { mealId: number; entry: EntryType; index: number } | null;
+  /** Information about the last undone deletion for redo. */
+  redoDeleted: { mealId: number; entry: EntryType; index: number } | null;
 }
 
 interface AppActions {
@@ -41,6 +45,8 @@ interface AppActions {
   updateEntry: (entryId: number, grams: number) => Promise<void>;
   moveEntry: (entryId: number, newOrder: number) => Promise<void>;
   deleteEntry: (entryId: number) => Promise<void>;
+  undo: () => Promise<void>;
+  redo: () => Promise<void>;
   addMeal: () => Promise<void>;
   deleteMeal: (mealId: number) => Promise<void>;
   renameMeal: (mealId: number, newName: string) => Promise<void>;
@@ -162,6 +168,8 @@ export const useStore = create<AppState & AppActions>((set, get) => ({
   presets: [],
   weight: null,
   goals: getGoalsForDate(initialDate),
+  lastDeleted: null,
+  redoDeleted: null,
 
   copyMeal: (mealId: number) => {
     set({ copiedMealId: mealId });
@@ -285,6 +293,7 @@ export const useStore = create<AppState & AppActions>((set, get) => ({
         carb: macros.carb,
         fat: macros.fat,
         sort_order: entryRes.sort_order,
+        fdc_id: foodId,
         unit_name: food.unit_name,
       };
       meal.entries.push(newEntry);
@@ -377,6 +386,7 @@ export const useStore = create<AppState & AppActions>((set, get) => ({
     set((state) => {
       const day = state.day;
       if (!day) return {};
+      let deleted: { mealId: number; entry: EntryType; index: number } | null = null;
       for (const meal of day.meals) {
         const idx = meal.entries.findIndex(e => e.id === entryId);
         if (idx >= 0) {
@@ -384,12 +394,55 @@ export const useStore = create<AppState & AppActions>((set, get) => ({
           meal.entries.splice(idx, 1);
           meal.entries.forEach((e, i) => { e.sort_order = i + 1; });
           const delta = { kcal: -entry.kcal, protein: -entry.protein, fat: -entry.fat, carb: -entry.carb };
-          meal.subtotal = applyDelta(meal.subtotal, delta);
-          day.totals = applyDelta(day.totals, delta);
+          applyDelta(meal.subtotal, delta);
+          applyDelta(day.totals, delta);
+          deleted = { mealId: meal.id, entry, index: idx };
           break;
         }
       }
-      return { day };
+      return { day, lastDeleted: deleted, redoDeleted: null };
+    });
+  },
+
+  undo: async () => {
+    const info = get().lastDeleted;
+    if (!info) return;
+    const { mealId, entry, index } = info;
+    const res = await api.addEntry(mealId, entry.fdc_id || 0, entry.quantity_g);
+    set((state) => {
+      const day = state.day;
+      if (!day) return {};
+      const meal = day.meals.find(m => m.id === mealId);
+      if (!meal) return {};
+      const newEntry = { ...entry, id: res.id, sort_order: res.sort_order };
+      meal.entries.splice(index, 0, newEntry);
+      meal.entries.forEach((e, i) => { e.sort_order = i + 1; });
+      const delta = { kcal: entry.kcal, protein: entry.protein, fat: entry.fat, carb: entry.carb };
+      applyDelta(meal.subtotal, delta);
+      applyDelta(day.totals, delta);
+      return { day, lastDeleted: null, redoDeleted: { mealId, entry: newEntry, index } };
+    });
+  },
+
+  redo: async () => {
+    const info = get().redoDeleted;
+    if (!info) return;
+    const { mealId, entry, index } = info;
+    await api.deleteEntry(entry.id);
+    set((state) => {
+      const day = state.day;
+      if (!day) return {};
+      const meal = day.meals.find(m => m.id === mealId);
+      if (!meal) return {};
+      const idx = meal.entries.findIndex(e => e.id === entry.id);
+      if (idx >= 0) {
+        meal.entries.splice(idx, 1);
+        meal.entries.forEach((e, i) => { e.sort_order = i + 1; });
+        const delta = { kcal: -entry.kcal, protein: -entry.protein, fat: -entry.fat, carb: -entry.carb };
+        applyDelta(meal.subtotal, delta);
+        applyDelta(day.totals, delta);
+      }
+      return { day, lastDeleted: { mealId, entry, index }, redoDeleted: null };
     });
   },
   

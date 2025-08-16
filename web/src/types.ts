@@ -37,6 +37,11 @@ export interface EntryType {
   carb: number;
   fat: number;
   sort_order: number;
+  /**
+   * Identifier of the underlying food item.  This is needed for actions like
+   * undoing a deletion where we must recreate the entry via the API.
+   */
+  fdc_id?: number;
   unit_name?: string;
 }
 

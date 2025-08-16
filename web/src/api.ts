@@ -254,6 +254,7 @@ export async function addEntry(meal_id: number, fdc_id: number, quantity_g: numb
         carb: 0,
         fat: 0,
         sort_order: meal.entries.length,
+        fdc_id,
       };
       meal.entries.push(entry);
       cacheDay(day.date, day);
