@@ -5,7 +5,7 @@ import httpx
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select, delete
 from sqlalchemy import func
-from pydantic import BaseModel, field_validator, model_validator
+from pydantic import BaseModel, field_validator, model_validator, ConfigDict, Field
 
 from server.db import get_session
 from server.models import Food, FoodEntry, Favorite
@@ -293,7 +293,34 @@ class CustomFoodUpdate(BaseModel):
     carb_g_per_unit: Optional[float] = None
     fat_g_per_unit: Optional[float] = None
 
-@router.post("/api/custom_foods")
+
+class CustomFoodOut(BaseModel):
+    fdc_id: int
+    description: str
+    brand_owner: Optional[str] = None
+    data_type: Optional[str] = None
+    kcal_per_100g: float
+    protein_g_per_100g: float
+    carb_g_per_100g: float
+    fat_g_per_100g: float
+    unit_name: Optional[str] = None
+    kcal_per_unit: Optional[float] = None
+    protein_g_per_unit: Optional[float] = None
+    carb_g_per_unit: Optional[float] = None
+    fat_g_per_unit: Optional[float] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class CustomFoodSearchResult(BaseModel):
+    fdc_id: int = Field(alias="fdcId")
+    description: str
+    brand_owner: Optional[str] = Field(default=None, alias="brandOwner")
+    data_type: Optional[str] = Field(default=None, alias="dataType")
+
+    model_config = ConfigDict(populate_by_name=True)
+
+@router.post("/api/custom_foods", response_model=CustomFoodOut)
 def create_custom_food(body: CustomFoodIn, session: Session = Depends(get_session)):
     desc = body.description.strip()
     brand = (body.brand_owner or "").strip() or None
@@ -320,14 +347,27 @@ def create_custom_food(body: CustomFoodIn, session: Session = Depends(get_sessio
     session.refresh(f)
     return f
 
-@router.get("/api/custom_foods/search")
+@router.get("/api/custom_foods/search", response_model=List[CustomFoodSearchResult])
 def search_custom_foods(q: str, session: Session = Depends(get_session)):
     q_like = f"%{q.strip()}%"
     rows = session.exec(
-        select(Food).where(Food.data_type == "Custom", Food.archived == False, Food.description.ilike(q_like))
-        .order_by(Food.description).limit(50)
+        select(Food).where(
+            Food.data_type == "Custom",
+            Food.archived == False,
+            Food.description.ilike(q_like),
+        )
+        .order_by(Food.description)
+        .limit(50)
     ).all()
-    return [{"fdcId": r.fdc_id, "description": r.description, "brandOwner": r.brand_owner, "dataType": r.data_type} for r in rows]
+    return [
+        CustomFoodSearchResult(
+            fdc_id=r.fdc_id,
+            description=r.description,
+            brand_owner=r.brand_owner,
+            data_type=r.data_type,
+        )
+        for r in rows
+    ]
 
 @router.patch("/api/custom_foods/{fdc_id}")
 def update_custom_food(fdc_id: int, payload: CustomFoodUpdate, session: Session = Depends(get_session)):
@@ -360,7 +400,19 @@ def delete_custom_food(fdc_id: int, session: Session = Depends(get_session)):
     session.commit()
     return {"ok": True}
 
-@router.get("/api/my_foods")
+@router.get("/api/my_foods", response_model=List[CustomFoodSearchResult])
 def my_foods(session: Session = Depends(get_session)):
-    rows = session.exec(select(Food).where(Food.data_type == "Custom", Food.archived == False).order_by(Food.description)).all()
-    return [{"fdcId": f.fdc_id, "description": f.description, "brandOwner": f.brand_owner, "dataType": f.data_type or "Custom"} for f in rows]
+    rows = session.exec(
+        select(Food)
+        .where(Food.data_type == "Custom", Food.archived == False)
+        .order_by(Food.description)
+    ).all()
+    return [
+        CustomFoodSearchResult(
+            fdc_id=f.fdc_id,
+            description=f.description,
+            brand_owner=f.brand_owner,
+            data_type=f.data_type or "Custom",
+        )
+        for f in rows
+    ]
