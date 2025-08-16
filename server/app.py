@@ -11,6 +11,7 @@ from sqlmodel import SQLModel
 from server.db import get_engine
 from server.routers import foods, meals, presets, history, weight, config
 from server.run_migrations import run_migrations
+from server import utils
 
 logging.basicConfig(level=logging.INFO)
 
@@ -25,6 +26,8 @@ async def lifespan(app: FastAPI):
     except asyncio.CancelledError:
         # Swallow cancellation so reloads or Ctrl+C don't raise a stack trace
         pass
+    finally:
+        await utils.aclose_usda_client()
 
 
 allowed_origins_raw = os.getenv("ALLOWED_ORIGINS")
