@@ -1,4 +1,5 @@
 from typing import Optional, List, Dict
+from datetime import date
 import csv
 import io
 
@@ -14,7 +15,7 @@ from server.utils import get_or_create_meal, ensure_food_cached
 router = APIRouter()
 
 class MealCreate(BaseModel):
-    date: str
+    date: date
 
 class MealUpdate(BaseModel):
     name: Optional[str] = None
@@ -34,12 +35,13 @@ class FoodEntryCreate(BaseModel):
 
 @router.post("/api/meals", response_model=Meal)
 def create_meal(payload: MealCreate, session: Session = Depends(get_session)):
+    date_str = payload.date.isoformat()
     max_sort_order = session.exec(
-        select(func.max(Meal.sort_order)).where(Meal.date == payload.date)
+        select(func.max(Meal.sort_order)).where(Meal.date == date_str)
     ).first() or 0
     new_order = max_sort_order + 1
     new_name = f"Meal {new_order}"
-    db_meal = Meal(date=payload.date, name=new_name, sort_order=new_order)
+    db_meal = Meal(date=date_str, name=new_name, sort_order=new_order)
     session.add(db_meal)
     session.commit()
     session.refresh(db_meal)
@@ -132,8 +134,9 @@ def _scaled_from_food(f: Food, grams: float):
     )
 
 @router.get("/api/days/{date}")
-def get_day(date: str, session: Session = Depends(get_session)):
-    meals = session.exec(select(Meal).where(Meal.date == date)).all()
+def get_day(date: date, session: Session = Depends(get_session)):
+    date_str = date.isoformat()
+    meals = session.exec(select(Meal).where(Meal.date == date_str)).all()
     meal_ids = [m.id for m in meals]
     if not meal_ids:
         return {"meals": [], "entries": [], "totals": {"kcal": 0, "protein": 0, "fat": 0, "carb": 0}}
@@ -239,11 +242,12 @@ def delete_entry(entry_id: int, session: Session = Depends(get_session)):
     return {"ok": True}
 
 @router.get("/api/days/{date}/full")
-async def get_day_full(date: str, session: Session = Depends(get_session)):
-    meals = session.exec(select(Meal).where(Meal.date == date).order_by(Meal.sort_order)).all()
+async def get_day_full(date: date, session: Session = Depends(get_session)):
+    date_str = date.isoformat()
+    meals = session.exec(select(Meal).where(Meal.date == date_str).order_by(Meal.sort_order)).all()
     meal_ids = [m.id for m in meals]
     if not meal_ids:
-        return {"date": date, "meals": [], "totals": {"kcal": 0, "protein": 0, "fat": 0, "carb": 0}}
+        return {"date": date_str, "meals": [], "totals": {"kcal": 0, "protein": 0, "fat": 0, "carb": 0}}
     entries = session.exec(
         select(FoodEntry).where(FoodEntry.meal_id.in_(meal_ids)).order_by(FoodEntry.sort_order)
     ).all()
@@ -276,13 +280,15 @@ async def get_day_full(date: str, session: Session = Depends(get_session)):
             totals[k] += sub[k]
         meals_out.append({"id": m.id, "name": m.name, "date": m.date, "sort_order": m.sort_order,
                           "entries": m_entries, "subtotal": {k: round(v, 2) for k, v in sub.items()}})
-    return {"date": date, "meals": meals_out, "totals": {k: round(v, 2) for k, v in totals.items()}}
+    return {"date": date_str, "meals": meals_out, "totals": {k: round(v, 2) for k, v in totals.items()}}
 
 @router.get("/api/export")
-def export_csv(start: str = Query(..., description="YYYY-MM-DD"),
-               end: str   = Query(..., description="YYYY-MM-DD"),
+def export_csv(start: date = Query(..., description="YYYY-MM-DD"),
+               end: date = Query(..., description="YYYY-MM-DD"),
                session: Session = Depends(get_session)):
-    meals = session.exec(select(Meal).where(Meal.date >= start, Meal.date <= end)).all()
+    start_str = start.isoformat()
+    end_str = end.isoformat()
+    meals = session.exec(select(Meal).where(Meal.date >= start_str, Meal.date <= end_str)).all()
     if not meals:
         return Response(content="date,meal,item,grams,kcal,protein,carb,fat\n", media_type="text/csv")
     meals_by_id = {m.id: m for m in meals}
@@ -303,7 +309,7 @@ def export_csv(start: str = Query(..., description="YYYY-MM-DD"),
         w.writerow([meals_by_id[e.meal_id].date, meals_by_id[e.meal_id].name, f.description, e.quantity_g,
                     kcal, p, c, fat])
     csv_bytes = buf.getvalue().encode("utf-8")
-    filename = f"macro_export_{start}_to_{end}.csv"
+    filename = f"macro_export_{start_str}_to_{end_str}.csv"
     return Response(content=csv_bytes, media_type="text/csv",
                     headers={"Content-Disposition": f'attachment; filename="{filename}"'})
 
@@ -337,7 +343,7 @@ async def delete_meal(meal_id: int, session: Session = Depends(get_session)):
     return {"deleted": True}
 
 class CopyToMealPayload(BaseModel):
-    date: str
+    date: date
     meal_name: str
 
 @router.post("/api/meals/{source_meal_id}/copy_to", status_code=201)

@@ -2,6 +2,7 @@ import os
 
 os.environ['USDA_KEY'] = 'test'
 
+from datetime import date
 from fastapi.testclient import TestClient
 from sqlmodel import SQLModel, Session, create_engine
 from sqlalchemy.pool import StaticPool
@@ -42,19 +43,25 @@ def test_history_returns_macros_and_weight():
                 fat_g_per_100g=2,
             )
             session.add(food)
-            meal1 = Meal(date='2024-01-01', name='Meal 1', sort_order=1)
-            meal2 = Meal(date='2024-01-02', name='Meal 1', sort_order=1)
+            meal1 = Meal(date=date(2024, 1, 1).isoformat(), name='Meal 1', sort_order=1)
+            meal2 = Meal(date=date(2024, 1, 2).isoformat(), name='Meal 1', sort_order=1)
             session.add_all([meal1, meal2])
             session.commit()
             e1 = FoodEntry(meal_id=meal1.id, fdc_id=1, quantity_g=100, sort_order=1)
             e2 = FoodEntry(meal_id=meal2.id, fdc_id=1, quantity_g=200, sort_order=1)
             session.add_all([e1, e2])
-            w1 = BodyWeight(date='2024-01-01', weight=180)
-            w2 = BodyWeight(date='2024-01-02', weight=181)
+            w1 = BodyWeight(date=date(2024, 1, 1).isoformat(), weight=180)
+            w2 = BodyWeight(date=date(2024, 1, 2).isoformat(), weight=181)
             session.add_all([w1, w2])
             session.commit()
 
-        resp = client.get('/api/history', params={'start_date': '2024-01-01', 'end_date': '2024-01-02'})
+        resp = client.get(
+            '/api/history',
+            params={
+                'start_date': date(2024, 1, 1).isoformat(),
+                'end_date': date(2024, 1, 2).isoformat(),
+            },
+        )
         assert resp.status_code == 200
         data = resp.json()
         assert data == [

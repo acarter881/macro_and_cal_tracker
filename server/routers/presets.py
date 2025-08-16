@@ -1,4 +1,5 @@
 from typing import List
+from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select, delete
@@ -21,11 +22,11 @@ class PresetCreate(BaseModel):
 
 class PresetFromMeal(BaseModel):
     name: str
-    date: str
+    date: date
     meal_name: str
 
 class PresetApply(BaseModel):
-    date: str
+    date: date
     meal_name: str
     multiplier: float | None = 1.0
 
@@ -71,7 +72,8 @@ def create_preset(payload: PresetCreate, session: Session = Depends(get_session)
 
 @router.post("/api/presets/from_meal")
 def create_preset_from_meal(payload: PresetFromMeal, session: Session = Depends(get_session)):
-    m = session.exec(select(Meal).where(Meal.date == payload.date, Meal.name == payload.meal_name)).first()
+    date_str = payload.date.isoformat()
+    m = session.exec(select(Meal).where(Meal.date == date_str, Meal.name == payload.meal_name)).first()
     if not m:
         raise HTTPException(status_code=404, detail="Meal not found")
     entries = session.exec(select(FoodEntry).where(FoodEntry.meal_id == m.id)).all()
