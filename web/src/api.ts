@@ -118,6 +118,11 @@ const api = axios.create({
   baseURL: `${inferredBase}/api`,
 });
 
+const configAuthToken = import.meta.env.VITE_CONFIG_AUTH_TOKEN;
+const configHeaders = configAuthToken
+  ? { "X-Config-Token": configAuthToken }
+  : undefined;
+
 class ApiError extends Error {
   constructor(message: string) {
     super(message);
@@ -395,12 +400,16 @@ export async function setWeight(date: string, weight: number) {
 
 // --- Configuration ---
 export async function getUsdaKey(): Promise<string | null> {
-  const response = await api.get("/config/usda-key");
+  const response = await api.get("/config/usda-key", { headers: configHeaders });
   return response.data.key || null;
 }
 
 export async function updateUsdaKey(key: string) {
-  const response = await api.post("/config/usda-key", { key });
+  const response = await api.post(
+    "/config/usda-key",
+    { key },
+    { headers: configHeaders }
+  );
   return response.data;
 }
 
