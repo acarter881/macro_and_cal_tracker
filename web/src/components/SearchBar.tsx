@@ -121,6 +121,22 @@ export function SearchBar() {
     }
   }
 
+  // Determine the currently selected food from either search results or custom foods
+  const selectedFood = useMemo(
+    () => [...results, ...allMyFoods].find(f => f.fdcId === selected) || null,
+    [results, allMyFoods, selected]
+  );
+
+  // If the selected food provides a default quantity, use it
+  useEffect(() => {
+    if (selectedFood?.defaultGrams) setGrams(selectedFood.defaultGrams);
+  }, [selectedFood]);
+
+  // Label to display for the quantity input
+  const quantityLabel = selectedFood?.unit_name
+    ? selectedFood.unit_name.charAt(0).toUpperCase() + selectedFood.unit_name.slice(1)
+    : 'Grams';
+
   const idQuery = "search-query";
   const idTypeFilter = "type-filter";
   const idUnbranded = "unbranded-first";
@@ -245,7 +261,7 @@ export function SearchBar() {
           </ul>
         </div>
       <div className="flex items-center gap-2">
-        <label htmlFor={idGrams} className="text-sm">Grams</label>
+        <label htmlFor={idGrams} className="text-sm">{quantityLabel}</label>
         <Input id={idGrams} className="w-24" type="number" min={1} step={1} value={grams} onChange={e => setGrams(parseFloat(e.target.value))} />
         <Button className="btn-primary w-full" onClick={() => handleAddSelectedFood()} disabled={!selected || isAddingFood}>
           {isAddingFood ? 'Adding…' : `Add to ${mealName}`}
