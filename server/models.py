@@ -1,4 +1,5 @@
 from typing import Optional
+from datetime import datetime
 from sqlmodel import SQLModel, Field, Column
 from sqlalchemy import Boolean, UniqueConstraint
 
@@ -13,6 +14,7 @@ class Food(SQLModel, table=True):
     fat_g_per_100g: float
     carb_g_per_100g: float
     archived: bool = Field(default=False, sa_column=Column(Boolean, nullable=False, server_default="0"))
+    fetched_at: datetime = Field(default_factory=datetime.utcnow)
 
 class Meal(SQLModel, table=True):
     __table_args__ = (UniqueConstraint("date", "sort_order", name="uq_meal_date_sort_order"),)
