@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import toast from 'react-hot-toast';
 import * as api from "../../api";
 import { Button } from "../ui/Button";
@@ -13,6 +13,11 @@ export function ExportTab() {
   const [exportStart, setExportStart] = useState<string>(defaultStart);
   const [exportEnd, setExportEnd] = useState<string>(today);
   const [isExporting, setIsExporting] = useState(false);
+
+  useEffect(() => {
+    setExportStart(selectedDate > today ? today : selectedDate);
+  }, [selectedDate, today]);
+
   const invalidRange = !exportStart || !exportEnd || exportStart > exportEnd;
 
   async function handleExport() {
