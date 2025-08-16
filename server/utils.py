@@ -38,6 +38,26 @@ _config = _load_config()
 # USDA_KEY is loaded from config file first, then environment
 USDA_KEY = _config.get("usda_key") or os.getenv("USDA_KEY")
 
+_usda_client: Optional[httpx.AsyncClient] = None
+
+
+async def get_usda_client() -> httpx.AsyncClient:
+    """Return a shared AsyncClient for USDA requests."""
+    global _usda_client
+    if _usda_client is None:
+        _usda_client = httpx.AsyncClient(
+            timeout=20.0, headers={"Accept": "application/json"}
+        )
+    return _usda_client
+
+
+async def aclose_usda_client() -> None:
+    """Close the shared USDA AsyncClient if it exists."""
+    global _usda_client
+    if _usda_client is not None:
+        await _usda_client.aclose()
+        _usda_client = None
+
 def update_usda_key(new_key: str) -> None:
     """Persist a new USDA API key and update global reference."""
     global USDA_KEY, _config
@@ -186,20 +206,20 @@ async def fetch_food_detail(fdc_id: int) -> dict:
         httpx.ReadTimeout, httpx.ConnectTimeout, httpx.ReadError,
         httpx.RemoteProtocolError, httpx.ConnectError, httpx.NetworkError,
     )
-    async with httpx.AsyncClient(timeout=20.0, headers={"Accept": "application/json"}) as client:
-        for attempt in range(3):
-            try:
-                r = await client.get(url, params=params)
-                if r.status_code == 200:
-                    try:
-                        return r.json()
-                    except Exception as e:
-                        raise HTTPException(status_code=502, detail=f"USDA JSON decode error: {e!s}")
-                raise HTTPException(status_code=r.status_code, detail=f"USDA error {r.status_code}: {r.text[:400]}")
-            except exceptions_to_retry as e:
-                if attempt == 2:
-                    raise HTTPException(status_code=502, detail=f"USDA network error: {e!s}")
-                await asyncio.sleep(0.4 * (attempt + 1))
+    client = await get_usda_client()
+    for attempt in range(3):
+        try:
+            r = await client.get(url, params=params)
+            if r.status_code == 200:
+                try:
+                    return r.json()
+                except Exception as e:
+                    raise HTTPException(status_code=502, detail=f"USDA JSON decode error: {e!s}")
+            raise HTTPException(status_code=r.status_code, detail=f"USDA error {r.status_code}: {r.text[:400]}")
+        except exceptions_to_retry as e:
+            if attempt == 2:
+                raise HTTPException(status_code=502, detail=f"USDA network error: {e!s}")
+            await asyncio.sleep(0.4 * (attempt + 1))
 
 async def ensure_food_cached(fdc_id: int, session: Session) -> Food:
     food = session.get(Food, fdc_id)
