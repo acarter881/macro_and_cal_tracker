@@ -30,32 +30,30 @@ describe('QuickAdd', () => {
       { fdcId: 1, description: 'Apple', defaultGrams: 150 },
     ];
     mockStore.mealName = 'Lunch';
-    const promptSpy = vi.spyOn(window, 'prompt').mockReturnValue('175');
     render(<QuickAdd />);
-    const btn = screen.getByRole('button', { name: /apple/i });
-    fireEvent.click(btn);
-    expect(promptSpy).toHaveBeenCalledWith(
-      'Add to Lunch: How many grams of Apple?',
-      '150'
-    );
+    fireEvent.click(screen.getByRole('button', { name: /apple/i }));
+    const dialog = screen.getByRole('dialog');
+    expect(dialog).toHaveTextContent('Add to Lunch: How many grams of Apple?');
+    const input = screen.getByRole('spinbutton') as HTMLInputElement;
+    expect(input.value).toBe('150');
+    fireEvent.change(input, { target: { value: '175' } });
+    fireEvent.click(screen.getByRole('button', { name: /ok/i }));
     expect(mockStore.addFood).toHaveBeenCalledWith(1, 175);
-    promptSpy.mockRestore();
   });
 
-  test('uses custom unit in prompt', () => {
+  test('uses custom unit in dialog', () => {
     mockStore.favorites = [
       { fdcId: 3, description: 'Fish Oil', unit_name: 'softgel', defaultGrams: 1 },
     ];
     mockStore.mealName = 'Dinner';
-    const promptSpy = vi.spyOn(window, 'prompt').mockReturnValue('2');
     render(<QuickAdd />);
     fireEvent.click(screen.getByRole('button', { name: /fish oil/i }));
-    expect(promptSpy).toHaveBeenCalledWith(
-      'Add to Dinner: How many softgel of Fish Oil?',
-      '1'
-    );
+    const dialog = screen.getByRole('dialog');
+    expect(dialog).toHaveTextContent('Add to Dinner: How many softgel of Fish Oil?');
+    const input = screen.getByRole('spinbutton') as HTMLInputElement;
+    fireEvent.change(input, { target: { value: '2' } });
+    fireEvent.click(screen.getByRole('button', { name: /ok/i }));
     expect(mockStore.addFood).toHaveBeenCalledWith(3, 2);
-    promptSpy.mockRestore();
   });
 
   test('still triggers addFood when offline', () => {
@@ -63,11 +61,12 @@ describe('QuickAdd', () => {
     mockStore.favorites = [
       { fdcId: 2, description: 'Pear', defaultGrams: 100 },
     ];
-    const promptSpy = vi.spyOn(window, 'prompt').mockReturnValue('120');
     render(<QuickAdd />);
     fireEvent.click(screen.getByRole('button', { name: /pear/i }));
+    const input = screen.getByRole('spinbutton') as HTMLInputElement;
+    fireEvent.change(input, { target: { value: '120' } });
+    fireEvent.click(screen.getByRole('button', { name: /ok/i }));
     expect(mockStore.addFood).toHaveBeenCalledWith(2, 120);
-    promptSpy.mockRestore();
     Object.defineProperty(navigator, 'onLine', { value: true, configurable: true });
   });
 });
