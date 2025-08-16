@@ -71,7 +71,9 @@ VITE_CONFIG_AUTH_TOKEN=secret-token npm run build
 The application supports a few global shortcuts:
 
 - `Ctrl+M` — add a new meal.
-- `Ctrl+F` — focus the food search box.
+- `Ctrl+F` or `/` — focus the food search box.
+- `Ctrl+Z` — undo the most recent delete.
+- `Ctrl+Shift+Z` or `Ctrl+Y` — redo the most recent delete.
 - `Ctrl+Shift+L` — toggle between light and dark themes.
 - `?` — show the in-app shortcuts help.
 
