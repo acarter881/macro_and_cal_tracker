@@ -5,7 +5,7 @@ import io
 
 from fastapi import APIRouter, Depends, HTTPException, Response, Query
 from sqlmodel import Session, select
-from sqlalchemy import func, delete
+from sqlalchemy import func, delete, desc
 from pydantic import BaseModel, field_validator
 
 from server.db import get_session
@@ -200,11 +200,12 @@ def update_entry(entry_id: int, payload: EntryUpdate, session: Session = Depends
                     FoodEntry.sort_order >= new_order,
                     FoodEntry.sort_order < old_order,
                 )
-                .order_by(FoodEntry.sort_order)
+                .order_by(desc(FoodEntry.sort_order))
             ).all()
             for item in affected:
                 item.sort_order += 1
                 session.add(item)
+                session.flush()
         elif new_order > old_order:
             affected = session.exec(
                 select(FoodEntry)
@@ -218,6 +219,7 @@ def update_entry(entry_id: int, payload: EntryUpdate, session: Session = Depends
             for item in affected:
                 item.sort_order -= 1
                 session.add(item)
+                session.flush()
         e.sort_order = new_order
     if payload.quantity_g is not None:
         e.quantity_g = float(payload.quantity_g)
