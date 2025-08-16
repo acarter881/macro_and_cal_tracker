@@ -5,7 +5,7 @@ import httpx
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select, delete
 from sqlalchemy import func
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, field_validator, model_validator
 
 from server.db import get_session
 from server.models import Food, FoodEntry, Favorite
@@ -228,10 +228,15 @@ def list_recents(limit: int = 20, session: Session = Depends(get_session)):
 class CustomFoodIn(BaseModel):
     description: str
     brand_owner: str | None = None
-    kcal_per_100g: float
-    protein_g_per_100g: float
-    carb_g_per_100g: float
-    fat_g_per_100g: float
+    kcal_per_100g: Optional[float] = None
+    protein_g_per_100g: Optional[float] = None
+    carb_g_per_100g: Optional[float] = None
+    fat_g_per_100g: Optional[float] = None
+    unit_name: Optional[str] = None
+    kcal_per_unit: Optional[float] = None
+    protein_g_per_unit: Optional[float] = None
+    carb_g_per_unit: Optional[float] = None
+    fat_g_per_unit: Optional[float] = None
 
     @field_validator("description")
     @classmethod
@@ -241,12 +246,33 @@ class CustomFoodIn(BaseModel):
             raise ValueError("Description is required.")
         return v
 
-    @field_validator("kcal_per_100g", "protein_g_per_100g", "carb_g_per_100g", "fat_g_per_100g")
+    @field_validator(
+        "kcal_per_100g",
+        "protein_g_per_100g",
+        "carb_g_per_100g",
+        "fat_g_per_100g",
+        "kcal_per_unit",
+        "protein_g_per_unit",
+        "carb_g_per_unit",
+        "fat_g_per_unit",
+    )
     @classmethod
-    def non_negative(cls, v: float) -> float:
-        if v is None or v < 0:
+    def non_negative(cls, v: Optional[float]) -> Optional[float]:
+        if v is not None and v < 0:
             raise ValueError("Macro values must be ≥ 0.")
-        return float(v)
+        return None if v is None else float(v)
+
+    @model_validator(mode="after")
+    def check_macros(self):
+        if self.unit_name:
+            required = [self.kcal_per_unit, self.protein_g_per_unit, self.carb_g_per_unit, self.fat_g_per_unit]
+            if any(v is None for v in required):
+                raise ValueError("Per-unit macros are required when unit_name is set.")
+        else:
+            required = [self.kcal_per_100g, self.protein_g_per_100g, self.carb_g_per_100g, self.fat_g_per_100g]
+            if any(v is None for v in required):
+                raise ValueError("Macro values per 100g are required.")
+        return self
 
 class CustomFoodUpdate(BaseModel):
     description: Optional[str] = None
@@ -255,6 +281,11 @@ class CustomFoodUpdate(BaseModel):
     protein_g_per_100g: Optional[float] = None
     carb_g_per_100g: Optional[float] = None
     fat_g_per_100g: Optional[float] = None
+    unit_name: Optional[str] = None
+    kcal_per_unit: Optional[float] = None
+    protein_g_per_unit: Optional[float] = None
+    carb_g_per_unit: Optional[float] = None
+    fat_g_per_unit: Optional[float] = None
 
 @router.post("/api/custom_foods")
 def create_custom_food(body: CustomFoodIn, session: Session = Depends(get_session)):
@@ -263,9 +294,19 @@ def create_custom_food(body: CustomFoodIn, session: Session = Depends(get_sessio
     import time
     fdc_id = -int(time.time() * 1000)
     f = Food(
-        fdc_id=fdc_id, description=desc, data_type="Custom", brand_owner=brand,
-        kcal_per_100g=body.kcal_per_100g, protein_g_per_100g=body.protein_g_per_100g,
-        carb_g_per_100g=body.carb_g_per_100g, fat_g_per_100g=body.fat_g_per_100g,
+        fdc_id=fdc_id,
+        description=desc,
+        data_type="Custom",
+        brand_owner=brand,
+        kcal_per_100g=body.kcal_per_100g or 0,
+        protein_g_per_100g=body.protein_g_per_100g or 0,
+        carb_g_per_100g=body.carb_g_per_100g or 0,
+        fat_g_per_100g=body.fat_g_per_100g or 0,
+        unit_name=body.unit_name,
+        kcal_per_unit=body.kcal_per_unit,
+        protein_g_per_unit=body.protein_g_per_unit,
+        carb_g_per_unit=body.carb_g_per_unit,
+        fat_g_per_unit=body.fat_g_per_unit,
         archived=False,
     )
     session.add(f)

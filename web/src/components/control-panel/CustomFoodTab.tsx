@@ -12,6 +12,7 @@ function toSimpleFood(f: any): SimpleFood {
     fdcId: f.fdc_id ?? f.fdcId, description: f.description ?? "",
     brandOwner: f.brand_owner ?? f.brandOwner ?? undefined,
     dataType: f.data_type ?? f.dataType ?? undefined,
+    unit_name: f.unit_name ?? f.unitName ?? undefined,
   };
 }
 
@@ -20,6 +21,11 @@ type CustomFoodFormData = {
   kcal_per_100g: number | ''; protein_g_per_100g: number | ''; carb_g_per_100g: number | ''; fat_g_per_100g: number | '';
   labelKcal: number | ''; labelP: number | ''; labelC: number | ''; labelF: number | ''; servAmt: number | '';
   servUnit: LabelUnit; density: number | '';
+  unitName: string;
+  kcal_per_unit: number | '';
+  protein_g_per_unit: number | '';
+  carb_g_per_unit: number | '';
+  fat_g_per_unit: number | '';
 };
 
 export function CustomFoodTab() {
@@ -29,7 +35,8 @@ export function CustomFoodTab() {
     defaultValues: {
       density: 1, servUnit: 'g', description: '', brand_owner: '',
       kcal_per_100g: '', protein_g_per_100g: '', carb_g_per_100g: '', fat_g_per_100g: '',
-      labelKcal: '', labelP: '', labelC: '', labelF: '', servAmt: ''
+      labelKcal: '', labelP: '', labelC: '', labelF: '', servAmt: '',
+      unitName: '', kcal_per_unit: '', protein_g_per_unit: '', carb_g_per_unit: '', fat_g_per_unit: ''
     }
   });
   const [isCreatingFood, setIsCreatingFood] = useState(false);
@@ -46,6 +53,7 @@ export function CustomFoodTab() {
 
   const watchedConverterFields = watch(["labelKcal", "labelP", "labelC", "labelF", "servAmt", "servUnit", "density"]);
   const servUnit = watch("servUnit");
+  const unitName = watch("unitName");
 
   const labelPer100 = useMemo(() => {
     const [labelKcal, labelP, labelC, labelF, servAmt, servUnit, density] = watchedConverterFields;
@@ -68,7 +76,21 @@ export function CustomFoodTab() {
   const onCreateCustomFood = async (data: CustomFoodFormData) => {
     setIsCreatingFood(true);
     try {
-      const payload = { ...data, kcal_per_100g: Number(data.kcal_per_100g) || 0, protein_g_per_100g: Number(data.protein_g_per_100g) || 0, carb_g_per_100g: Number(data.carb_g_per_100g) || 0, fat_g_per_100g: Number(data.fat_g_per_100g) || 0 };
+      const payload: any = {
+        description: data.description,
+        brand_owner: data.brand_owner || undefined,
+        kcal_per_100g: Number(data.kcal_per_100g) || 0,
+        protein_g_per_100g: Number(data.protein_g_per_100g) || 0,
+        carb_g_per_100g: Number(data.carb_g_per_100g) || 0,
+        fat_g_per_100g: Number(data.fat_g_per_100g) || 0,
+      };
+      if (data.unitName) {
+        payload.unit_name = data.unitName;
+        payload.kcal_per_unit = Number(data.kcal_per_unit) || 0;
+        payload.protein_g_per_unit = Number(data.protein_g_per_unit) || 0;
+        payload.carb_g_per_unit = Number(data.carb_g_per_unit) || 0;
+        payload.fat_g_per_unit = Number(data.fat_g_per_unit) || 0;
+      }
       const created = await api.createCustomFood(payload);
       setAllMyFoods([toSimpleFood(created), ...allMyFoods]);
       reset();
@@ -94,6 +116,7 @@ export function CustomFoodTab() {
     protein: "cf-protein",
     fat: "cf-fat",
     carb: "cf-carb"
+    , unitName: "cf-unitName", kcalPerUnit: "cf-kcalUnit", proteinPerUnit: "cf-proteinUnit", carbPerUnit: "cf-carbUnit", fatPerUnit: "cf-fatUnit"
   } as const;
 
   return (
@@ -183,6 +206,30 @@ export function CustomFoodTab() {
             <Input id={ids.carb} type="number" step={0.01} placeholder="carb g" {...register('carb_g_per_100g', { required: true, valueAsNumber: true, min: 0 })} />
           </div>
         </div>
+        <div>
+          <label htmlFor={ids.unitName} className="sr-only">Unit name</label>
+          <Input id={ids.unitName} placeholder="Unit name (e.g., softgel)" {...register('unitName')} />
+        </div>
+        {unitName && (
+          <div className="grid grid-cols-2 gap-2">
+            <div className="flex flex-col">
+              <label htmlFor={ids.kcalPerUnit} className="sr-only">kcal per unit</label>
+              <Input id={ids.kcalPerUnit} type="number" step={0.01} placeholder="kcal / unit" {...register('kcal_per_unit', { valueAsNumber: true })} />
+            </div>
+            <div className="flex flex-col">
+              <label htmlFor={ids.proteinPerUnit} className="sr-only">protein g per unit</label>
+              <Input id={ids.proteinPerUnit} type="number" step={0.01} placeholder="protein g / unit" {...register('protein_g_per_unit', { valueAsNumber: true })} />
+            </div>
+            <div className="flex flex-col">
+              <label htmlFor={ids.fatPerUnit} className="sr-only">fat g per unit</label>
+              <Input id={ids.fatPerUnit} type="number" step={0.01} placeholder="fat g / unit" {...register('fat_g_per_unit', { valueAsNumber: true })} />
+            </div>
+            <div className="flex flex-col">
+              <label htmlFor={ids.carbPerUnit} className="sr-only">carb g per unit</label>
+              <Input id={ids.carbPerUnit} type="number" step={0.01} placeholder="carb g / unit" {...register('carb_g_per_unit', { valueAsNumber: true })} />
+            </div>
+          </div>
+        )}
         <div className="flex justify-end pt-2">
           <Button type="submit" className="btn-primary" disabled={isCreatingFood || !isValid}>
             {isCreatingFood ? 'Creating...' : 'Create Food'}

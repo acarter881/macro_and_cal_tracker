@@ -212,7 +212,7 @@ function MealCard({ meal, isCurrent, onSelect, onUpdateEntry, onDeleteEntry, onD
           <thead className="hidden sm:table-header-group">
             <tr className="border-b border-border-light dark:border-border-dark">
               <th className="text-left p-3 font-medium">Item</th>
-              <th className="text-right p-3 font-medium">Qty (g)</th>
+              <th className="text-right p-3 font-medium">Qty</th>
               <th className="text-right p-3 font-medium">kcal</th>
               <th className="text-right p-3 font-medium">F</th>
               <th className="text-right p-3 font-medium">C</th>
@@ -318,12 +318,12 @@ function Row({ e, onUpdate, onDelete, provided }: RowProps) {
     >
       <td className="p-2 text-left font-medium block sm:table-cell">{e.description}</td>
       <td className="p-2 flex items-center justify-between sm:table-cell sm:text-right">
-        <span className="sm:hidden mr-2">Qty (g)</span>
+        <span className="sm:hidden mr-2">{`Qty (${e.unit_name || 'g'})`}</span>
         {(() => {
           const id = `entry-${e.id}-qty`;
           return (
             <>
-              <label htmlFor={id} className="sr-only">Quantity in grams</label>
+              <label htmlFor={id} className="sr-only">Quantity in {e.unit_name || 'grams'}</label>
               <Input
                 id={id}
                 className="text-right w-20 py-1"
