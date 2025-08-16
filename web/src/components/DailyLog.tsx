@@ -204,6 +204,7 @@ function MealCard({ meal, isCurrent, onSelect, onUpdateEntry, onDeleteEntry, onD
             <col />
             <col className="w-24" />
             <col className="w-20" />
+            <col className="w-20" />
             <col className="w-16" />
             <col className="w-16" />
             <col className="w-16" />
@@ -213,6 +214,7 @@ function MealCard({ meal, isCurrent, onSelect, onUpdateEntry, onDeleteEntry, onD
             <tr className="border-b border-border-light dark:border-border-dark">
               <th className="text-left p-3 font-medium">Item</th>
               <th className="text-right p-3 font-medium">Qty</th>
+              <th className="text-right p-3 font-medium">Unit</th>
               <th className="text-right p-3 font-medium">kcal</th>
               <th className="text-right p-3 font-medium">F</th>
               <th className="text-right p-3 font-medium">C</th>
@@ -240,7 +242,7 @@ function MealCard({ meal, isCurrent, onSelect, onUpdateEntry, onDeleteEntry, onD
                     ))
                 ) : (
                   <tr className="block sm:table-row">
-                    <td className="p-4 text-text-muted text-center" colSpan={7}>No entries yet.</td>
+                    <td className="p-4 text-text-muted text-center" colSpan={8}>No entries yet.</td>
                   </tr>
                 )}
                 {providedEntries.placeholder}
@@ -249,7 +251,7 @@ function MealCard({ meal, isCurrent, onSelect, onUpdateEntry, onDeleteEntry, onD
           </Droppable>
           <tfoot className="block sm:table-footer-group">
             <tr className="font-semibold border-t-2 border-border-light dark:border-border-dark block sm:table-row">
-                <td className="p-3 flex justify-between sm:table-cell sm:text-right" colSpan={2}>
+                <td className="p-3 flex justify-between sm:table-cell sm:text-right" colSpan={3}>
                   <span className="sm:hidden">Subtotal</span>
                 </td>
                 <td className="p-3 subtotal-kcal flex justify-between sm:table-cell sm:text-right">
@@ -318,7 +320,7 @@ function Row({ e, onUpdate, onDelete, provided }: RowProps) {
     >
       <td className="p-2 text-left font-medium block sm:table-cell">{e.description}</td>
       <td className="p-2 flex items-center justify-between sm:table-cell sm:text-right">
-        <span className="sm:hidden mr-2">{`Qty (${e.unit_name || 'g'})`}</span>
+        <span className="sm:hidden mr-2">Qty</span>
         {(() => {
           const id = `entry-${e.id}-qty`;
           return (
@@ -337,6 +339,10 @@ function Row({ e, onUpdate, onDelete, provided }: RowProps) {
             </>
           );
         })()}
+      </td>
+      <td className="p-2 flex justify-between sm:table-cell sm:text-right">
+        <span className="sm:hidden">Unit</span>
+        <span>{e.unit_name || 'g'}</span>
       </td>
       <td className="p-2 flex justify-between sm:table-cell sm:text-right">
         <span className="sm:hidden">kcal</span>
