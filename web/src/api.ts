@@ -1,41 +1,21 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import axios from "axios";
 import toast from "react-hot-toast";
-import type { DayFull, HistoryDay, SimpleFood } from "./types";
+import type {
+  DayFull,
+  HistoryDay,
+  SimpleFood,
+  MealType,
+  EntryType,
+  CustomFoodPayload,
+  CopyMealPayload,
+  OfflineOp,
+  OfflineStore,
+} from "./types";
 import { loadJSON, saveJSON } from "./utils/storage";
 
 // --- Offline cache helpers -------------------------------------------------
 const isOnline = () =>
   typeof navigator === "undefined" ? true : navigator.onLine;
-
-type OfflineOp =
-  | { kind: "createMeal"; payload: { date: string; tempId: number } }
-  | { kind: "deleteMeal"; payload: { mealId: number } }
-  | {
-      kind: "updateMeal";
-      payload: { mealId: number; data: { name?: string; sort_order?: number } };
-    }
-  | {
-      kind: "addEntry";
-      payload: {
-        meal_id: number;
-        fdc_id: number;
-        quantity_g: number;
-        tempId: number;
-      };
-    }
-  | { kind: "updateEntry"; payload: { entryId: number; newGrams: number } }
-  | { kind: "moveEntry"; payload: { entryId: number; newOrder: number } }
-  | { kind: "deleteEntry"; payload: { entryId: number } }
-  | { kind: "setWeight"; payload: { date: string; weight: number } };
-
-type OfflineStore = {
-  days: Record<string, DayFull>;
-  foods: SimpleFood[];
-  weights: Record<string, number>;
-  queue: OfflineOp[];
-  nextId: number;
-};
 
 const OFFLINE_KEY = "offline-cache";
 const MAX_QUEUE_LENGTH = 100;
@@ -182,10 +162,22 @@ export async function getDayFull(date: string) {
 
 export async function createMeal(date: string) {
   if (!isOnline()) {
-    const day = getCachedDay(date) || { date, meals: [], totals: { kcal: 0, protein: 0, fat: 0, carb: 0 } };
+    const day =
+      getCachedDay(date) || {
+        date,
+        meals: [],
+        totals: { kcal: 0, protein: 0, fat: 0, carb: 0 },
+      };
     const id = nextTempId();
-    const meal = { id, name: `Meal ${day.meals.length + 1}`, date, sort_order: day.meals.length, entries: [], subtotal: { kcal: 0, protein: 0, fat: 0, carb: 0 } };
-    day.meals.push(meal as any);
+    const meal: MealType = {
+      id,
+      name: `Meal ${day.meals.length + 1}`,
+      date,
+      sort_order: day.meals.length,
+      entries: [],
+      subtotal: { kcal: 0, protein: 0, fat: 0, carb: 0 },
+    };
+    day.meals.push(meal);
     cacheDay(date, day);
     enqueue({ kind: "createMeal", payload: { date, tempId: id } });
     return meal;
@@ -202,8 +194,8 @@ export async function createMeal(date: string) {
 export async function deleteMeal(mealId: number) {
   if (!isOnline()) {
     const store = loadStore();
-    for (const day of Object.values(store.days)) {
-      const idx = day.meals.findIndex((m: any) => m.id === mealId);
+    for (const day of Object.values(store.days) as DayFull[]) {
+      const idx = day.meals.findIndex((m) => m.id === mealId);
       if (idx >= 0) day.meals.splice(idx, 1);
     }
     enqueue({ kind: "deleteMeal", payload: { mealId } });
@@ -217,8 +209,8 @@ export async function deleteMeal(mealId: number) {
 export async function updateMeal(mealId: number, payload: { name?: string; sort_order?: number }) {
   if (!isOnline()) {
     const store = loadStore();
-    for (const day of Object.values(store.days)) {
-      const meal = day.meals.find((m: any) => m.id === mealId);
+    for (const day of Object.values(store.days) as DayFull[]) {
+      const meal = day.meals.find((m) => m.id === mealId);
       if (meal) Object.assign(meal, payload);
     }
     enqueue({ kind: "updateMeal", payload: { mealId, data: payload } });
@@ -232,12 +224,24 @@ export async function updateMeal(mealId: number, payload: { name?: string; sort_
 export async function addEntry(meal_id: number, fdc_id: number, quantity_g: number) {
   if (!isOnline()) {
     const store = loadStore();
-    const day = Object.values(store.days).find((d: any) => d.meals.some((m: any) => m.id === meal_id));
+    const day = (Object.values(store.days) as DayFull[]).find((d) =>
+      d.meals.some((m) => m.id === meal_id)
+    );
     if (day) {
-      const meal = day.meals.find((m: any) => m.id === meal_id);
+      const meal = day.meals.find((m) => m.id === meal_id);
       if (!meal) return null;
       const id = nextTempId();
-      meal.entries.push({ id, description: '', quantity_g, kcal: 0, protein: 0, carb: 0, fat: 0, sort_order: meal.entries.length });
+      const entry: EntryType = {
+        id,
+        description: "",
+        quantity_g,
+        kcal: 0,
+        protein: 0,
+        carb: 0,
+        fat: 0,
+        sort_order: meal.entries.length,
+      };
+      meal.entries.push(entry);
       cacheDay(day.date, day);
       enqueue({ kind: "addEntry", payload: { meal_id, fdc_id, quantity_g, tempId: id } });
       return { id };
@@ -251,9 +255,9 @@ export async function addEntry(meal_id: number, fdc_id: number, quantity_g: numb
 export async function updateEntry(entryId: number, newGrams: number) {
   if (!isOnline()) {
     const store = loadStore();
-    for (const day of Object.values(store.days)) {
+    for (const day of Object.values(store.days) as DayFull[]) {
       for (const meal of day.meals) {
-        const entry = (meal as any).entries.find((e: any) => e.id === entryId);
+        const entry = meal.entries.find((e) => e.id === entryId);
         if (entry) entry.quantity_g = newGrams;
       }
     }
@@ -268,9 +272,9 @@ export async function updateEntry(entryId: number, newGrams: number) {
 export async function moveEntry(entryId: number, newOrder: number) {
   if (!isOnline()) {
     const store = loadStore();
-    for (const day of Object.values(store.days)) {
+    for (const day of Object.values(store.days) as DayFull[]) {
       for (const meal of day.meals) {
-        const entry = (meal as any).entries.find((e: any) => e.id === entryId);
+        const entry = meal.entries.find((e) => e.id === entryId);
         if (entry) entry.sort_order = newOrder;
       }
     }
@@ -285,10 +289,10 @@ export async function moveEntry(entryId: number, newOrder: number) {
 export async function deleteEntry(entryId: number) {
   if (!isOnline()) {
     const store = loadStore();
-    for (const day of Object.values(store.days)) {
+    for (const day of Object.values(store.days) as DayFull[]) {
       for (const meal of day.meals) {
-        const idx = (meal as any).entries.findIndex((e: any) => e.id === entryId);
-        if (idx >= 0) (meal as any).entries.splice(idx, 1);
+        const idx = meal.entries.findIndex((e) => e.id === entryId);
+        if (idx >= 0) meal.entries.splice(idx, 1);
       }
     }
     enqueue({ kind: "deleteEntry", payload: { entryId } });
@@ -321,9 +325,9 @@ export async function deletePreset(presetId: number) {
 }
 
 // --- Custom Foods ---
-export async function createCustomFood(payload: any) {
-    const response = await api.post("/custom_foods", payload);
-    return response.data;
+export async function createCustomFood(payload: CustomFoodPayload) {
+  const response = await api.post("/custom_foods", payload);
+  return response.data;
 }
 
 export async function searchMyFoods() {
@@ -346,9 +350,12 @@ export async function exportCSV(start: string, end: string) {
 }
 
 // --- Meal Copying ---
-export async function copyMealTo(sourceMealId: number, date: string, meal_name: string) {
-    const response = await api.post(`/meals/${sourceMealId}/copy_to`, { date, meal_name });
-    return response.data;
+export async function copyMealTo(
+  sourceMealId: number,
+  payload: CopyMealPayload
+) {
+  const response = await api.post(`/meals/${sourceMealId}/copy_to`, payload);
+  return response.data;
 }
 
 // --- History ---
@@ -411,7 +418,7 @@ export async function syncQueue() {
           const newId = res.data.id;
           idMap[item.payload.tempId] = newId;
           const day = store.days[item.payload.date];
-          const meal = day?.meals.find((m: any) => m.id === item.payload.tempId);
+          const meal = day?.meals.find((m) => m.id === item.payload.tempId);
           if (meal) meal.id = newId;
         } catch {
           store.queue.unshift(item);
@@ -455,9 +462,9 @@ export async function syncQueue() {
           });
           const newId = res.data.id;
           idMap[item.payload.tempId] = newId;
-          for (const day of Object.values(store.days)) {
+          for (const day of Object.values(store.days) as DayFull[]) {
             for (const meal of day.meals) {
-              const entry = (meal as any).entries.find((e: any) => e.id === item.payload.tempId);
+              const entry = meal.entries.find((e) => e.id === item.payload.tempId);
               if (entry) entry.id = newId;
             }
           }

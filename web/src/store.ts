@@ -1,7 +1,15 @@
 import { create } from 'zustand';
 import toast from 'react-hot-toast';
 import * as api from './api';
-import type { DayFull, Preset, SimpleFood, MealType, Goals, EntryType } from "./types";
+import type {
+  DayFull,
+  Preset,
+  SimpleFood,
+  MealType,
+  Goals,
+  EntryType,
+  CopyMealPayload,
+} from "./types";
 import { loadJSON, saveJSON } from "./utils/storage";
 
 type Theme = 'light' | 'dark';
@@ -90,7 +98,14 @@ const applyDelta = (t: MacroTotals, d: MacroTotals) => {
   t.carb = +(t.carb + d.carb).toFixed(2);
 };
 
-const macrosFromFood = (food: any, grams: number): MacroTotals => {
+interface MacroFood {
+  kcal_per_100g?: number;
+  protein_g_per_100g?: number;
+  carb_g_per_100g?: number;
+  fat_g_per_100g?: number;
+}
+
+const macrosFromFood = (food: MacroFood, grams: number): MacroTotals => {
   const f = grams / 100;
   return {
     kcal: +((food.kcal_per_100g || 0) * f).toFixed(2),
@@ -132,7 +147,8 @@ export const useStore = create<AppState & AppActions>((set, get) => ({
   pasteMeal: async () => {
     const sourceMealId = get().copiedMealId;
     if (!sourceMealId) return;
-    const promise = api.copyMealTo(sourceMealId, get().date, get().mealName);
+    const payload: CopyMealPayload = { date: get().date, meal_name: get().mealName };
+    const promise = api.copyMealTo(sourceMealId, payload);
     toast.promise(promise, {
         loading: 'Pasting meal...',
         success: 'Meal pasted successfully!',
@@ -362,8 +378,9 @@ export const useStore = create<AppState & AppActions>((set, get) => ({
       await api.applyPreset(presetId, get().date, get().mealName, 1);
       await get().fetchDay();
       toast.success('Preset applied!');
-    } catch (e: any) {
-      toast.error(e?.response?.data?.detail || "Failed to apply preset.");
+    } catch (e) {
+      const err = e as { response?: { data?: { detail?: string } } };
+      toast.error(err?.response?.data?.detail || "Failed to apply preset.");
     }
   },
 
