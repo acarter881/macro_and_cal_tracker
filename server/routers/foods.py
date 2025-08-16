@@ -59,9 +59,15 @@ async def foods_get(fdc_id: int, session: Session = Depends(get_session), refres
         raise HTTPException(status_code=404, detail="Custom food not found")
     data = await fetch_food_detail(fdc_id)
     try:
-        abridge_url = (f"https://api.nal.usda.gov/fdc/v1/foods?api_key={utils.USDA_KEY}&format=abridged&fdcIds={fdc_id}&nutrients=1008,1004,1003,1005")
+        params = {
+            "api_key": utils.USDA_KEY,
+            "format": "abridged",
+            "fdcIds": fdc_id,
+            "nutrients": [1008, 1004, 1003, 1005],
+        }
+        url = httpx.URL(f"{USDA_BASE}/foods")
         async with httpx.AsyncClient() as client:
-            resp = await client.get(abridge_url)
+            resp = await client.get(url, params=params)
             resp.raise_for_status()
             abr = resp.json()[0]
         abr_fn = abr.get("foodNutrients") or []
