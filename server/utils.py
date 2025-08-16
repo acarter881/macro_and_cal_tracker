@@ -3,6 +3,7 @@ import json
 import asyncio
 from pathlib import Path
 from typing import Dict, Optional, TypedDict
+from datetime import date
 
 import httpx
 from fastapi import HTTPException
@@ -219,15 +220,16 @@ async def ensure_food_cached(fdc_id: int, session: Session) -> Food:
     session.refresh(food)
     return food
 
-def get_or_create_meal(session: Session, date: str, name: str) -> Meal:
-    m = session.exec(select(Meal).where(Meal.date == date, Meal.name == name)).first()
+def get_or_create_meal(session: Session, date: date, name: str) -> Meal:
+    date_str = date.isoformat()
+    m = session.exec(select(Meal).where(Meal.date == date_str, Meal.name == name)).first()
     if m:
         return m
     max_sort_order = session.exec(
-        select(func.max(Meal.sort_order)).where(Meal.date == date)
+        select(func.max(Meal.sort_order)).where(Meal.date == date_str)
     ).first() or 0
     new_order = max_sort_order + 1
-    m = Meal(date=date, name=name, sort_order=new_order)
+    m = Meal(date=date_str, name=name, sort_order=new_order)
     session.add(m)
     session.commit()
     session.refresh(m)

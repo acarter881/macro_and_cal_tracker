@@ -21,9 +21,11 @@ def _scaled_from_food(f: Food, grams: float):
 
 
 @router.get("/api/history")
-def get_history(start_date: str, end_date: str, session: Session = Depends(get_session)):
+def get_history(start_date: date, end_date: date, session: Session = Depends(get_session)):
+    start_str = start_date.isoformat()
+    end_str = end_date.isoformat()
     meals = session.exec(
-        select(Meal).where(Meal.date >= start_date, Meal.date <= end_date)
+        select(Meal).where(Meal.date >= start_str, Meal.date <= end_str)
     ).all()
     meal_map = {m.id: m for m in meals}
     meal_ids = list(meal_map.keys())
@@ -43,7 +45,7 @@ def get_history(start_date: str, end_date: str, session: Session = Depends(get_s
 
     weights = session.exec(
         select(BodyWeight).where(
-            BodyWeight.date >= start_date, BodyWeight.date <= end_date
+            BodyWeight.date >= start_str, BodyWeight.date <= end_str
         )
     ).all()
     weight_map = {w.date: w.weight for w in weights}
@@ -65,11 +67,9 @@ def get_history(start_date: str, end_date: str, session: Session = Depends(get_s
         totals[day]["carb"] += c
         totals[day]["fat"] += fat
 
-    start = date.fromisoformat(start_date)
-    end = date.fromisoformat(end_date)
     out = []
-    cur = start
-    while cur <= end:
+    cur = start_date
+    while cur <= end_date:
         day = cur.isoformat()
         t = totals.get(day, {"kcal": 0.0, "protein": 0.0, "carb": 0.0, "fat": 0.0})
         out.append(

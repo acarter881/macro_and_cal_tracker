@@ -2,6 +2,7 @@ import os
 
 os.environ['USDA_KEY'] = 'test'
 
+from datetime import date
 from fastapi.testclient import TestClient
 from sqlmodel import SQLModel, Session, create_engine
 from sqlalchemy.pool import StaticPool
@@ -41,7 +42,7 @@ def test_entry_crud_flow():
                 carb_g_per_100g=5,
                 fat_g_per_100g=2,
             )
-            meal = Meal(date='2024-01-01', name='Meal 1', sort_order=1)
+            meal = Meal(date=date(2024, 1, 1).isoformat(), name='Meal 1', sort_order=1)
             session.add(food)
             session.add(meal)
             session.commit()
@@ -65,7 +66,8 @@ def test_entry_crud_flow():
         resp_move = client.patch(f'/api/entries/{entry_id2}', json={'sort_order': 1})
         assert resp_move.status_code == 200
 
-        resp3 = client.get('/api/days/2024-01-01')
+        day = date(2024, 1, 1).isoformat()
+        resp3 = client.get(f'/api/days/{day}')
         assert resp3.status_code == 200
         data = resp3.json()
         assert data['entries'][0]['id'] == entry_id2
@@ -76,7 +78,7 @@ def test_entry_crud_flow():
         resp4 = client.delete(f'/api/entries/{entry_id2}')
         assert resp4.status_code == 200
 
-        resp5 = client.get('/api/days/2024-01-01')
+        resp5 = client.get(f'/api/days/{day}')
         assert resp5.status_code == 200
         assert len(resp5.json()['entries']) == 1
         assert resp5.json()['totals'] == {'kcal': 150.0, 'protein': 15.0, 'carb': 7.5, 'fat': 3.0}
@@ -98,7 +100,7 @@ def test_negative_quantity_rejected():
                 carb_g_per_100g=5,
                 fat_g_per_100g=2,
             )
-            meal = Meal(date='2024-01-01', name='Meal 1', sort_order=1)
+            meal = Meal(date=date(2024, 1, 1).isoformat(), name='Meal 1', sort_order=1)
             session.add(food)
             session.add(meal)
             session.commit()

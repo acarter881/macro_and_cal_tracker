@@ -2,6 +2,7 @@ import os
 
 os.environ['USDA_KEY'] = 'test'
 
+from datetime import date
 from fastapi.testclient import TestClient
 from sqlmodel import SQLModel, Session, create_engine
 from sqlalchemy.pool import StaticPool
@@ -32,13 +33,13 @@ def test_meal_creation_increments_sort_order():
     with TestClient(app.app) as client:
         SQLModel.metadata.create_all(engine)
 
-        resp1 = client.post('/api/meals', json={'date': '2024-01-01'})
+        resp1 = client.post('/api/meals', json={'date': date(2024, 1, 1).isoformat()})
         assert resp1.status_code == 200
         data1 = resp1.json()
         assert data1['sort_order'] == 1
         assert data1['name'] == 'Meal 1'
 
-        resp2 = client.post('/api/meals', json={'date': '2024-01-01'})
+        resp2 = client.post('/api/meals', json={'date': date(2024, 1, 1).isoformat()})
         assert resp2.status_code == 200
         data2 = resp2.json()
         assert data2['sort_order'] == 2

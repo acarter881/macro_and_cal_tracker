@@ -2,6 +2,7 @@ import os
 
 os.environ['USDA_KEY'] = 'test'
 
+from datetime import date
 from fastapi.testclient import TestClient
 from sqlmodel import SQLModel, Session, create_engine
 from sqlalchemy.pool import StaticPool
@@ -55,10 +56,13 @@ def test_preset_create_and_apply():
         assert resp_detail.status_code == 200
         assert resp_detail.json()['items'][0]['fdc_id'] == 1
 
-        resp_apply = client.post(f'/api/presets/{preset_id}/apply', json={'date': '2024-01-01', 'meal_name': 'Meal 1'})
+        resp_apply = client.post(
+            f'/api/presets/{preset_id}/apply',
+            json={'date': date(2024, 1, 1).isoformat(), 'meal_name': 'Meal 1'}
+        )
         assert resp_apply.status_code == 200
         assert resp_apply.json()['added'] == 1
 
-        day = client.get('/api/days/2024-01-01')
+        day = client.get(f'/api/days/{date(2024, 1, 1).isoformat()}')
         assert day.status_code == 200
         assert len(day.json()['entries']) == 1
