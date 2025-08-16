@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends
 from sqlmodel import Session, select
 
 from server.db import get_session
-from server.models import Meal, FoodEntry, Food, BodyWeight
+from server.models import BodyWeight, Food, FoodEntry, Meal
 from server.utils import scaled_macros_from_food
 
 router = APIRouter()
