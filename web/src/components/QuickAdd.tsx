@@ -3,6 +3,7 @@ import { useStore } from "../store";
 import type { SimpleFood } from "../types";
 import { Button } from "./ui/Button";
 import { Input } from "./ui/Input";
+import { Modal } from "./ui/Modal";
 
 export function QuickAdd() {
   const addFood = useStore(s => s.addFood);
@@ -45,17 +46,9 @@ export function QuickAdd() {
           </Button>
         ))}
       </div>
-      {current && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
-          onClick={() => setCurrent(null)}
-        >
-          <div
-            className="bg-surface-light dark:bg-surface-dark rounded-md p-6 shadow-lg text-text dark:text-text-light"
-            onClick={e => e.stopPropagation()}
-            role="dialog"
-            aria-modal="true"
-          >
+      <Modal open={!!current} onClose={() => setCurrent(null)}>
+        {current && (
+          <>
             <p className="mb-4">
               Add to <span className="font-semibold">{mealName}</span>: How many
               <span className="font-semibold"> {current.unit_name || "grams"}</span>
@@ -76,9 +69,9 @@ export function QuickAdd() {
                 OK
               </Button>
             </div>
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </Modal>
     </>
   );
 }
