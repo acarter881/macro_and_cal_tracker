@@ -366,19 +366,28 @@ async def copy_meal_to(
     if not source_meal:
         raise HTTPException(status_code=404, detail="Source meal not found")
     source_entries = session.exec(
-        select(FoodEntry).where(FoodEntry.meal_id == source_meal_id)
+        select(FoodEntry)
+        .where(FoodEntry.meal_id == source_meal_id)
+        .order_by(FoodEntry.sort_order)
     ).all()
     if not source_entries:
         return {"message": "Source meal has no entries to copy.", "added_count": 0}
     dest_meal = get_or_create_meal(session, payload.date, payload.meal_name)
+    max_sort_order = (
+        session.exec(
+            select(func.max(FoodEntry.sort_order)).where(FoodEntry.meal_id == dest_meal.id)
+        ).first()
+        or 0
+    )
     food_ids_to_cache = {e.fdc_id for e in source_entries}
     for fdc_id in food_ids_to_cache:
         await ensure_food_cached(fdc_id, session)
-    for entry in source_entries:
+    for idx, entry in enumerate(source_entries, start=1):
         new_entry = FoodEntry(
             meal_id=dest_meal.id,
             fdc_id=entry.fdc_id,
-            quantity_g=entry.quantity_g
+            quantity_g=entry.quantity_g,
+            sort_order=max_sort_order + idx,
         )
         session.add(new_entry)
     session.commit()
