@@ -25,16 +25,18 @@ def test_create_and_search_custom_food():
         SQLModel.metadata.create_all(engine)
         payload = {
             'description': 'Test Food',
-            'kcal_per_100g': 100,
-            'protein_g_per_100g': 10,
-            'carb_g_per_100g': 5,
-            'fat_g_per_100g': 2,
+            'unit_name': 'pill',
+            'kcal_per_unit': 100,
+            'protein_g_per_unit': 10,
+            'carb_g_per_unit': 5,
+            'fat_g_per_unit': 2,
         }
         resp = client.post('/api/custom_foods', json=payload)
         assert resp.status_code == 200
         created = resp.json()
         assert created['description'] == 'Test Food'
-        assert created['kcal_per_100g'] == 100
+        assert created['unit_name'] == 'pill'
+        assert created['kcal_per_unit'] == 100
         assert 'fdc_id' in created
 
         resp_search = client.get('/api/custom_foods/search', params={'q': 'Test'})
@@ -44,9 +46,11 @@ def test_create_and_search_custom_food():
         assert results[0]['fdcId'] == created['fdc_id']
         assert results[0]['description'] == 'Test Food'
         assert results[0]['dataType'] == 'Custom'
+        assert results[0]['unit_name'] == 'pill'
 
         resp_my = client.get('/api/my_foods')
         assert resp_my.status_code == 200
         myfoods = resp_my.json()
         assert myfoods[0]['fdcId'] == created['fdc_id']
         assert myfoods[0]['description'] == 'Test Food'
+        assert myfoods[0]['unit_name'] == 'pill'

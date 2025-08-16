@@ -317,6 +317,7 @@ class CustomFoodSearchResult(BaseModel):
     description: str
     brand_owner: Optional[str] = Field(default=None, alias="brandOwner")
     data_type: Optional[str] = Field(default=None, alias="dataType")
+    unit_name: Optional[str] = None
 
     model_config = ConfigDict(populate_by_name=True)
 
@@ -365,6 +366,7 @@ def search_custom_foods(q: str, session: Session = Depends(get_session)):
             description=r.description,
             brand_owner=r.brand_owner,
             data_type=r.data_type,
+            unit_name=r.unit_name,
         )
         for r in rows
     ]
@@ -413,6 +415,7 @@ def my_foods(session: Session = Depends(get_session)):
             description=f.description,
             brand_owner=f.brand_owner,
             data_type=f.data_type or "Custom",
+            unit_name=f.unit_name,
         )
         for f in rows
     ]
