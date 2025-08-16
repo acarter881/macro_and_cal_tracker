@@ -223,6 +223,25 @@ async def ensure_food_cached(fdc_id: int, session: Session) -> Food:
     session.refresh(food)
     return food
 
+
+def scaled_macros_from_food(f: Food, qty: float) -> tuple[float, float, float, float]:
+    """Return kcal, protein, carb and fat scaled by quantity for a food item."""
+    if f.unit_name:
+        factor = qty or 0
+        return (
+            (f.kcal_per_unit or 0) * factor,
+            (f.protein_g_per_unit or 0) * factor,
+            (f.carb_g_per_unit or 0) * factor,
+            (f.fat_g_per_unit or 0) * factor,
+        )
+    factor = (qty or 0) / 100.0
+    return (
+        (f.kcal_per_100g or 0) * factor,
+        (f.protein_g_per_100g or 0) * factor,
+        (f.carb_g_per_100g or 0) * factor,
+        (f.fat_g_per_100g or 0) * factor,
+    )
+
 def get_or_create_meal(session: Session, date: date, name: str) -> Meal:
     date_str = date.isoformat()
     m = session.exec(select(Meal).where(Meal.date == date_str, Meal.name == name)).first()
