@@ -342,9 +342,14 @@ def delete_custom_food(fdc_id: int, session: Session = Depends(get_session)):
         raise HTTPException(status_code=404, detail="Food not found.")
     if food.data_type != "Custom":
         raise HTTPException(status_code=400, detail="Only custom foods can be deleted here.")
-    cnt = session.exec(select(func.count()).select_from(FoodEntry).where(FoodEntry.fdc_id == fdc_id)).one()
-    if cnt and cnt[0] > 0:
-        raise HTTPException(status_code=409, detail="This food is used in logged entries. Remove it from logs first.")
+    cnt = session.exec(
+        select(func.count()).select_from(FoodEntry).where(FoodEntry.fdc_id == fdc_id)
+    ).one()
+    if cnt > 0:
+        raise HTTPException(
+            status_code=409,
+            detail="This food is used in logged entries. Remove it from logs first.",
+        )
     session.delete(food)
     session.commit()
     return {"ok": True}
