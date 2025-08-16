@@ -189,48 +189,100 @@ export function CustomFoodTab() {
           <Input id={ids.brand} placeholder="Brand / store (optional)" {...register('brand_owner')} />
         </div>
         {!unitName && (
-          <div className="grid grid-cols-2 gap-2">
+          <>
             <div className="flex flex-col">
               <label htmlFor={ids.kcal} className="sr-only">kcal</label>
-              <Input id={ids.kcal} type="number" step={0.01} placeholder="kcal" {...register('kcal_per_100g', { required: true, valueAsNumber: true, min: 0 })} />
+              <Input
+                id={ids.kcal}
+                type="number"
+                step={0.01}
+                placeholder="kcal"
+                {...register('kcal_per_100g', { required: true, valueAsNumber: true, min: 0 })}
+              />
             </div>
-            <div className="flex flex-col">
-              <label htmlFor={ids.protein} className="sr-only">protein g</label>
-              <Input id={ids.protein} type="number" step={0.01} placeholder="protein g" {...register('protein_g_per_100g', { required: true, valueAsNumber: true, min: 0 })} />
+            <div className="grid grid-cols-3 gap-2 mt-2">
+              <div className="flex flex-col">
+                <label htmlFor={ids.fat} className="sr-only">fat g</label>
+                <Input
+                  id={ids.fat}
+                  type="number"
+                  step={0.01}
+                  placeholder="fat g"
+                  {...register('fat_g_per_100g', { required: true, valueAsNumber: true, min: 0 })}
+                />
+              </div>
+              <div className="flex flex-col">
+                <label htmlFor={ids.carb} className="sr-only">carb g</label>
+                <Input
+                  id={ids.carb}
+                  type="number"
+                  step={0.01}
+                  placeholder="carb g"
+                  {...register('carb_g_per_100g', { required: true, valueAsNumber: true, min: 0 })}
+                />
+              </div>
+              <div className="flex flex-col">
+                <label htmlFor={ids.protein} className="sr-only">protein g</label>
+                <Input
+                  id={ids.protein}
+                  type="number"
+                  step={0.01}
+                  placeholder="protein g"
+                  {...register('protein_g_per_100g', { required: true, valueAsNumber: true, min: 0 })}
+                />
+              </div>
             </div>
-            <div className="flex flex-col">
-              <label htmlFor={ids.fat} className="sr-only">fat g</label>
-              <Input id={ids.fat} type="number" step={0.01} placeholder="fat g" {...register('fat_g_per_100g', { required: true, valueAsNumber: true, min: 0 })} />
-            </div>
-            <div className="flex flex-col">
-              <label htmlFor={ids.carb} className="sr-only">carb g</label>
-              <Input id={ids.carb} type="number" step={0.01} placeholder="carb g" {...register('carb_g_per_100g', { required: true, valueAsNumber: true, min: 0 })} />
-            </div>
-          </div>
+          </>
         )}
         <div>
           <label htmlFor={ids.unitName} className="sr-only">Unit name</label>
           <Input id={ids.unitName} placeholder="Unit name (e.g., softgel)" {...register('unitName')} />
         </div>
         {unitName && (
-          <div className="grid grid-cols-2 gap-2">
+          <>
             <div className="flex flex-col">
               <label htmlFor={ids.kcalPerUnit} className="sr-only">kcal per unit</label>
-              <Input id={ids.kcalPerUnit} type="number" step={0.01} placeholder="kcal / unit" {...register('kcal_per_unit', { valueAsNumber: true })} />
+              <Input
+                id={ids.kcalPerUnit}
+                type="number"
+                step={0.01}
+                placeholder="kcal / unit"
+                {...register('kcal_per_unit', { valueAsNumber: true })}
+              />
             </div>
-            <div className="flex flex-col">
-              <label htmlFor={ids.proteinPerUnit} className="sr-only">protein g per unit</label>
-              <Input id={ids.proteinPerUnit} type="number" step={0.01} placeholder="protein g / unit" {...register('protein_g_per_unit', { valueAsNumber: true })} />
+            <div className="grid grid-cols-3 gap-2 mt-2">
+              <div className="flex flex-col">
+                <label htmlFor={ids.fatPerUnit} className="sr-only">fat g per unit</label>
+                <Input
+                  id={ids.fatPerUnit}
+                  type="number"
+                  step={0.01}
+                  placeholder="fat g / unit"
+                  {...register('fat_g_per_unit', { valueAsNumber: true })}
+                />
+              </div>
+              <div className="flex flex-col">
+                <label htmlFor={ids.carbPerUnit} className="sr-only">carb g per unit</label>
+                <Input
+                  id={ids.carbPerUnit}
+                  type="number"
+                  step={0.01}
+                  placeholder="carb g / unit"
+                  {...register('carb_g_per_unit', { valueAsNumber: true })}
+                />
+              </div>
+              <div className="flex flex-col">
+                <label htmlFor={ids.proteinPerUnit} className="sr-only">protein g per unit</label>
+                <Input
+                  id={ids.proteinPerUnit}
+                  type="number"
+                  step={0.01}
+                  placeholder="protein g / unit"
+                  {...register('protein_g_per_unit', { valueAsNumber: true })}
+                />
+              </div>
             </div>
-            <div className="flex flex-col">
-              <label htmlFor={ids.fatPerUnit} className="sr-only">fat g per unit</label>
-              <Input id={ids.fatPerUnit} type="number" step={0.01} placeholder="fat g / unit" {...register('fat_g_per_unit', { valueAsNumber: true })} />
-            </div>
-            <div className="flex flex-col">
-              <label htmlFor={ids.carbPerUnit} className="sr-only">carb g per unit</label>
-              <Input id={ids.carbPerUnit} type="number" step={0.01} placeholder="carb g / unit" {...register('carb_g_per_unit', { valueAsNumber: true })} />
-            </div>
-          </div>
+          </>
         )}
         <div className="flex justify-end pt-2">
           <Button type="submit" className="btn-primary" disabled={isCreatingFood || !isValid}>
