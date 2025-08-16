@@ -31,7 +31,7 @@ type CustomFoodFormData = {
 export function CustomFoodTab() {
   const { allMyFoods, setAllMyFoods } = useStore();
   const { register, handleSubmit, formState: { errors, isValid }, watch, setValue, reset } = useForm<CustomFoodFormData>({
-    mode: 'onChange',
+    mode: 'onChange', shouldUnregister: true,
     defaultValues: {
       density: 1, servUnit: 'g', description: '', brand_owner: '',
       kcal_per_100g: '', protein_g_per_100g: '', carb_g_per_100g: '', fat_g_per_100g: '',
@@ -178,7 +178,7 @@ export function CustomFoodTab() {
         )}
       </div>
       <div className="space-y-2">
-        <h4 className="font-medium text-sm text-text dark:text-text-light">Create Food (values per 100g)</h4>
+        <h4 className="font-medium text-sm text-text dark:text-text-light">Create Food {unitName ? '(per unit)' : '(values per 100g)'}</h4>
         <div>
           <label htmlFor={ids.description} className="sr-only">Description</label>
           <Input id={ids.description} placeholder="Description (e.g., Pop-Tarts)" {...register('description', { required: 'Description is required' })} />
@@ -188,24 +188,26 @@ export function CustomFoodTab() {
           <label htmlFor={ids.brand} className="sr-only">Brand / store</label>
           <Input id={ids.brand} placeholder="Brand / store (optional)" {...register('brand_owner')} />
         </div>
-        <div className="grid grid-cols-2 gap-2">
-          <div className="flex flex-col">
-            <label htmlFor={ids.kcal} className="sr-only">kcal</label>
-            <Input id={ids.kcal} type="number" step={0.01} placeholder="kcal" {...register('kcal_per_100g', { required: true, valueAsNumber: true, min: 0 })} />
+        {!unitName && (
+          <div className="grid grid-cols-2 gap-2">
+            <div className="flex flex-col">
+              <label htmlFor={ids.kcal} className="sr-only">kcal</label>
+              <Input id={ids.kcal} type="number" step={0.01} placeholder="kcal" {...register('kcal_per_100g', { required: true, valueAsNumber: true, min: 0 })} />
+            </div>
+            <div className="flex flex-col">
+              <label htmlFor={ids.protein} className="sr-only">protein g</label>
+              <Input id={ids.protein} type="number" step={0.01} placeholder="protein g" {...register('protein_g_per_100g', { required: true, valueAsNumber: true, min: 0 })} />
+            </div>
+            <div className="flex flex-col">
+              <label htmlFor={ids.fat} className="sr-only">fat g</label>
+              <Input id={ids.fat} type="number" step={0.01} placeholder="fat g" {...register('fat_g_per_100g', { required: true, valueAsNumber: true, min: 0 })} />
+            </div>
+            <div className="flex flex-col">
+              <label htmlFor={ids.carb} className="sr-only">carb g</label>
+              <Input id={ids.carb} type="number" step={0.01} placeholder="carb g" {...register('carb_g_per_100g', { required: true, valueAsNumber: true, min: 0 })} />
+            </div>
           </div>
-          <div className="flex flex-col">
-            <label htmlFor={ids.protein} className="sr-only">protein g</label>
-            <Input id={ids.protein} type="number" step={0.01} placeholder="protein g" {...register('protein_g_per_100g', { required: true, valueAsNumber: true, min: 0 })} />
-          </div>
-          <div className="flex flex-col">
-            <label htmlFor={ids.fat} className="sr-only">fat g</label>
-            <Input id={ids.fat} type="number" step={0.01} placeholder="fat g" {...register('fat_g_per_100g', { required: true, valueAsNumber: true, min: 0 })} />
-          </div>
-          <div className="flex flex-col">
-            <label htmlFor={ids.carb} className="sr-only">carb g</label>
-            <Input id={ids.carb} type="number" step={0.01} placeholder="carb g" {...register('carb_g_per_100g', { required: true, valueAsNumber: true, min: 0 })} />
-          </div>
-        </div>
+        )}
         <div>
           <label htmlFor={ids.unitName} className="sr-only">Unit name</label>
           <Input id={ids.unitName} placeholder="Unit name (e.g., softgel)" {...register('unitName')} />
