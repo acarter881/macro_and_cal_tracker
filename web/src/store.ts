@@ -394,8 +394,8 @@ export const useStore = create<AppState & AppActions>((set, get) => ({
           meal.entries.splice(idx, 1);
           meal.entries.forEach((e, i) => { e.sort_order = i + 1; });
           const delta = { kcal: -entry.kcal, protein: -entry.protein, fat: -entry.fat, carb: -entry.carb };
-          applyDelta(meal.subtotal, delta);
-          applyDelta(day.totals, delta);
+          meal.subtotal = applyDelta(meal.subtotal, delta);
+          day.totals = applyDelta(day.totals, delta);
           deleted = { mealId: meal.id, entry, index: idx };
           break;
         }
@@ -418,8 +418,8 @@ export const useStore = create<AppState & AppActions>((set, get) => ({
       meal.entries.splice(index, 0, newEntry);
       meal.entries.forEach((e, i) => { e.sort_order = i + 1; });
       const delta = { kcal: entry.kcal, protein: entry.protein, fat: entry.fat, carb: entry.carb };
-      applyDelta(meal.subtotal, delta);
-      applyDelta(day.totals, delta);
+      meal.subtotal = applyDelta(meal.subtotal, delta);
+      day.totals = applyDelta(day.totals, delta);
       return { day, lastDeleted: null, redoDeleted: { mealId, entry: newEntry, index } };
     });
   },
@@ -439,8 +439,8 @@ export const useStore = create<AppState & AppActions>((set, get) => ({
         meal.entries.splice(idx, 1);
         meal.entries.forEach((e, i) => { e.sort_order = i + 1; });
         const delta = { kcal: -entry.kcal, protein: -entry.protein, fat: -entry.fat, carb: -entry.carb };
-        applyDelta(meal.subtotal, delta);
-        applyDelta(day.totals, delta);
+        meal.subtotal = applyDelta(meal.subtotal, delta);
+        day.totals = applyDelta(day.totals, delta);
       }
       return { day, lastDeleted: { mealId, entry, index }, redoDeleted: null };
     });
