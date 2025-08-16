@@ -5,6 +5,7 @@ import json
 def test_usda_key_update(tmp_path, monkeypatch):
     monkeypatch.setenv('USDA_CONFIG_PATH', str(tmp_path / 'cfg.json'))
     monkeypatch.setenv('USDA_KEY', 'envkey')
+    monkeypatch.setenv('CONFIG_AUTH_TOKEN', 'token')
     from importlib import reload
     import server.utils as utils
     reload(utils)
@@ -32,16 +33,17 @@ def test_usda_key_update(tmp_path, monkeypatch):
 
     with TestClient(app.app) as client:
         SQLModel.metadata.create_all(engine)
+        headers = {'X-Config-Token': 'token'}
         # initial key from env
-        resp = client.get('/api/config/usda-key')
+        resp = client.get('/api/config/usda-key', headers=headers)
         assert resp.status_code == 200
         assert resp.json()['key'] == 'envkey'
         # update key
-        resp = client.post('/api/config/usda-key', json={'key': 'newkey'})
+        resp = client.post('/api/config/usda-key', json={'key': 'newkey'}, headers=headers)
         assert resp.status_code == 200
         assert resp.json()['ok'] is True
         # verify
-        resp = client.get('/api/config/usda-key')
+        resp = client.get('/api/config/usda-key', headers=headers)
         assert resp.json()['key'] == 'newkey'
         cfg = json.load(open(tmp_path / 'cfg.json'))
         assert cfg['usda_key'] == 'newkey'
