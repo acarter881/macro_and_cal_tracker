@@ -139,7 +139,16 @@ export async function searchFoods(query: string, dataType: string) {
     return response.data.results;
   } catch (err) {
     console.error("Failed to search foods:", err);
-    toast.error("Food search failed.");
+    if (axios.isAxiosError(err) && err.response?.status === 503) {
+      const detail = err.response.data?.detail;
+      toast.error(
+        typeof detail === "string"
+          ? detail
+          : "USDA search service unavailable. Please try again later."
+      );
+    } else {
+      toast.error("Food search failed.");
+    }
     return [];
   }
 }
