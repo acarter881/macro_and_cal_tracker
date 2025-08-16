@@ -103,10 +103,24 @@ interface MacroFood {
   protein_g_per_100g?: number;
   carb_g_per_100g?: number;
   fat_g_per_100g?: number;
+  unit_name?: string;
+  kcal_per_unit?: number;
+  protein_g_per_unit?: number;
+  carb_g_per_unit?: number;
+  fat_g_per_unit?: number;
 }
 
-const macrosFromFood = (food: MacroFood, grams: number): MacroTotals => {
-  const f = grams / 100;
+const macrosFromFood = (food: MacroFood, amount: number): MacroTotals => {
+  if (food.unit_name) {
+    const f = amount;
+    return {
+      kcal: +((food.kcal_per_unit || 0) * f).toFixed(2),
+      protein: +((food.protein_g_per_unit || 0) * f).toFixed(2),
+      fat: +((food.fat_g_per_unit || 0) * f).toFixed(2),
+      carb: +((food.carb_g_per_unit || 0) * f).toFixed(2),
+    };
+  }
+  const f = amount / 100;
   return {
     kcal: +((food.kcal_per_100g || 0) * f).toFixed(2),
     protein: +((food.protein_g_per_100g || 0) * f).toFixed(2),
@@ -261,6 +275,7 @@ export const useStore = create<AppState & AppActions>((set, get) => ({
         carb: macros.carb,
         fat: macros.fat,
         sort_order: entryRes.sort_order,
+        unit_name: food.unit_name,
       };
       meal.entries.push(newEntry);
       meal.entries.sort((a, b) => a.sort_order - b.sort_order);

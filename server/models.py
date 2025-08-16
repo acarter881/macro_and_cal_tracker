@@ -13,6 +13,12 @@ class Food(SQLModel, table=True):
     protein_g_per_100g: float
     fat_g_per_100g: float
     carb_g_per_100g: float
+    # optional per-unit values for items not measured in grams
+    unit_name: Optional[str] = None
+    kcal_per_unit: Optional[float] = None
+    protein_g_per_unit: Optional[float] = None
+    carb_g_per_unit: Optional[float] = None
+    fat_g_per_unit: Optional[float] = None
     archived: bool = Field(default=False, sa_column=Column(Boolean, nullable=False, server_default="0"))
     fetched_at: datetime = Field(default_factory=datetime.utcnow)
 

@@ -124,8 +124,16 @@ def create_entry(payload: FoodEntryCreate, session: Session = Depends(get_sessio
     session.refresh(entry)
     return entry
 
-def _scaled_from_food(f: Food, grams: float):
-    factor = (grams or 0) / 100.0
+def _scaled_from_food(f: Food, qty: float):
+    if f.unit_name:
+        factor = qty or 0
+        return (
+            (f.kcal_per_unit or 0) * factor,
+            (f.protein_g_per_unit or 0) * factor,
+            (f.carb_g_per_unit or 0) * factor,
+            (f.fat_g_per_unit or 0) * factor,
+        )
+    factor = (qty or 0) / 100.0
     return (
         (f.kcal_per_100g or 0) * factor,
         (f.protein_g_per_100g or 0) * factor,
@@ -261,10 +269,10 @@ async def get_day_full(date: date, session: Session = Depends(get_session)):
         f = foods.get(e.fdc_id)
         if f is None:
             return {"id": e.id, "fdc_id": e.fdc_id, "description": "[deleted item]",
-                    "quantity_g": e.quantity_g, "kcal": 0.0, "protein": 0.0, "carb": 0.0, "fat": 0.0}
+                    "quantity_g": e.quantity_g, "kcal": 0.0, "protein": 0.0, "carb": 0.0, "fat": 0.0, "unit_name": None}
         kcal, p, c, fat = _scaled_from_food(f, e.quantity_g)
         return {"id": e.id, "fdc_id": e.fdc_id, "description": f.description, "quantity_g": e.quantity_g,
-                "kcal": kcal, "protein": p, "carb": c, "fat": fat, "sort_order": e.sort_order}
+                "kcal": kcal, "protein": p, "carb": c, "fat": fat, "sort_order": e.sort_order, "unit_name": f.unit_name}
     by_meal: Dict[int, List[Dict]] = {m.id: [] for m in meals}
     for e in entries:
         by_meal[e.meal_id].append(row_for_entry(e))

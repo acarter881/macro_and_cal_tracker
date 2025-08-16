@@ -10,8 +10,16 @@ from server.models import Meal, FoodEntry, Food, BodyWeight
 router = APIRouter()
 
 
-def _scaled_from_food(f: Food, grams: float):
-    factor = (grams or 0) / 100.0
+def _scaled_from_food(f: Food, qty: float):
+    if f.unit_name:
+        factor = qty or 0
+        return (
+            (f.kcal_per_unit or 0) * factor,
+            (f.protein_g_per_unit or 0) * factor,
+            (f.carb_g_per_unit or 0) * factor,
+            (f.fat_g_per_unit or 0) * factor,
+        )
+    factor = (qty or 0) / 100.0
     return (
         (f.kcal_per_100g or 0) * factor,
         (f.protein_g_per_100g or 0) * factor,

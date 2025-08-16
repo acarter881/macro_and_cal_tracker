@@ -9,6 +9,7 @@ export type SimpleFood = {
   brandOwner?: string;
   dataType?: string;
   defaultGrams?: number;
+  unit_name?: string;
 };
 
 // --- MEAL & DAY ---
@@ -36,6 +37,7 @@ export interface EntryType {
   carb: number;
   fat: number;
   sort_order: number;
+  unit_name?: string;
 }
 
 // The full data structure for a day's meals and totals
@@ -82,10 +84,15 @@ export type Goals = {
 export interface CustomFoodPayload {
   description: string;
   brand_owner?: string;
-  kcal_per_100g: number;
-  protein_g_per_100g: number;
-  carb_g_per_100g: number;
-  fat_g_per_100g: number;
+  kcal_per_100g?: number;
+  protein_g_per_100g?: number;
+  carb_g_per_100g?: number;
+  fat_g_per_100g?: number;
+  unit_name?: string;
+  kcal_per_unit?: number;
+  protein_g_per_unit?: number;
+  carb_g_per_unit?: number;
+  fat_g_per_unit?: number;
 }
 
 export interface CopyMealPayload {
