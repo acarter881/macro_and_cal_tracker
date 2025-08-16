@@ -24,7 +24,7 @@ export function UsdaKeyDialog({ onSaved }: Props) {
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
-      <div className="bg-white dark:bg-surface-dark p-6 rounded shadow w-full max-w-sm">
+      <div className="bg-surface-card p-6 rounded shadow w-full max-w-sm">
         <h2 className="text-lg font-semibold mb-2">USDA API Key</h2>
         <p className="text-sm mb-4">Enter your USDA API key to enable food search.</p>
         <Input

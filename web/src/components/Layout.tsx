@@ -96,12 +96,12 @@ export function Layout({ children }: LayoutProps) {
             </nav>
             <div className="relative" title={isOnline ? 'Online' : 'Offline'}>
               {isOnline ? (
-                <SignalIcon className="h-5 w-5 text-green-500" />
+                <SignalIcon className="h-5 w-5 text-brand-success" />
               ) : (
-                <SignalSlashIcon className="h-5 w-5 text-red-500" />
+                <SignalSlashIcon className="h-5 w-5 text-brand-danger" />
               )}
               {queueSize > 0 && (
-                <span className="absolute -top-1 -right-1 bg-brand-primary text-white text-xs rounded-full px-1">
+                <span className="absolute -top-1 -right-1 bg-brand-primary text-text-light text-xs rounded-full px-1">
                   {queueSize}
                 </span>
               )}
