@@ -220,18 +220,25 @@ def delete_entry(entry_id: int, session: Session = Depends(get_session)):
     deleted_order = e.sort_order
     meal_id = e.meal_id
     session.delete(e)
-    session.commit()
+    # remove the entry but keep transaction open so we can safely reorder
+    session.flush()
 
-    stmt = select(FoodEntry).where(FoodEntry.meal_id == meal_id)
     if deleted_order is not None:
-        stmt = stmt.where(FoodEntry.sort_order > deleted_order)
-        start_order = deleted_order
-    else:
-        start_order = 1
-    remaining = session.exec(stmt.order_by(FoodEntry.sort_order)).all()
-    for idx, item in enumerate(remaining, start=start_order):
-        item.sort_order = idx
-        session.add(item)
+        affected = session.exec(
+            select(FoodEntry)
+            .where(
+                FoodEntry.meal_id == meal_id,
+                FoodEntry.sort_order > deleted_order,
+            )
+            .order_by(FoodEntry.sort_order)
+        ).all()
+        for item in affected:
+            # decrement sort order one-by-one, flushing each change to avoid
+            # unique constraint conflicts on (meal_id, sort_order)
+            item.sort_order -= 1
+            session.add(item)
+            session.flush()
+
     session.commit()
     return {"ok": True}
 
