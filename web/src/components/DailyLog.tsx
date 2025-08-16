@@ -246,7 +246,7 @@ function MealCard({ meal, isCurrent, onSelect, onUpdateEntry, onDeleteEntry, onD
             <col className="w-16" />
             <col className="w-16" />
             <col className="w-16" />
-            <col className="w-36" />
+            <col className="w-48" />
           </colgroup>
           <thead className="hidden sm:table-header-group">
             <tr className="border-b border-border-light dark:border-border-dark">
