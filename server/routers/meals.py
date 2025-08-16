@@ -10,7 +10,7 @@ from pydantic import BaseModel, field_validator
 
 from server.db import get_session
 from server.models import Meal, FoodEntry, Food
-from server.utils import get_or_create_meal, ensure_food_cached
+from server.utils import get_or_create_meal, ensure_food_cached, scaled_macros_from_food
 
 router = APIRouter()
 
@@ -124,22 +124,6 @@ def create_entry(payload: FoodEntryCreate, session: Session = Depends(get_sessio
     session.refresh(entry)
     return entry
 
-def _scaled_from_food(f: Food, qty: float):
-    if f.unit_name:
-        factor = qty or 0
-        return (
-            (f.kcal_per_unit or 0) * factor,
-            (f.protein_g_per_unit or 0) * factor,
-            (f.carb_g_per_unit or 0) * factor,
-            (f.fat_g_per_unit or 0) * factor,
-        )
-    factor = (qty or 0) / 100.0
-    return (
-        (f.kcal_per_100g or 0) * factor,
-        (f.protein_g_per_100g or 0) * factor,
-        (f.carb_g_per_100g or 0) * factor,
-        (f.fat_g_per_100g or 0) * factor,
-    )
 
 @router.get("/api/days/{date}")
 def get_day(date: date, session: Session = Depends(get_session)):
@@ -157,7 +141,7 @@ def get_day(date: date, session: Session = Depends(get_session)):
         f = foods.get(e.fdc_id)
         if not f:
             continue
-        kcal, p, c, fat = _scaled_from_food(f, e.quantity_g)
+        kcal, p, c, fat = scaled_macros_from_food(f, e.quantity_g)
         totals["kcal"] += kcal
         totals["protein"] += p
         totals["carb"] += c
@@ -272,7 +256,7 @@ async def get_day_full(date: date, session: Session = Depends(get_session)):
         if f is None:
             return {"id": e.id, "fdc_id": e.fdc_id, "description": "[deleted item]",
                     "quantity_g": e.quantity_g, "kcal": 0.0, "protein": 0.0, "carb": 0.0, "fat": 0.0, "unit_name": None}
-        kcal, p, c, fat = _scaled_from_food(f, e.quantity_g)
+        kcal, p, c, fat = scaled_macros_from_food(f, e.quantity_g)
         return {"id": e.id, "fdc_id": e.fdc_id, "description": f.description, "quantity_g": e.quantity_g,
                 "kcal": kcal, "protein": p, "carb": c, "fat": fat, "sort_order": e.sort_order, "unit_name": f.unit_name}
     by_meal: Dict[int, List[Dict]] = {m.id: [] for m in meals}
@@ -315,7 +299,7 @@ def export_csv(start: date = Query(..., description="YYYY-MM-DD"),
         f = foods.get(e.fdc_id)
         if not f:
             continue
-        kcal, p, c, fat = _scaled_from_food(f, e.quantity_g)
+        kcal, p, c, fat = scaled_macros_from_food(f, e.quantity_g)
         w.writerow([meals_by_id[e.meal_id].date, meals_by_id[e.meal_id].name, f.description, e.quantity_g,
                     kcal, p, c, fat])
     csv_bytes = buf.getvalue().encode("utf-8")

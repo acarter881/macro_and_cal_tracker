@@ -6,26 +6,10 @@ from sqlmodel import Session, select
 
 from server.db import get_session
 from server.models import Meal, FoodEntry, Food, BodyWeight
+from server.utils import scaled_macros_from_food
 
 router = APIRouter()
 
-
-def _scaled_from_food(f: Food, qty: float):
-    if f.unit_name:
-        factor = qty or 0
-        return (
-            (f.kcal_per_unit or 0) * factor,
-            (f.protein_g_per_unit or 0) * factor,
-            (f.carb_g_per_unit or 0) * factor,
-            (f.fat_g_per_unit or 0) * factor,
-        )
-    factor = (qty or 0) / 100.0
-    return (
-        (f.kcal_per_100g or 0) * factor,
-        (f.protein_g_per_100g or 0) * factor,
-        (f.carb_g_per_100g or 0) * factor,
-        (f.fat_g_per_100g or 0) * factor,
-    )
 
 
 @router.get("/api/history")
@@ -69,7 +53,7 @@ def get_history(start_date: date, end_date: date, session: Session = Depends(get
         food = foods.get(e.fdc_id)
         if not food:
             continue
-        kcal, p, c, fat = _scaled_from_food(food, e.quantity_g)
+        kcal, p, c, fat = scaled_macros_from_food(food, e.quantity_g)
         totals[day]["kcal"] += kcal
         totals[day]["protein"] += p
         totals[day]["carb"] += c
