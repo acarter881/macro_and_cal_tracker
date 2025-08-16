@@ -1,21 +1,24 @@
 import { useStore } from "../store";
+import type { SimpleFood } from "../types";
 import { Button } from "./ui/Button";
 
 export function QuickAdd() {
   const addFood = useStore(s => s.addFood);
   const favorites = useStore(s => s.favorites);
+  const mealName = useStore(s => s.mealName);
   if (!favorites.length) return null;
 
-  function handleClick(f: { fdcId: number; description: string; defaultGrams?: number }) {
-    const defaultAmount = f.defaultGrams ?? 100;
+  function handleClick(f: SimpleFood) {
+    const unit = f.unit_name || "grams";
+    const defaultAmount = f.defaultGrams ?? (f.unit_name ? 1 : 100);
     const input = window.prompt(
-      `How many grams of ${f.description}?`,
+      `Add to ${mealName}: How many ${unit} of ${f.description}?`,
       String(defaultAmount)
     );
     if (!input) return;
-    const grams = parseFloat(input);
-    if (!isNaN(grams) && grams > 0) {
-      addFood(f.fdcId, grams);
+    const qty = parseFloat(input);
+    if (!isNaN(qty) && qty > 0) {
+      addFood(f.fdcId, qty);
     }
   }
 
