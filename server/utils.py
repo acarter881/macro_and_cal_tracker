@@ -3,7 +3,7 @@ import json
 import asyncio
 from pathlib import Path
 from typing import Dict, Optional, TypedDict
-from datetime import date
+from datetime import date, datetime, timedelta
 
 import httpx
 from fastapi import HTTPException
@@ -15,6 +15,8 @@ from server.models import Food, Meal
 USDA_BASE = "https://api.nal.usda.gov/fdc/v1"
 from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv())
+
+CACHE_TTL = timedelta(days=30)
 
 # Location for storing USDA API key between runs
 CONFIG_PATH = Path(os.getenv("USDA_CONFIG_PATH") or Path.home() / ".macro_tracker_config.json")
@@ -201,20 +203,21 @@ async def fetch_food_detail(fdc_id: int) -> dict:
 
 async def ensure_food_cached(fdc_id: int, session: Session) -> Food:
     food = session.get(Food, fdc_id)
-    if food:
+    now = datetime.utcnow()
+    if food and food.fetched_at and food.fetched_at > now - CACHE_TTL:
         return food
     food_json = await fetch_food_detail(fdc_id)
     macros = extract_macros_from_fdc(food_json)
-    food = Food(
-        fdc_id=fdc_id,
-        description=food_json.get("description", f"FDC {fdc_id}"),
-        brand_owner=food_json.get("brandOwner"),
-        data_type=food_json.get("dataType"),
-        kcal_per_100g=macros["kcal"],
-        protein_g_per_100g=macros["protein"],
-        fat_g_per_100g=macros["fat"],
-        carb_g_per_100g=macros["carb"],
-    )
+    if food is None:
+        food = Food(fdc_id=fdc_id)
+    food.description = food_json.get("description", f"FDC {fdc_id}")
+    food.brand_owner = food_json.get("brandOwner")
+    food.data_type = food_json.get("dataType")
+    food.kcal_per_100g = macros["kcal"]
+    food.protein_g_per_100g = macros["protein"]
+    food.fat_g_per_100g = macros["fat"]
+    food.carb_g_per_100g = macros["carb"]
+    food.fetched_at = now
     session.add(food)
     session.commit()
     session.refresh(food)
