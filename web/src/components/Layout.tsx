@@ -127,8 +127,7 @@ export function Layout({ children }: LayoutProps) {
           </nav>
         </div>
       </div>
-
-      <main className="mx-auto max-w-screen-lg px-4 py-6 lg:px-6">{children}</main>
+      <main className="mx-auto px-4 py-6 lg:px-6">{children}</main>
     </div>
   );
 }
