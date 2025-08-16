@@ -17,24 +17,25 @@ export default {
     extend: {
       colors: {
         brand: {
-          primary: '#6366f1',
-          success: '#82ca9d',
-          warning: '#ffc658',
-          danger: '#ff8042',
+          primary: 'rgb(var(--color-brand-primary) / <alpha-value>)',
+          success: 'rgb(var(--color-brand-success) / <alpha-value>)',
+          warning: 'rgb(var(--color-brand-warning) / <alpha-value>)',
+          danger: 'rgb(var(--color-brand-danger) / <alpha-value>)',
         },
         surface: {
-          light: '#f3f4f6',
-          dark: '#111827',
+          light: 'rgb(var(--color-surface-light) / <alpha-value>)',
+          dark: 'rgb(var(--color-surface-dark) / <alpha-value>)',
+          card: 'rgb(var(--color-surface-card) / <alpha-value>)',
         },
         text: {
-          DEFAULT: '#1f2937',
-          light: '#f3f4f6',
-          muted: '#6b7280',
-          'muted-dark': '#9ca3af',
+          DEFAULT: 'rgb(var(--color-text-default) / <alpha-value>)',
+          light: 'rgb(var(--color-text-light) / <alpha-value>)',
+          muted: 'rgb(var(--color-text-muted) / <alpha-value>)',
+          'muted-dark': 'rgb(var(--color-text-muted-dark) / <alpha-value>)',
         },
         border: {
-          light: '#e5e7eb',
-          dark: '#4b5563',
+          light: 'rgb(var(--color-border-light) / <alpha-value>)',
+          dark: 'rgb(var(--color-border-dark) / <alpha-value>)',
         },
       },
       fontFamily: {
