@@ -78,3 +78,52 @@ export type Goals = {
   fat: number;
   carb: number;
 };
+
+export interface CustomFoodPayload {
+  description: string;
+  brand_owner?: string;
+  kcal_per_100g: number;
+  protein_g_per_100g: number;
+  carb_g_per_100g: number;
+  fat_g_per_100g: number;
+}
+
+export interface CopyMealPayload {
+  date: string;
+  meal_name: string;
+}
+
+export type CreateMealPayload = { date: string; tempId: number };
+export type DeleteMealPayload = { mealId: number };
+export type UpdateMealPayload = {
+  mealId: number;
+  data: { name?: string; sort_order?: number };
+};
+export type AddEntryPayload = {
+  meal_id: number;
+  fdc_id: number;
+  quantity_g: number;
+  tempId: number;
+};
+export type UpdateEntryPayload = { entryId: number; newGrams: number };
+export type MoveEntryPayload = { entryId: number; newOrder: number };
+export type DeleteEntryPayload = { entryId: number };
+export type SetWeightPayload = { date: string; weight: number };
+
+export type OfflineOp =
+  | { kind: "createMeal"; payload: CreateMealPayload }
+  | { kind: "deleteMeal"; payload: DeleteMealPayload }
+  | { kind: "updateMeal"; payload: UpdateMealPayload }
+  | { kind: "addEntry"; payload: AddEntryPayload }
+  | { kind: "updateEntry"; payload: UpdateEntryPayload }
+  | { kind: "moveEntry"; payload: MoveEntryPayload }
+  | { kind: "deleteEntry"; payload: DeleteEntryPayload }
+  | { kind: "setWeight"; payload: SetWeightPayload };
+
+export interface OfflineStore {
+  days: Record<string, DayFull>;
+  foods: SimpleFood[];
+  weights: Record<string, number>;
+  queue: OfflineOp[];
+  nextId: number;
+}
