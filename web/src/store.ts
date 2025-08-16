@@ -97,12 +97,22 @@ const loadFavorites = (): SimpleFood[] =>
 // --- Day mutation helpers -------------------------------------------------
 type MacroTotals = { kcal: number; protein: number; fat: number; carb: number };
 
-const applyDelta = (t: MacroTotals, d: MacroTotals) => {
-  t.kcal = +(t.kcal + d.kcal).toFixed(2);
-  t.protein = +(t.protein + d.protein).toFixed(2);
-  t.fat = +(t.fat + d.fat).toFixed(2);
-  t.carb = +(t.carb + d.carb).toFixed(2);
-};
+/**
+ * Apply a macro delta immutably.
+ *
+ * Zustand subscribers relying on object reference checks (the default
+ * behaviour) won't be notified if we mutate the existing totals object in
+ * place. This function returns a new object with the delta applied so that any
+ * part of the state tree referencing it receives a new reference and
+ * components such as the `Summary` card re-render when entries are removed or
+ * added.
+ */
+const applyDelta = (t: MacroTotals, d: MacroTotals): MacroTotals => ({
+  kcal: +(t.kcal + d.kcal).toFixed(2),
+  protein: +(t.protein + d.protein).toFixed(2),
+  fat: +(t.fat + d.fat).toFixed(2),
+  carb: +(t.carb + d.carb).toFixed(2),
+});
 
 interface MacroFood {
   kcal_per_100g?: number;
@@ -288,8 +298,8 @@ export const useStore = create<AppState & AppActions>((set, get) => ({
       };
       meal.entries.push(newEntry);
       meal.entries.sort((a, b) => a.sort_order - b.sort_order);
-      applyDelta(meal.subtotal, macros);
-      applyDelta(day.totals, macros);
+      meal.subtotal = applyDelta(meal.subtotal, macros);
+      day.totals = applyDelta(day.totals, macros);
       set({ day });
     } catch (e) {
       toast.error("Failed to add food entry.");
@@ -344,8 +354,8 @@ export const useStore = create<AppState & AppActions>((set, get) => ({
           entry.protein = newTotals.protein;
           entry.fat = newTotals.fat;
           entry.carb = newTotals.carb;
-          applyDelta(meal.subtotal, delta);
-          applyDelta(day.totals, delta);
+          meal.subtotal = applyDelta(meal.subtotal, delta);
+          day.totals = applyDelta(day.totals, delta);
           break;
         }
       }
