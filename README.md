@@ -59,6 +59,13 @@ export CONFIG_AUTH_TOKEN=secret-token
 curl -H "X-Config-Token: secret-token" http://localhost:8000/api/config/usda-key
 ```
 
+When building the frontend, expose the token as `VITE_CONFIG_AUTH_TOKEN` so
+requests automatically include the header:
+
+```
+VITE_CONFIG_AUTH_TOKEN=secret-token npm run build
+```
+
 ## Keyboard Shortcuts
 
 The application supports a few global shortcuts:
