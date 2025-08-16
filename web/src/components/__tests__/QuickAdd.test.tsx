@@ -28,10 +28,12 @@ describe('QuickAdd', () => {
     mockStore.favorites = [
       { fdcId: 1, description: 'Apple', defaultGrams: 150 },
     ];
+    const promptSpy = vi.spyOn(window, 'prompt').mockReturnValue('175');
     render(<QuickAdd />);
     const btn = screen.getByRole('button', { name: /apple/i });
     fireEvent.click(btn);
-    expect(mockStore.addFood).toHaveBeenCalledWith(1, 150);
+    expect(mockStore.addFood).toHaveBeenCalledWith(1, 175);
+    promptSpy.mockRestore();
   });
 
   test('still triggers addFood when offline', () => {
@@ -39,9 +41,11 @@ describe('QuickAdd', () => {
     mockStore.favorites = [
       { fdcId: 2, description: 'Pear', defaultGrams: 100 },
     ];
+    const promptSpy = vi.spyOn(window, 'prompt').mockReturnValue('120');
     render(<QuickAdd />);
     fireEvent.click(screen.getByRole('button', { name: /pear/i }));
-    expect(mockStore.addFood).toHaveBeenCalledWith(2, 100);
+    expect(mockStore.addFood).toHaveBeenCalledWith(2, 120);
+    promptSpy.mockRestore();
     Object.defineProperty(navigator, 'onLine', { value: true, configurable: true });
   });
 });
