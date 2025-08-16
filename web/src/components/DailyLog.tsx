@@ -9,10 +9,29 @@ import { Button } from "./ui/Button";
 import { Input } from "./ui/Input";
 
 export function DailyLog() {
-  const { day, mealName, setDate, setMealName, addMeal, updateEntry, moveEntry, deleteEntry, deleteMeal, renameMeal, moveMeal, copiedMealId, copyMeal, pasteMeal } = useStore();
+  const {
+    day,
+    mealName,
+    setDate,
+    setMealName,
+    addMeal,
+    updateEntry,
+    moveEntry,
+    deleteEntry,
+    deleteMeal,
+    renameMeal,
+    moveMeal,
+    copiedMealId,
+    copyMeal,
+    pasteMeal,
+    copiedEntry,
+    copyEntry,
+    pasteEntry,
+  } = useStore();
 
   const [isAddingMeal, setIsAddingMeal] = useState(false);
   const [isPasting, setIsPasting] = useState(false);
+  const [isPastingEntry, setIsPastingEntry] = useState(false);
 
   const currentDate = day?.date ?? new Date().toISOString().slice(0, 10);
 
@@ -26,6 +45,12 @@ export function DailyLog() {
     setIsPasting(true);
     await pasteMeal();
     setIsPasting(false);
+  };
+
+  const handlePasteEntry = async () => {
+    setIsPastingEntry(true);
+    await pasteEntry();
+    setIsPastingEntry(false);
   };
 
   const pickerMeals = useMemo(() => {
@@ -93,6 +118,17 @@ export function DailyLog() {
               </Button>
             )}
 
+            {copiedEntry && (
+              <Button
+                type="button"
+                className="btn-secondary whitespace-nowrap"
+                onClick={handlePasteEntry}
+                disabled={isPastingEntry}
+              >
+                {isPastingEntry ? "Pasting..." : `Paste row to ${mealName}`}
+              </Button>
+            )}
+
             <Button type="button" className="btn-secondary" onClick={handleAddMeal} disabled={isAddingMeal}>
               {isAddingMeal ? "+ ..." : "+ Meal"}
             </Button>
@@ -116,6 +152,7 @@ export function DailyLog() {
                       onDeleteMeal={deleteMeal}
                       onCopyMeal={copyMeal}
                       onRenameMeal={renameMeal}
+                      onCopyEntry={copyEntry}
                       provided={providedMeal}
                     />
                   )}
@@ -139,10 +176,11 @@ type MealCardProps = {
   onDeleteMeal: (mealId: number) => Promise<void>;
   onCopyMeal: (mealId: number) => void;
   onRenameMeal: (mealId: number, newName: string) => Promise<void>;
+  onCopyEntry: (entry: EntryType) => void;
   provided: any;
 };
 
-function MealCard({ meal, isCurrent, onSelect, onUpdateEntry, onDeleteEntry, onDeleteMeal, onCopyMeal, onRenameMeal, provided }: MealCardProps) {
+function MealCard({ meal, isCurrent, onSelect, onUpdateEntry, onDeleteEntry, onDeleteMeal, onCopyMeal, onRenameMeal, onCopyEntry, provided }: MealCardProps) {
   const [isRenaming, setIsRenaming] = useState(false);
   const [tempName, setTempName] = useState(meal.name);
   useEffect(() => setTempName(meal.name), [meal.name]);
@@ -224,11 +262,11 @@ function MealCard({ meal, isCurrent, onSelect, onUpdateEntry, onDeleteEntry, onD
           </thead>
           <Droppable droppableId={`entries-${meal.id}`} type="ENTRY">
             {providedEntries => (
-              <tbody
-                ref={providedEntries.innerRef}
-                {...providedEntries.droppableProps}
-                className="block sm:table-row-group"
-              >
+          <tbody
+            ref={providedEntries.innerRef}
+            {...providedEntries.droppableProps}
+            className="block sm:table-row-group"
+          >
                 {meal.entries.length ? (
                   meal.entries
                     .slice()
@@ -236,7 +274,7 @@ function MealCard({ meal, isCurrent, onSelect, onUpdateEntry, onDeleteEntry, onD
                     .map((e, idx) => (
                       <Draggable key={e.id} draggableId={`entry-${e.id}`} index={idx}>
                         {providedRow => (
-                          <Row e={e} onUpdate={onUpdateEntry} onDelete={onDeleteEntry} provided={providedRow} />
+                          <Row e={e} onUpdate={onUpdateEntry} onDelete={onDeleteEntry} onCopy={onCopyEntry} provided={providedRow} />
                         )}
                       </Draggable>
                     ))
@@ -280,9 +318,9 @@ function MealCard({ meal, isCurrent, onSelect, onUpdateEntry, onDeleteEntry, onD
 }
 
 
-type RowProps = { e: EntryType, onUpdate: (id: number, grams: number) => Promise<void>, onDelete: (id: number) => Promise<void>, provided: any };
+type RowProps = { e: EntryType, onUpdate: (id: number, grams: number) => Promise<void>, onDelete: (id: number) => Promise<void>, onCopy: (e: EntryType) => void, provided: any };
 
-function Row({ e, onUpdate, onDelete, provided }: RowProps) {
+function Row({ e, onUpdate, onDelete, onCopy, provided }: RowProps) {
   const [g, setG] = useState<number>(e.quantity_g);
   const [isMutating, setIsMutating] = useState(false);
   const changed = g !== e.quantity_g;
@@ -362,6 +400,15 @@ function Row({ e, onUpdate, onDelete, provided }: RowProps) {
       </td>
       <td className="p-2 sm:table-cell">
         <div className="flex gap-2 justify-end">
+          <Button
+            className="btn-ghost btn-sm"
+            onClick={() => onCopy(e)}
+            disabled={isMutating}
+            title="Copy entry"
+            aria-label="Copy entry"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+          </Button>
           <Button
             className="btn-secondary btn-sm"
             disabled={!changed || isNaN(g) || g <= 0 || isMutating}
