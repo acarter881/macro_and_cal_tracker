@@ -3,10 +3,15 @@ import toast from 'react-hot-toast';
 import * as api from "../../api";
 import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
+import { useStore } from "../../store";
 
 export function ExportTab() {
-  const [exportStart, setExportStart] = useState<string>(new Date().toISOString().slice(0, 10));
-  const [exportEnd, setExportEnd] = useState<string>(new Date().toISOString().slice(0, 10));
+  const today = new Date().toISOString().slice(0, 10);
+  const selectedDate = useStore(state => state.date);
+  const defaultStart = selectedDate > today ? today : selectedDate;
+
+  const [exportStart, setExportStart] = useState<string>(defaultStart);
+  const [exportEnd, setExportEnd] = useState<string>(today);
   const [isExporting, setIsExporting] = useState(false);
   const invalidRange = !exportStart || !exportEnd || exportStart > exportEnd;
 
