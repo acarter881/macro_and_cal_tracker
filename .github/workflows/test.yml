@@ -14,7 +14,7 @@ jobs:
           python-version: '3.x'
       - name: Install dependencies
         run: |
-          pip install fastapi sqlmodel sqlalchemy httpx python-dotenv pytest
+          pip install fastapi sqlmodel sqlalchemy httpx python-dotenv pytest tenacity
       - name: Run tests
         run: |
           pytest
