@@ -27,11 +27,11 @@ const palettes = {
         tooltipBg: '#333',
         tooltipColor: '#fff',
         lines: {
-            kcal: '#8884d8',
+            kcal: '#a5b4fc',
             protein: '#82ca9d',
             fat: '#ffc658',
             carb: '#ff8042',
-            weight: '#8884d8',
+            weight: '#a5b4fc',
         },
     },
 } as const;
