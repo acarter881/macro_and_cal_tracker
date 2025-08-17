@@ -238,8 +238,8 @@ function MealCard({ meal, isCurrent, onSelect, onUpdateEntry, onDeleteEntry, onD
         </div>
       </div>
       <div className="overflow-x-auto">
-        <table className="w-full text-sm table-fixed table-zebra block sm:table">
-          <colgroup className="hidden sm:table-column-group">
+        <table className="w-full text-sm table-fixed table-zebra">
+          <colgroup className="table-column-group">
             <col />
             <col className="w-24" />
             <col className="w-20" />
@@ -249,7 +249,7 @@ function MealCard({ meal, isCurrent, onSelect, onUpdateEntry, onDeleteEntry, onD
             <col className="w-16" />
             <col className="w-48" />
           </colgroup>
-          <thead className="hidden sm:table-header-group">
+          <thead className="table-header-group">
             <tr className="border-b border-border-light dark:border-border-dark">
               <th className="text-left p-3 font-medium">Item</th>
               <th className="text-right p-3 font-medium">Qty</th>
@@ -266,7 +266,7 @@ function MealCard({ meal, isCurrent, onSelect, onUpdateEntry, onDeleteEntry, onD
           <tbody
             ref={providedEntries.innerRef}
             {...providedEntries.droppableProps}
-            className="block sm:table-row-group"
+            className="table-row-group"
           >
                 {meal.entries.length ? (
                   meal.entries
@@ -280,7 +280,7 @@ function MealCard({ meal, isCurrent, onSelect, onUpdateEntry, onDeleteEntry, onD
                       </Draggable>
                     ))
                 ) : (
-                  <tr className="block sm:table-row">
+                  <tr>
                     <td className="p-4 text-text-muted text-center" colSpan={8}>No entries yet.</td>
                   </tr>
                 )}
@@ -288,27 +288,13 @@ function MealCard({ meal, isCurrent, onSelect, onUpdateEntry, onDeleteEntry, onD
               </tbody>
             )}
           </Droppable>
-          <tfoot className="block sm:table-footer-group">
-            <tr className="font-semibold border-t-2 border-border-light dark:border-border-dark block sm:table-row">
-                <td className="p-3 flex justify-between sm:table-cell sm:text-right" colSpan={3}>
-                  <span className="sm:hidden">Subtotal</span>
-                </td>
-                <td className="p-3 subtotal-kcal flex justify-between sm:table-cell sm:text-right">
-                  <span className="sm:hidden">kcal</span>
-                  <span>{meal.subtotal.kcal.toFixed(1)}</span>
-                </td>
-                <td className="p-3 subtotal-fat flex justify-between sm:table-cell sm:text-right">
-                  <span className="sm:hidden">F</span>
-                  <span>{meal.subtotal.fat.toFixed(1)}</span>
-                </td>
-                <td className="p-3 subtotal-carb flex justify-between sm:table-cell sm:text-right">
-                  <span className="sm:hidden">C</span>
-                  <span>{meal.subtotal.carb.toFixed(1)}</span>
-                </td>
-                <td className="p-3 subtotal-protein flex justify-between sm:table-cell sm:text-right">
-                  <span className="sm:hidden">P</span>
-                  <span>{meal.subtotal.protein.toFixed(1)}</span>
-                </td>
+          <tfoot className="table-footer-group">
+            <tr className="font-semibold border-t-2 border-border-light dark:border-border-dark">
+                <td className="p-3 text-right" colSpan={3}></td>
+                <td className="p-3 subtotal-kcal text-right">{meal.subtotal.kcal.toFixed(1)}</td>
+                <td className="p-3 subtotal-fat text-right">{meal.subtotal.fat.toFixed(1)}</td>
+                <td className="p-3 subtotal-carb text-right">{meal.subtotal.carb.toFixed(1)}</td>
+                <td className="p-3 subtotal-protein text-right">{meal.subtotal.protein.toFixed(1)}</td>
                 <td className="p-3 text-right"></td>
             </tr>
           </tfoot>
@@ -352,14 +338,13 @@ function Row({ e, onUpdate, onDelete, onCopy, provided }: RowProps) {
 
   return (
     <tr
-      className="border-t border-border-light dark:border-border-dark block sm:table-row"
+      className="border-t border-border-light dark:border-border-dark"
       ref={provided.innerRef}
       {...provided.draggableProps}
       {...provided.dragHandleProps}
     >
-      <td className="p-2 text-left font-medium block sm:table-cell">{e.description}</td>
-      <td className="p-2 flex items-center justify-between sm:table-cell sm:text-right">
-        <span className="sm:hidden mr-2">Qty</span>
+      <td className="p-2 text-left font-medium">{e.description}</td>
+      <td className="p-2 text-right">
         {(() => {
           const id = `entry-${e.id}-qty`;
           return (
@@ -379,27 +364,12 @@ function Row({ e, onUpdate, onDelete, onCopy, provided }: RowProps) {
           );
         })()}
       </td>
-      <td className="p-2 flex justify-between sm:table-cell sm:text-right">
-        <span className="sm:hidden">Unit</span>
-        <span>{e.unit_name || 'g'}</span>
-      </td>
-      <td className="p-2 flex justify-between sm:table-cell sm:text-right">
-        <span className="sm:hidden">kcal</span>
-        <span>{e.kcal.toFixed(1)}</span>
-      </td>
-      <td className="p-2 flex justify-between sm:table-cell sm:text-right">
-        <span className="sm:hidden">F</span>
-        <span>{e.fat.toFixed(1)}</span>
-      </td>
-      <td className="p-2 flex justify-between sm:table-cell sm:text-right">
-        <span className="sm:hidden">C</span>
-        <span>{e.carb.toFixed(1)}</span>
-      </td>
-      <td className="p-2 flex justify-between sm:table-cell sm:text-right">
-        <span className="sm:hidden">P</span>
-        <span>{e.protein.toFixed(1)}</span>
-      </td>
-      <td className="p-2 sm:table-cell">
+      <td className="p-2 text-right">{e.unit_name || 'g'}</td>
+      <td className="p-2 text-right">{e.kcal.toFixed(1)}</td>
+      <td className="p-2 text-right">{e.fat.toFixed(1)}</td>
+      <td className="p-2 text-right">{e.carb.toFixed(1)}</td>
+      <td className="p-2 text-right">{e.protein.toFixed(1)}</td>
+      <td className="p-2">
         <div className="flex gap-2 justify-end">
           <Button
             className="btn-ghost btn-sm"
