@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { format, subDays, parseISO } from 'date-fns';
-import { getHistory } from "../api";
+import { getHistory } from "../api/meals";
 import type { HistoryDay } from "../types";
 import { LoadingSpinner } from "../components/LoadingSpinner";
 import { useStore } from "../store";

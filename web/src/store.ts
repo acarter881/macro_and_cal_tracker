@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import toast from 'react-hot-toast';
-import * as api from './api';
+import * as mealsApi from './api/meals';
+import * as foodsApi from './api/foods';
+import { syncQueue } from './api/offline';
 import type {
   DayFull,
   Preset,
@@ -184,7 +186,7 @@ export const useStore = create<AppState & AppActions>((set, get) => ({
     const sourceMealId = get().copiedMealId;
     if (!sourceMealId) return;
     const payload: CopyMealPayload = { date: get().date, meal_name: get().mealName };
-    const promise = api.copyMealTo(sourceMealId, payload);
+    const promise = mealsApi.copyMealTo(sourceMealId, payload);
     toast.promise(promise, {
         loading: 'Pasting meal...',
         success: 'Meal pasted successfully!',
@@ -206,11 +208,11 @@ export const useStore = create<AppState & AppActions>((set, get) => ({
     if (!entry || !state.day) return;
     let meal = state.day.meals.find(m => m.name === state.mealName);
     if (!meal) {
-      const newMeal = await api.createMeal(state.date);
+      const newMeal = await mealsApi.createMeal(state.date);
       meal = { ...newMeal, entries: [], subtotal: { kcal: 0, protein: 0, fat: 0, carb: 0 } };
       state.day.meals.push(meal);
     }
-    const promise = api.addEntry(meal.id, entry.fdc_id!, entry.quantity_g);
+    const promise = mealsApi.addEntry(meal.id, entry.fdc_id!, entry.quantity_g);
     toast.promise(promise, {
       loading: 'Pasting entry...',
       success: 'Entry pasted successfully!',
@@ -263,7 +265,7 @@ export const useStore = create<AppState & AppActions>((set, get) => ({
     await get().syncOffline();
     await get().fetchDay();
     await get().refreshPresets();
-    const foods = await api.searchMyFoods();
+    const foods = await foodsApi.searchMyFoods();
     set({ allMyFoods: foods });
   },
 
@@ -286,7 +288,7 @@ export const useStore = create<AppState & AppActions>((set, get) => ({
 
   saveWeight: async (w) => {
     try {
-      await api.setWeight(get().date, w);
+      await mealsApi.setWeight(get().date, w);
       set({ weight: w });
       toast.success('Weight saved!');
     } catch {
@@ -296,12 +298,12 @@ export const useStore = create<AppState & AppActions>((set, get) => ({
 
   fetchDay: async () => {
     try {
-      let d = await api.getDayFull(get().date);
+      let d = await mealsApi.getDayFull(get().date);
       if (d.meals.length === 0) {
-        for (let i = 0; i < 4; i++) { await api.createMeal(get().date); }
-        d = await api.getDayFull(get().date);
+        for (let i = 0; i < 4; i++) { await mealsApi.createMeal(get().date); }
+        d = await mealsApi.getDayFull(get().date);
       }
-      const w = await api.getWeight(get().date);
+      const w = await mealsApi.getWeight(get().date);
       set({ day: d, weight: w?.weight ?? null });
       const mealExists = d.meals.some((m: MealType) => m.name === get().mealName);
       if (!mealExists) set({ mealName: d.meals[0]?.name || "Meal 1" });
@@ -326,12 +328,12 @@ export const useStore = create<AppState & AppActions>((set, get) => ({
       if (!day) return;
       let meal = day.meals.find(m => m.name === state.mealName);
       if (!meal) {
-        const newMeal = await api.createMeal(state.date);
+        const newMeal = await mealsApi.createMeal(state.date);
         meal = { ...newMeal, entries: [], subtotal: { kcal: 0, protein: 0, fat: 0, carb: 0 } };
         day.meals.push(meal);
       }
-      const food = await api.getFood(foodId);
-      const entryRes = await api.addEntry(meal.id, foodId, grams);
+      const food = await foodsApi.getFood(foodId);
+      const entryRes = await mealsApi.addEntry(meal.id, foodId, grams);
       const macros = macrosFromFood(food, grams);
       const newEntry: EntryType = {
         id: entryRes.id,
@@ -356,18 +358,18 @@ export const useStore = create<AppState & AppActions>((set, get) => ({
   },
 
   addMeal: async () => {
-    const newMeal = await api.createMeal(get().date);
+    const newMeal = await mealsApi.createMeal(get().date);
     await get().fetchDay();
     set({ mealName: newMeal.name });
   },
   
   deleteMeal: async (mealId) => {
-    await api.deleteMeal(mealId);
+    await mealsApi.deleteMeal(mealId);
     await get().fetchDay();
   },
 
   renameMeal: async (mealId, newName) => {
-    await api.updateMeal(mealId, { name: newName });
+    await mealsApi.updateMeal(mealId, { name: newName });
     set((state) => {
       const day = state.day;
       if (!day) return {};
@@ -379,12 +381,12 @@ export const useStore = create<AppState & AppActions>((set, get) => ({
   },
 
   moveMeal: async (mealId, newOrder) => {
-    await api.updateMeal(mealId, { sort_order: newOrder });
+    await mealsApi.updateMeal(mealId, { sort_order: newOrder });
     await get().fetchDay();
   },
 
   updateEntry: async (entryId, grams) => {
-    await api.updateEntry(entryId, grams);
+    await mealsApi.updateEntry(entryId, grams);
     set((state) => {
       const day = state.day;
       if (!day) return {};
@@ -413,7 +415,7 @@ export const useStore = create<AppState & AppActions>((set, get) => ({
   },
 
   moveEntry: async (entryId, newOrder) => {
-    await api.moveEntry(entryId, newOrder);
+    await mealsApi.moveEntry(entryId, newOrder);
     set((state) => {
       const day = state.day;
       if (!day) return {};
@@ -431,7 +433,7 @@ export const useStore = create<AppState & AppActions>((set, get) => ({
   },
 
   deleteEntry: async (entryId) => {
-    await api.deleteEntry(entryId);
+    await mealsApi.deleteEntry(entryId);
     set((state) => {
       const day = state.day;
       if (!day) return {};
@@ -457,7 +459,7 @@ export const useStore = create<AppState & AppActions>((set, get) => ({
     const info = get().lastDeleted;
     if (!info) return;
     const { mealId, entry, index } = info;
-    const res = await api.addEntry(mealId, entry.fdc_id || 0, entry.quantity_g);
+    const res = await mealsApi.addEntry(mealId, entry.fdc_id || 0, entry.quantity_g);
     set((state) => {
       const day = state.day;
       if (!day) return {};
@@ -477,7 +479,7 @@ export const useStore = create<AppState & AppActions>((set, get) => ({
     const info = get().redoDeleted;
     if (!info) return;
     const { mealId, entry, index } = info;
-    await api.deleteEntry(entry.id);
+    await mealsApi.deleteEntry(entry.id);
     set((state) => {
       const day = state.day;
       if (!day) return {};
@@ -496,13 +498,13 @@ export const useStore = create<AppState & AppActions>((set, get) => ({
   },
   
   refreshPresets: async () => {
-    const presets = await api.getPresets();
+    const presets = await mealsApi.getPresets();
     set({ presets });
   },
 
   applyPreset: async (presetId) => {
     try {
-      await api.applyPreset(presetId, get().date, get().mealName, 1);
+      await mealsApi.applyPreset(presetId, get().date, get().mealName, 1);
       await get().fetchDay();
       toast.success('Preset applied!');
     } catch (e) {
@@ -522,11 +524,11 @@ export const useStore = create<AppState & AppActions>((set, get) => ({
   },
 
   syncOffline: async () => {
-    await api.syncQueue();
+    await syncQueue();
     await get().fetchDay();
-    const foods = await api.searchMyFoods();
+    const foods = await foodsApi.searchMyFoods();
     set({ allMyFoods: foods });
-    const w = await api.getWeight(get().date);
+    const w = await mealsApi.getWeight(get().date);
     set({ weight: w?.weight ?? null });
   }
 }));

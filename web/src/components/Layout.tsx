@@ -11,7 +11,7 @@ import {
   SignalIcon,
   SignalSlashIcon,
 } from "@heroicons/react/24/outline";
-import { getOfflineQueueSize } from "../api";
+import { getOfflineQueueSize } from "../api/offline";
 
 interface LayoutProps {
   children: React.ReactNode;

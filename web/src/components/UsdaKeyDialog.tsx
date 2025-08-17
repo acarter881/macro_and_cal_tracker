@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "./ui/Button";
 import { Input } from "./ui/Input";
-import * as api from "../api";
+import { updateUsdaKey } from "../api/foods";
 
 interface Props {
   onSaved: () => void;
@@ -15,7 +15,7 @@ export function UsdaKeyDialog({ onSaved }: Props) {
     if (!key) return;
     setSaving(true);
     try {
-      await api.updateUsdaKey(key);
+      await updateUsdaKey(key);
       onSaved();
     } finally {
       setSaving(false);

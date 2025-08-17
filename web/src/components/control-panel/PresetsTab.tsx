@@ -1,7 +1,7 @@
 import { useState } from "react";
 import toast from 'react-hot-toast';
 import { useStore } from "../../store";
-import * as api from "../../api";
+import { createPresetFromMeal, deletePreset } from "../../api/meals";
 import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
 
@@ -15,7 +15,7 @@ export function PresetsTab() {
     if (!newPresetName.trim() || !currentMeal) return;
     setIsSavingPreset(true);
     try {
-      await api.createPresetFromMeal(newPresetName.trim(), date, currentMeal.name);
+      await createPresetFromMeal(newPresetName.trim(), date, currentMeal.name);
       setNewPresetName("");
       await refreshPresets();
       toast.success('Preset saved!');
@@ -49,7 +49,7 @@ export function PresetsTab() {
                     <Button className="btn-ghost btn-sm" onClick={() => applyPreset(p.id)}>Apply</Button>
                     <Button className="btn-ghost btn-sm text-brand-danger hover:bg-brand-danger/10 dark:hover:bg-brand-danger/30" onClick={async () => {
                       if (!confirm(`Delete preset \"${p.name}\"?`)) return;
-                      await api.deletePreset(p.id);
+                      await deletePreset(p.id);
                       await refreshPresets();
                     }}>Delete</Button>
                   </div>

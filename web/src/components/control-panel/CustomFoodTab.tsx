@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import toast from 'react-hot-toast';
 import { useStore } from "../../store";
-import * as api from "../../api";
+import { createCustomFood } from "../../api/foods";
 import type { LabelUnit, SimpleFood } from "../../types";
 import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
@@ -91,7 +91,7 @@ export function CustomFoodTab() {
         payload.carb_g_per_unit = Number(data.carb_g_per_unit) || 0;
         payload.fat_g_per_unit = Number(data.fat_g_per_unit) || 0;
       }
-      const created = await api.createCustomFood(payload);
+      const created = await createCustomFood(payload);
       setAllMyFoods([toSimpleFood(created), ...allMyFoods]);
       reset();
       toast.success('Custom food created!');
