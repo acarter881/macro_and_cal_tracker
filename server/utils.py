@@ -1,14 +1,21 @@
 import os
 import json
-import asyncio
 from pathlib import Path
 from typing import Dict, Optional, TypedDict
 from datetime import date, datetime, timedelta
 
 import httpx
+import logging
 from fastapi import HTTPException
 from sqlmodel import Session, select
 from sqlalchemy import func
+from tenacity import (
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+    before_sleep_log,
+)
 
 from server.models import Food, Meal
 
@@ -17,6 +24,17 @@ from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv())
 
 CACHE_TTL = timedelta(days=30)
+
+logger = logging.getLogger(__name__)
+
+exceptions_to_retry = (
+    httpx.ReadTimeout,
+    httpx.ConnectTimeout,
+    httpx.ReadError,
+    httpx.RemoteProtocolError,
+    httpx.ConnectError,
+    httpx.NetworkError,
+)
 
 # Location for storing USDA API key between runs
 CONFIG_PATH = Path(os.getenv("USDA_CONFIG_PATH") or Path.home() / ".macro_tracker_config.json")
@@ -197,29 +215,36 @@ def extract_macros_from_fdc(data: dict) -> MacroTotals:
         out[k] = _to_float(out[k])
     return out
 
+def _log_final_failure(retry_state):
+    exc = retry_state.outcome.exception()
+    logger.error(
+        "USDA network error after %s attempts: %s",
+        retry_state.attempt_number,
+        exc,
+    )
+    raise HTTPException(status_code=502, detail=f"USDA network error: {exc!s}")
+
+
+@retry(
+    retry=retry_if_exception_type(exceptions_to_retry),
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=0.4),
+    before_sleep=before_sleep_log(logger, logging.WARNING),
+    retry_error_callback=_log_final_failure,
+)
 async def fetch_food_detail(fdc_id: int) -> dict:
     if not USDA_KEY:
         raise HTTPException(status_code=500, detail="USDA_KEY is not set on the server")
     url = f"{USDA_BASE}/food/{fdc_id}"
     params = {"api_key": USDA_KEY}
-    exceptions_to_retry = (
-        httpx.ReadTimeout, httpx.ConnectTimeout, httpx.ReadError,
-        httpx.RemoteProtocolError, httpx.ConnectError, httpx.NetworkError,
-    )
     client = await get_usda_client()
-    for attempt in range(3):
+    r = await client.get(url, params=params)
+    if r.status_code == 200:
         try:
-            r = await client.get(url, params=params)
-            if r.status_code == 200:
-                try:
-                    return r.json()
-                except Exception as e:
-                    raise HTTPException(status_code=502, detail=f"USDA JSON decode error: {e!s}")
-            raise HTTPException(status_code=r.status_code, detail=f"USDA error {r.status_code}: {r.text[:400]}")
-        except exceptions_to_retry as e:
-            if attempt == 2:
-                raise HTTPException(status_code=502, detail=f"USDA network error: {e!s}")
-            await asyncio.sleep(0.4 * (attempt + 1))
+            return r.json()
+        except Exception as e:
+            raise HTTPException(status_code=502, detail=f"USDA JSON decode error: {e!s}")
+    raise HTTPException(status_code=r.status_code, detail=f"USDA error {r.status_code}: {r.text[:400]}")
 
 async def ensure_food_cached(fdc_id: int, session: Session) -> Food:
     food = session.get(Food, fdc_id)
