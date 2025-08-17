@@ -7,6 +7,7 @@ import { useStore } from "../store";
 import type { MealType, EntryType } from "../types";
 import { Button } from "./ui/Button";
 import { Input } from "./ui/Input";
+import { PencilSquareIcon, TrashIcon } from "@heroicons/react/24/outline";
 
 export function DailyLog() {
   const {
@@ -212,7 +213,7 @@ function MealCard({ meal, isCurrent, onSelect, onUpdateEntry, onDeleteEntry, onD
               onClick={(e) => { e.stopPropagation(); setIsRenaming(true); }}
               className="btn-ghost btn-sm"
             >
-              ✏️
+              <PencilSquareIcon className="h-4 w-4" />
             </Button>
             <Button
               type="button"
@@ -231,7 +232,7 @@ function MealCard({ meal, isCurrent, onSelect, onUpdateEntry, onDeleteEntry, onD
                 onClick={(e) => { e.stopPropagation(); onDeleteMeal(meal.id); }}
                 className="btn-ghost btn-sm"
               >
-                🗑️
+                <TrashIcon className="h-4 w-4" />
               </Button>
             )}
         </div>
