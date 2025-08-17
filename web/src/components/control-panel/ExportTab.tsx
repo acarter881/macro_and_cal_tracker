@@ -35,7 +35,8 @@ export function ExportTab() {
       a.click();
       a.remove();
       window.URL.revokeObjectURL(url);
-    } catch (err: any) {
+    } catch (err: unknown) {
+      console.error("Export failed:", err);
       toast.error("Export failed. Please try again.");
     } finally {
       setIsExporting(false);

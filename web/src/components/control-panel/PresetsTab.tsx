@@ -19,8 +19,9 @@ export function PresetsTab() {
       setNewPresetName("");
       await refreshPresets();
       toast.success('Preset saved!');
-    } catch (e:any) {
-      toast.error(e?.response?.data?.detail || "Failed to save preset.");
+    } catch (e: unknown) {
+      const msg = (e as { response?: { data?: { detail?: string } } }).response?.data?.detail;
+      toast.error(msg || "Failed to save preset.");
     } finally {
       setIsSavingPreset(false);
     }
@@ -48,7 +49,7 @@ export function PresetsTab() {
                   <div className="flex gap-1 justify-end">
                     <Button className="btn-ghost btn-sm" onClick={() => applyPreset(p.id)}>Apply</Button>
                     <Button className="btn-ghost btn-sm text-brand-danger hover:bg-brand-danger/10 dark:hover:bg-brand-danger/30" onClick={async () => {
-                      if (!confirm(`Delete preset \"${p.name}\"?`)) return;
+                      if (!confirm(`Delete preset "${p.name}"?`)) return;
                       await api.deletePreset(p.id);
                       await refreshPresets();
                     }}>Delete</Button>

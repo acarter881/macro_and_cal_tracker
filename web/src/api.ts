@@ -393,7 +393,8 @@ export async function getWeight(date: string) {
     const response = await api.get(`/weight/${date}`);
     if (response.data?.weight !== undefined) cacheWeight(date, response.data.weight);
     return response.data;
-  } catch (err) {
+  } catch (err: unknown) {
+    console.error("Failed to fetch weight:", err);
     return null;
   }
 }

@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect } from "react";
 import toast from 'react-hot-toast';
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
-import type { DropResult } from "@hello-pangea/dnd";
+import type { DropResult, DraggableProvided } from "@hello-pangea/dnd";
 import { addDays, subDays } from "date-fns";
 import { useStore } from "../store";
 import type { MealType, EntryType } from "../types";
@@ -178,7 +178,7 @@ type MealCardProps = {
   onCopyMeal: (mealId: number) => void;
   onRenameMeal: (mealId: number, newName: string) => Promise<void>;
   onCopyEntry: (entry: EntryType) => void;
-  provided: any;
+  provided: DraggableProvided;
 };
 
 function MealCard({ meal, isCurrent, onSelect, onUpdateEntry, onDeleteEntry, onDeleteMeal, onCopyMeal, onRenameMeal, onCopyEntry, provided }: MealCardProps) {
@@ -305,7 +305,7 @@ function MealCard({ meal, isCurrent, onSelect, onUpdateEntry, onDeleteEntry, onD
 }
 
 
-type RowProps = { e: EntryType, onUpdate: (id: number, grams: number) => Promise<void>, onDelete: (id: number) => Promise<void>, onCopy: (e: EntryType) => void, provided: any };
+type RowProps = { e: EntryType, onUpdate: (id: number, grams: number) => Promise<void>, onDelete: (id: number) => Promise<void>, onCopy: (e: EntryType) => void, provided: DraggableProvided };
 
 function Row({ e, onUpdate, onDelete, onCopy, provided }: RowProps) {
   const [g, setG] = useState<number>(e.quantity_g);
@@ -318,8 +318,9 @@ function Row({ e, onUpdate, onDelete, onCopy, provided }: RowProps) {
     setIsMutating(true);
     try {
       await onUpdate(e.id, g);
-    } catch (err: any) {
-      toast.error(err?.response?.data?.detail || "Failed to update entry.");
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { detail?: string } } }).response?.data?.detail;
+      toast.error(msg || "Failed to update entry.");
     } finally {
       setIsMutating(false);
     }
@@ -329,8 +330,9 @@ function Row({ e, onUpdate, onDelete, onCopy, provided }: RowProps) {
     setIsMutating(true);
     try {
       await onDelete(e.id);
-    } catch (err: any) {
-      toast.error(err?.response?.data?.detail || "Failed to delete entry.");
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { detail?: string } } }).response?.data?.detail;
+      toast.error(msg || "Failed to delete entry.");
     } finally {
       setIsMutating(false);
     }

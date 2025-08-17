@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { beforeEach, expect, test, vi } from 'vitest';
 
 const postMock = vi.fn();

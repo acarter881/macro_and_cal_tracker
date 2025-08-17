@@ -305,7 +305,8 @@ export const useStore = create<AppState & AppActions>((set, get) => ({
       set({ day: d, weight: w?.weight ?? null });
       const mealExists = d.meals.some((m: MealType) => m.name === get().mealName);
       if (!mealExists) set({ mealName: d.meals[0]?.name || "Meal 1" });
-    } catch (error) {
+    } catch (error: unknown) {
+      console.error('Failed to fetch day:', error);
       toast.error('Failed to fetch day. Please check your connection and try again.');
       const state = get();
       if (!state.day) {
@@ -322,7 +323,7 @@ export const useStore = create<AppState & AppActions>((set, get) => ({
   addFood: async (foodId, grams) => {
     try {
       const state = get();
-      let day = state.day;
+      const day = state.day;
       if (!day) return;
       let meal = day.meals.find(m => m.name === state.mealName);
       if (!meal) {
@@ -350,8 +351,9 @@ export const useStore = create<AppState & AppActions>((set, get) => ({
       meal.subtotal = applyDelta(meal.subtotal, macros);
       day.totals = applyDelta(day.totals, macros);
       set({ day });
-    } catch (e) {
-      toast.error("Failed to add food entry.");
+    } catch (e: unknown) {
+      const msg = (e as { response?: { data?: { detail?: string } } }).response?.data?.detail;
+      toast.error(msg || "Failed to add food entry.");
     }
   },
 

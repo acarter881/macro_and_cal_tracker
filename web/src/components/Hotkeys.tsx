@@ -47,7 +47,7 @@ export function Hotkeys() {
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [addMeal, toggleTheme, focusSearch]);
+  }, [addMeal, toggleTheme, focusSearch, undo, redo]);
 
   if (!showHelp) return null;
   return (

@@ -116,8 +116,9 @@ export function SearchBar() {
       await api.deleteCustomFood(foodId);
       setAllMyFoods(allMyFoods.filter(food => food.fdcId !== foodId));
       toast.success('Custom food deleted.');
-    } catch (e: any) {
-      toast.error(e?.response?.data?.detail || "Could not delete food.");
+    } catch (e: unknown) {
+      const msg = (e as { response?: { data?: { detail?: string } } }).response?.data?.detail;
+      toast.error(msg || "Could not delete food.");
     }
   }
 

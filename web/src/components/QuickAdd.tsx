@@ -17,7 +17,7 @@ export function QuickAdd() {
   function handleClick(f: SimpleFood) {
     const unit =
       f.unit_name ||
-      (f as any).unitName ||
+      (f as { unitName?: string }).unitName ||
       allMyFoods.find(food => food.fdcId === f.fdcId)?.unit_name;
     const defaultAmount = f.defaultGrams ?? (unit ? 1 : 100);
     setQty(String(defaultAmount));

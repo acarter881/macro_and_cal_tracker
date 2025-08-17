@@ -3,13 +3,26 @@ import { useForm } from "react-hook-form";
 import toast from 'react-hot-toast';
 import { useStore } from "../../store";
 import * as api from "../../api";
-import type { LabelUnit, SimpleFood } from "../../types";
+import type { LabelUnit, SimpleFood, CustomFoodPayload } from "../../types";
 import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
 
-function toSimpleFood(f: any): SimpleFood {
+type RawFood = {
+  fdc_id?: number;
+  fdcId?: number;
+  description?: string;
+  brand_owner?: string;
+  brandOwner?: string;
+  data_type?: string;
+  dataType?: string;
+  unit_name?: string;
+  unitName?: string;
+};
+
+function toSimpleFood(f: RawFood): SimpleFood {
   return {
-    fdcId: f.fdc_id ?? f.fdcId, description: f.description ?? "",
+    fdcId: (f.fdc_id ?? f.fdcId) as number,
+    description: f.description ?? "",
     brandOwner: f.brand_owner ?? f.brandOwner ?? undefined,
     dataType: f.data_type ?? f.dataType ?? undefined,
     unit_name: f.unit_name ?? f.unitName ?? undefined,
@@ -76,7 +89,7 @@ export function CustomFoodTab() {
   const onCreateCustomFood = async (data: CustomFoodFormData) => {
     setIsCreatingFood(true);
     try {
-      const payload: any = {
+      const payload: CustomFoodPayload = {
         description: data.description,
         brand_owner: data.brand_owner || undefined,
         kcal_per_100g: Number(data.kcal_per_100g) || 0,
@@ -95,8 +108,9 @@ export function CustomFoodTab() {
       setAllMyFoods([toSimpleFood(created), ...allMyFoods]);
       reset();
       toast.success('Custom food created!');
-    } catch (e: any) {
-      toast.error(e?.response?.data?.detail || "Failed to create food.");
+    } catch (e: unknown) {
+      const msg = (e as { response?: { data?: { detail?: string } } }).response?.data?.detail;
+      toast.error(msg || "Failed to create food.");
     } finally {
       setIsCreatingFood(false);
     }
