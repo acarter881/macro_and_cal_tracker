@@ -177,6 +177,7 @@ export function SearchBar() {
             className="rounded text-brand-primary focus:ring-brand-primary"
             checked={unbrandedFirst}
             onChange={(e) => setUnbrandedFirst(e.target.checked)}
+            title="Show unbranded foods first"
           />
           <label htmlFor={idUnbranded} className="cursor-pointer">Unbranded first</label>
         </div>
