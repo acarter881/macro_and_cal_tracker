@@ -25,25 +25,25 @@ export function Summary() {
                         {/* kcal */}
                         <div className="flex-1 bg-brand-primary/10 dark:bg-brand-primary/30 p-3 rounded-lg text-center transition-shadow hover:shadow-md">
                             <div className="text-sm text-brand-primary dark:text-brand-primary mb-2">kcal</div>
-                            <RadialProgress value={totals?.kcal ?? 0} goal={goals.kcal} color="text-brand-primary" decimals={0} textColor="text-brand-primary" />
+                            <RadialProgress value={totals?.kcal ?? 0} goal={goals.kcal} color="text-brand-primary" decimals={0} textColor="text-brand-primary" valueClassName="text-base" />
                         </div>
 
                         {/* fat */}
                         <div className="flex-1 bg-brand-warning/10 dark:bg-brand-warning/30 p-3 rounded-lg text-center transition-shadow hover:shadow-md">
                             <div className="text-sm text-brand-warning dark:text-brand-warning mb-2">Fat</div>
-                            <RadialProgress value={totals?.fat ?? 0} goal={goals.fat} color="text-brand-warning" decimals={1} unit="g" />
+                            <RadialProgress value={totals?.fat ?? 0} goal={goals.fat} color="text-brand-warning" decimals={1} unit="g" valueClassName="text-base" />
                         </div>
 
                         {/* carb */}
                         <div className="flex-1 bg-brand-danger/10 dark:bg-brand-danger/30 p-3 rounded-lg text-center transition-shadow hover:shadow-md">
                             <div className="text-sm text-brand-danger dark:text-brand-danger mb-2">Carb</div>
-                            <RadialProgress value={totals?.carb ?? 0} goal={goals.carb} color="text-brand-danger" decimals={1} unit="g" />
+                            <RadialProgress value={totals?.carb ?? 0} goal={goals.carb} color="text-brand-danger" decimals={1} unit="g" valueClassName="text-base" />
                         </div>
 
                         {/* protein */}
                         <div className="flex-1 bg-brand-success/10 dark:bg-brand-success/30 p-3 rounded-lg text-center transition-shadow hover:shadow-md">
                             <div className="text-sm text-brand-success dark:text-brand-success mb-2">Protein</div>
-                            <RadialProgress value={totals?.protein ?? 0} goal={goals.protein} color="text-brand-success" decimals={1} unit="g" />
+                            <RadialProgress value={totals?.protein ?? 0} goal={goals.protein} color="text-brand-success" decimals={1} unit="g" valueClassName="text-base" />
                         </div>
                     </div>
                     <div className="mt-6">
