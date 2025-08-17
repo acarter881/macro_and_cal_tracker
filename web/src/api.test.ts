@@ -51,8 +51,11 @@ beforeEach(async () => {
 test('failed API call requeues operation and preserves queue length', async () => {
   const initialStore = {
     days: {},
+    dayTimestamps: {},
     foods: [],
+    foodsTimestamp: 0,
     weights: {},
+    weightTimestamps: {},
     queue: [{ kind: 'createMeal', payload: { date: '2024-01-01', tempId: -1 } }],
     nextId: -1,
   };
