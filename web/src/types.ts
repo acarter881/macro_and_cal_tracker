@@ -134,8 +134,11 @@ export type OfflineOp =
 
 export interface OfflineStore {
   days: Record<string, DayFull>;
+  dayTimestamps: Record<string, number>;
   foods: SimpleFood[];
+  foodsTimestamp: number;
   weights: Record<string, number>;
+  weightTimestamps: Record<string, number>;
   queue: OfflineOp[];
   nextId: number;
 }

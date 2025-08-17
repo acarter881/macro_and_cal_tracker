@@ -13,16 +13,76 @@ export const isOnline = () =>
 const OFFLINE_KEY = "offline-cache";
 const MAX_QUEUE_LENGTH = 100;
 
+export const CACHE_RETENTION_DAYS = 30;
+export const CACHE_MAX_ENTRIES = 100;
+
 const defaultStore: OfflineStore = {
   days: {},
+  dayTimestamps: {},
   foods: [],
+  foodsTimestamp: 0,
   weights: {},
+  weightTimestamps: {},
   queue: [],
   nextId: -1,
 };
 
+function purgeStore(store: OfflineStore) {
+  const cutoff = Date.now() - CACHE_RETENTION_DAYS * 24 * 60 * 60 * 1000;
+
+  for (const date of Object.keys(store.days)) {
+    const ts = store.dayTimestamps[date] || 0;
+    if (ts < cutoff) {
+      delete store.days[date];
+      delete store.dayTimestamps[date];
+    }
+  }
+  const dayEntries = Object.entries(store.dayTimestamps).sort((a, b) => b[1] - a[1]);
+  if (dayEntries.length > CACHE_MAX_ENTRIES) {
+    for (const [date] of dayEntries.slice(CACHE_MAX_ENTRIES)) {
+      delete store.days[date];
+      delete store.dayTimestamps[date];
+    }
+  }
+
+  for (const date of Object.keys(store.weights)) {
+    const ts = store.weightTimestamps[date] || 0;
+    if (ts < cutoff) {
+      delete store.weights[date];
+      delete store.weightTimestamps[date];
+    }
+  }
+  const weightEntries = Object.entries(store.weightTimestamps).sort((a, b) => b[1] - a[1]);
+  if (weightEntries.length > CACHE_MAX_ENTRIES) {
+    for (const [date] of weightEntries.slice(CACHE_MAX_ENTRIES)) {
+      delete store.weights[date];
+      delete store.weightTimestamps[date];
+    }
+  }
+
+  if (store.foodsTimestamp < cutoff) {
+    store.foods = [];
+    store.foodsTimestamp = 0;
+  }
+}
+
 export function loadStore(): OfflineStore {
-  return loadJSON<OfflineStore>(OFFLINE_KEY, { ...defaultStore });
+  const raw = loadJSON<Partial<OfflineStore>>(OFFLINE_KEY, {} as any);
+  const store: OfflineStore = {
+    ...defaultStore,
+    ...raw,
+    days: raw?.days ?? {},
+    dayTimestamps: raw?.dayTimestamps ?? {},
+    foods: raw?.foods ?? [],
+    foodsTimestamp: raw?.foodsTimestamp ?? 0,
+    weights: raw?.weights ?? {},
+    weightTimestamps: raw?.weightTimestamps ?? {},
+    queue: raw?.queue ?? [],
+    nextId: raw?.nextId ?? -1,
+  };
+  purgeStore(store);
+  saveStore(store);
+  return store;
 }
 
 export function saveStore(s: OfflineStore) {
@@ -64,6 +124,7 @@ export function enqueue(op: OfflineOp) {
 export function cacheDay(date: string, day: DayFull) {
   const s = loadStore();
   s.days[date] = day;
+  s.dayTimestamps[date] = Date.now();
   saveStore(s);
 }
 
@@ -75,6 +136,7 @@ export function getCachedDay(date: string): DayFull | null {
 export function cacheFoods(foods: SimpleFood[]) {
   const s = loadStore();
   s.foods = foods;
+  s.foodsTimestamp = Date.now();
   saveStore(s);
 }
 
@@ -86,6 +148,7 @@ export function getCachedFoods(): SimpleFood[] {
 export function cacheWeight(date: string, weight: number) {
   const s = loadStore();
   s.weights[date] = weight;
+  s.weightTimestamps[date] = Date.now();
   saveStore(s);
 }
 
