@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import toast from 'react-hot-toast';
+import toast from "react-hot-toast";
 import { useStore } from "../store";
 import { searchFoods, deleteCustomFood } from "../api/foods";
 import { DATA_TYPE_OPTIONS } from "../types";
@@ -8,7 +8,14 @@ import { Button } from "./ui/Button";
 import { Input } from "./ui/Input";
 
 export function SearchBar() {
-  const { mealName, allMyFoods, setAllMyFoods, addFood, favorites, toggleFavorite } = useStore();
+  const {
+    mealName,
+    allMyFoods,
+    setAllMyFoods,
+    addFood,
+    favorites,
+    toggleFavorite,
+  } = useStore();
   const [isAddingFood, setIsAddingFood] = useState(false);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SimpleFood[]>([]);
@@ -23,21 +30,26 @@ export function SearchBar() {
 
   const myFoodsFiltered = useMemo(() => {
     if (!query.trim()) return allMyFoods;
-    return allMyFoods.filter(f =>
-      f.description.toLowerCase().includes(query.toLowerCase()) ||
-      f.brandOwner?.toLowerCase().includes(query.toLowerCase())
+    return allMyFoods.filter(
+      (f) =>
+        f.description.toLowerCase().includes(query.toLowerCase()) ||
+        f.brandOwner?.toLowerCase().includes(query.toLowerCase()),
     );
   }, [query, allMyFoods]);
 
   function sortResults(list: SimpleFood[], unbranded: boolean) {
     const wt = (t?: string) => {
-      if (t === "Foundation") return 0; if (t === "SR Legacy") return 1;
-      if (t && t.startsWith("Survey")) return 2; if (t === "Branded") return 3; return 4;
+      if (t === "Foundation") return 0;
+      if (t === "SR Legacy") return 1;
+      if (t && t.startsWith("Survey")) return 2;
+      if (t === "Branded") return 3;
+      return 4;
     };
     const copy = [...list];
     copy.sort((a, b) => {
       if (unbranded) {
-        const aa = a.brandOwner ? 1 : 0; const bb = b.brandOwner ? 1 : 0;
+        const aa = a.brandOwner ? 1 : 0;
+        const bb = b.brandOwner ? 1 : 0;
         if (aa !== bb) return aa - bb;
       }
       return wt(a.dataType) - wt(b.dataType);
@@ -57,21 +69,28 @@ export function SearchBar() {
       setSearching(true);
       const r = await searchFoods(query, typeFilter);
       setResults(sortResults(r, unbrandedFirst));
-    } finally { setSearching(false); }
+    } finally {
+      setSearching(false);
+    }
   }
 
   useEffect(() => {
-    const handler = setTimeout(() => { doSearch(); }, 350);
+    const handler = setTimeout(() => {
+      doSearch();
+    }, 350);
     return () => clearTimeout(handler);
   }, [query, typeFilter, unbrandedFirst]);
 
-  const handleAddSelectedFood = useCallback(async (fdcId?: number) => {
-    const id = fdcId ?? selected;
-    if (!id) return;
-    setIsAddingFood(true);
-    await addFood(id, grams);
-    setIsAddingFood(false);
-  }, [addFood, grams, selected]);
+  const handleAddSelectedFood = useCallback(
+    async (fdcId?: number) => {
+      const id = fdcId ?? selected;
+      if (!id) return;
+      setIsAddingFood(true);
+      await addFood(id, grams);
+      setIsAddingFood(false);
+    },
+    [addFood, grams, selected],
+  );
 
   useEffect(() => {
     if (results.length > 0) {
@@ -87,35 +106,39 @@ export function SearchBar() {
     const el = queryRef.current;
     if (!el) return;
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowDown') {
+      if (e.key === "ArrowDown") {
         e.preventDefault();
-        setHighlightIndex(i => {
+        setHighlightIndex((i) => {
           const next = Math.min(results.length - 1, i + 1);
           setSelected(results[next]?.fdcId ?? null);
           return next;
         });
-      } else if (e.key === 'ArrowUp') {
+      } else if (e.key === "ArrowUp") {
         e.preventDefault();
-        setHighlightIndex(i => {
+        setHighlightIndex((i) => {
           const next = Math.max(0, i - 1);
           setSelected(results[next]?.fdcId ?? null);
           return next;
         });
-      } else if (e.key === 'Enter' && highlightIndex >= 0 && results[highlightIndex]) {
+      } else if (
+        e.key === "Enter" &&
+        highlightIndex >= 0 &&
+        results[highlightIndex]
+      ) {
         e.preventDefault();
         handleAddSelectedFood(results[highlightIndex].fdcId);
       }
     };
-    el.addEventListener('keydown', onKeyDown);
-    return () => el.removeEventListener('keydown', onKeyDown);
+    el.addEventListener("keydown", onKeyDown);
+    return () => el.removeEventListener("keydown", onKeyDown);
   }, [results, highlightIndex, handleAddSelectedFood]);
 
   async function handleDeleteCustomFood(foodId: number) {
     if (!confirm("Delete this custom food?")) return;
     try {
       await deleteCustomFood(foodId);
-      setAllMyFoods(allMyFoods.filter(food => food.fdcId !== foodId));
-      toast.success('Custom food deleted.');
+      setAllMyFoods(allMyFoods.filter((food) => food.fdcId !== foodId));
+      toast.success("Custom food deleted.");
     } catch (e: any) {
       toast.error(e?.response?.data?.detail || "Could not delete food.");
     }
@@ -123,8 +146,8 @@ export function SearchBar() {
 
   // Determine the currently selected food from either search results or custom foods
   const selectedFood = useMemo(
-    () => [...results, ...allMyFoods].find(f => f.fdcId === selected) || null,
-    [results, allMyFoods, selected]
+    () => [...results, ...allMyFoods].find((f) => f.fdcId === selected) || null,
+    [results, allMyFoods, selected],
   );
 
   // If the selected food provides a default quantity, use it
@@ -134,8 +157,9 @@ export function SearchBar() {
 
   // Label to display for the quantity input
   const quantityLabel = selectedFood?.unit_name
-    ? selectedFood.unit_name.charAt(0).toUpperCase() + selectedFood.unit_name.slice(1)
-    : 'Grams';
+    ? selectedFood.unit_name.charAt(0).toUpperCase() +
+      selectedFood.unit_name.slice(1)
+    : "Grams";
 
   const idQuery = "search-query";
   const idTypeFilter = "type-filter";
@@ -144,22 +168,30 @@ export function SearchBar() {
 
   return (
     <>
-      <label htmlFor={idQuery} className="sr-only">Search foods</label>
+      <label htmlFor={idQuery} className="sr-only">
+        Search foods
+      </label>
       <Input
         id={idQuery}
         ref={queryRef}
         placeholder="Search foods…"
         value={query}
-        onChange={e => setQuery(e.target.value)}
+        onChange={(e) => setQuery(e.target.value)}
         role="combobox"
         aria-autocomplete="list"
         aria-controls="search-results"
-        aria-activedescendant={highlightIndex >= 0 && results[highlightIndex] ? `search-result-${results[highlightIndex].fdcId}` : undefined}
+        aria-activedescendant={
+          highlightIndex >= 0 && results[highlightIndex]
+            ? `search-result-${results[highlightIndex].fdcId}`
+            : undefined
+        }
         aria-expanded={results.length > 0}
       />
       <div className="flex items-center gap-2">
         <div className="flex flex-col">
-          <label htmlFor={idTypeFilter} className="text-sm">Data type</label>
+          <label htmlFor={idTypeFilter} className="text-sm">
+            Data type
+          </label>
           <select
             id={idTypeFilter}
             className="form-input"
@@ -167,7 +199,11 @@ export function SearchBar() {
             onChange={(e) => setTypeFilter(e.target.value as DataTypeOpt)}
             title="Filter results by USDA data type"
           >
-            {DATA_TYPE_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+            {DATA_TYPE_OPTIONS.map((opt) => (
+              <option key={opt} value={opt}>
+                {opt}
+              </option>
+            ))}
           </select>
         </div>
         <div className="flex items-center gap-2 text-sm text-text dark:text-text-light whitespace-nowrap">
@@ -179,7 +215,9 @@ export function SearchBar() {
             onChange={(e) => setUnbrandedFirst(e.target.checked)}
             title="Show unbranded foods first"
           />
-          <label htmlFor={idUnbranded} className="cursor-pointer">Unbranded first</label>
+          <label htmlFor={idUnbranded} className="cursor-pointer">
+            Unbranded first
+          </label>
         </div>
       </div>
       {allMyFoods.length > 0 && (
@@ -191,31 +229,63 @@ export function SearchBar() {
             aria-expanded={showMyFoods}
           >
             <span>My Foods</span>
-            <span className={`transform transition-transform duration-200 ${showMyFoods ? 'rotate-180' : 'rotate-90'}`}>›</span>
+            <span
+              className={`transform transition-transform duration-200 ${
+                showMyFoods ? "rotate-180" : "rotate-90"
+              }`}
+            >
+              ›
+            </span>
           </button>
           {showMyFoods && (
             <ul className="border-border-light border rounded-md divide-y dark:border-border-dark dark:divide-border-dark max-h-40 overflow-auto">
               {myFoodsFiltered.map((f) => (
                 <li
                   key={f.fdcId}
-                  className={`p-2 flex justify-between items-center cursor-pointer ${selected === f.fdcId ? 'bg-brand-primary/20 dark:bg-brand-primary/30' : 'hover:bg-surface-light dark:hover:bg-border-dark'}`}
+                  className={`p-2 flex justify-between items-center cursor-pointer ${
+                    selected === f.fdcId
+                      ? "bg-brand-primary/20 dark:bg-brand-primary/30"
+                      : "hover:bg-surface-light dark:hover:bg-border-dark"
+                  }`}
                   onClick={() => setSelected(f.fdcId)}
                 >
-                  <div className="font-medium truncate text-sm">{f.description}</div>
+                  <div className="font-medium truncate text-sm">
+                    {f.description}
+                  </div>
                   <div className="flex items-center gap-1">
                     <Button
                       className="btn-ghost btn-sm"
-                      title={favorites.some(fav => fav.fdcId === f.fdcId) ? 'Remove favorite' : 'Add favorite'}
-                      aria-label={favorites.some(fav => fav.fdcId === f.fdcId) ? 'Remove favorite' : 'Add favorite'}
-                      onClick={(e) => { e.stopPropagation(); toggleFavorite(f); }}
-                    >{favorites.some(fav => fav.fdcId === f.fdcId) ? '⭐' : '☆'}</Button>
-                    {f.dataType === 'Custom' && (
+                      title={
+                        favorites.some((fav) => fav.fdcId === f.fdcId)
+                          ? "Remove favorite"
+                          : "Add favorite"
+                      }
+                      aria-label={
+                        favorites.some((fav) => fav.fdcId === f.fdcId)
+                          ? "Remove favorite"
+                          : "Add favorite"
+                      }
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleFavorite(f);
+                      }}
+                    >
+                      {favorites.some((fav) => fav.fdcId === f.fdcId)
+                        ? "⭐"
+                        : "☆"}
+                    </Button>
+                    {f.dataType === "Custom" && (
                       <Button
                         className="btn-ghost btn-sm text-brand-danger hover:bg-brand-danger/10 dark:hover:bg-brand-danger/30"
                         title="Delete custom food"
                         aria-label="Delete custom food"
-                        onClick={(e) => { e.stopPropagation(); handleDeleteCustomFood(f.fdcId); }}
-                      >🗑️</Button>
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteCustomFood(f.fdcId);
+                        }}
+                      >
+                        🗑️
+                      </Button>
                     )}
                   </div>
                 </li>
@@ -224,48 +294,83 @@ export function SearchBar() {
           )}
         </div>
       )}
-        <div>
-          <h4 className="font-semibold text-sm mb-1 text-text-muted dark:text-text-muted-dark">USDA Results</h4>
-          <ul
-            id="search-results"
-            role="listbox"
-            className="border-border-light border rounded-md divide-y dark:border-border-dark dark:divide-border-dark h-[250px] overflow-auto"
-          >
-            {searching ? (
-              <li className="p-2 text-text-muted">Searching...</li>
-            ) : (
-              results.map((r, idx) => (
-                <li
-                  key={r.fdcId}
-                  id={`search-result-${r.fdcId}`}
-                  role="option"
-                  aria-selected={highlightIndex === idx}
-                  className={`p-2 flex justify-between items-center cursor-pointer ${highlightIndex === idx ? 'bg-brand-primary/20 dark:bg-brand-primary/30' : 'hover:bg-surface-light dark:hover:bg-border-dark'}`}
-                  onClick={() => {
-                    setSelected(r.fdcId);
-                    setHighlightIndex(idx);
+      <div>
+        <h4 className="font-semibold text-sm mb-1 text-text-muted dark:text-text-muted-dark">
+          USDA Results
+        </h4>
+        <ul
+          id="search-results"
+          role="listbox"
+          className="border-border-light border rounded-md divide-y dark:border-border-dark dark:divide-border-dark h-[250px] overflow-auto"
+        >
+          {searching ? (
+            <li className="p-2 text-text-muted">Searching...</li>
+          ) : (
+            results.map((r, idx) => (
+              <li
+                key={r.fdcId}
+                id={`search-result-${r.fdcId}`}
+                role="option"
+                aria-selected={highlightIndex === idx}
+                className={`p-2 flex justify-between items-center cursor-pointer ${
+                  highlightIndex === idx
+                    ? "bg-brand-primary/20 dark:bg-brand-primary/30"
+                    : "hover:bg-surface-light dark:hover:bg-border-dark"
+                }`}
+                onClick={() => {
+                  setSelected(r.fdcId);
+                  setHighlightIndex(idx);
+                }}
+              >
+                <div>
+                  <div className="font-medium text-sm">{r.description}</div>
+                  <div className="text-xs text-text-muted dark:text-text-muted-dark">
+                    {r.brandOwner || r.dataType}
+                  </div>
+                </div>
+                <Button
+                  className="btn-ghost btn-sm"
+                  title={
+                    favorites.some((f) => f.fdcId === r.fdcId)
+                      ? "Remove favorite"
+                      : "Add favorite"
+                  }
+                  aria-label={
+                    favorites.some((f) => f.fdcId === r.fdcId)
+                      ? "Remove favorite"
+                      : "Add favorite"
+                  }
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleFavorite(r);
                   }}
                 >
-                  <div>
-                    <div className="font-medium text-sm">{r.description}</div>
-                    <div className="text-xs text-text-muted dark:text-text-muted-dark">{r.brandOwner || r.dataType}</div>
-                  </div>
-                  <Button
-                    className="btn-ghost btn-sm"
-                    title={favorites.some(f => f.fdcId === r.fdcId) ? 'Remove favorite' : 'Add favorite'}
-                    aria-label={favorites.some(f => f.fdcId === r.fdcId) ? 'Remove favorite' : 'Add favorite'}
-                    onClick={(e) => { e.stopPropagation(); toggleFavorite(r); }}
-                  >{favorites.some(f => f.fdcId === r.fdcId) ? '⭐' : '☆'}</Button>
-                </li>
-              ))
-            )}
-          </ul>
-        </div>
+                  {favorites.some((f) => f.fdcId === r.fdcId) ? "⭐" : "☆"}
+                </Button>
+              </li>
+            ))
+          )}
+        </ul>
+      </div>
       <div className="flex items-center gap-2">
-        <label htmlFor={idGrams} className="text-sm">{quantityLabel}</label>
-        <Input id={idGrams} className="w-24" type="number" min={1} step={1} value={grams} onChange={e => setGrams(parseFloat(e.target.value))} />
-        <Button className="btn-primary w-full" onClick={() => handleAddSelectedFood()} disabled={!selected || isAddingFood}>
-          {isAddingFood ? 'Adding…' : `Add to ${mealName}`}
+        <label htmlFor={idGrams} className="text-sm">
+          {quantityLabel}
+        </label>
+        <Input
+          id={idGrams}
+          className="w-24"
+          type="number"
+          min={1}
+          step={1}
+          value={grams}
+          onChange={(e) => setGrams(parseFloat(e.target.value))}
+        />
+        <Button
+          className="btn-primary w-full"
+          onClick={() => handleAddSelectedFood()}
+          disabled={!selected || isAddingFood}
+        >
+          {isAddingFood ? "Adding…" : `Add to ${mealName}`}
         </Button>
       </div>
     </>

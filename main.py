@@ -6,4 +6,3 @@ root by re-exporting the FastAPI ``app`` defined in
 """
 
 from server.app import app
-

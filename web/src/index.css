@@ -56,16 +56,16 @@
            dark:border-border-dark
            transition-shadow duration-300 hover:shadow-xl;
   }
-  
+
   /* Card header used for titles */
   .card-header {
     @apply p-4 border-b border-border-light dark:border-border-dark;
   }
-  
+
   .card-body {
     @apply p-4;
   }
-  
+
   /* --- Button Styles --- */
   .btn {
     @apply px-4 py-2 rounded-md font-semibold text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200;
@@ -83,12 +83,12 @@
            dark:text-text-muted-dark dark:hover:bg-border-dark;
   }
   .btn-danger {
-     @apply bg-brand-danger text-text hover:bg-brand-danger/90 focus:ring-brand-danger;
+    @apply bg-brand-danger text-text hover:bg-brand-danger/90 focus:ring-brand-danger;
   }
   .btn-sm {
     @apply px-2 py-1 text-xs;
   }
-  
+
   /* --- Form Input Styles --- */
   .form-input {
     /* Changed focus color to match new primary button color */
@@ -96,7 +96,7 @@
            focus:border-brand-primary focus:ring-brand-primary sm:text-sm
            dark:bg-border-dark dark:border-border-dark dark:placeholder-text-muted-dark dark:text-text-light;
   }
-  
+
   /* --- Table Zebra Striping --- */
   .table-zebra tbody tr:nth-child(even) {
     @apply bg-surface-light dark:bg-border-dark/50;

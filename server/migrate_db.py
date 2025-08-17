@@ -1,7 +1,7 @@
 """Migration script to move existing foodlog.db to the new data directory."""
 
-from pathlib import Path
 import shutil
+from pathlib import Path
 
 from platformdirs import user_data_dir
 
@@ -23,4 +23,3 @@ def migrate_foodlog_db():
 
 if __name__ == "__main__":
     migrate_foodlog_db()
-

@@ -19,7 +19,8 @@ export function Onboarding({ onComplete }: Props) {
       <div className="bg-surface-card max-w-md w-full p-6 rounded shadow">
         <h1 className="text-xl font-semibold mb-4">Welcome</h1>
         <p className="mb-4 text-sm">
-          This app uses the USDA FoodData Central API to search for foods. You'll need your own API key to use this feature.
+          This app uses the USDA FoodData Central API to search for foods.
+          You'll need your own API key to use this feature.
         </p>
         <a
           href="https://api.data.gov/signup/"
@@ -39,4 +40,3 @@ export function Onboarding({ onComplete }: Props) {
 }
 
 export default Onboarding;
-

@@ -29,12 +29,11 @@ export async function getDayFull(date: string) {
 
 export async function createMeal(date: string) {
   if (!isOnline()) {
-    const day =
-      getCachedDay(date) || {
-        date,
-        meals: [],
-        totals: { kcal: 0, protein: 0, fat: 0, carb: 0 },
-      };
+    const day = getCachedDay(date) || {
+      date,
+      meals: [],
+      totals: { kcal: 0, protein: 0, fat: 0, carb: 0 },
+    };
     const id = nextTempId();
     const meal: MealType = {
       id,
@@ -73,7 +72,10 @@ export async function deleteMeal(mealId: number) {
   return response.data;
 }
 
-export async function updateMeal(mealId: number, payload: { name?: string; sort_order?: number }) {
+export async function updateMeal(
+  mealId: number,
+  payload: { name?: string; sort_order?: number },
+) {
   if (!isOnline()) {
     const store = loadStore();
     for (const day of Object.values(store.days) as DayFull[]) {
@@ -88,11 +90,15 @@ export async function updateMeal(mealId: number, payload: { name?: string; sort_
   return response.data;
 }
 
-export async function addEntry(meal_id: number, fdc_id: number, quantity_g: number) {
+export async function addEntry(
+  meal_id: number,
+  fdc_id: number,
+  quantity_g: number,
+) {
   if (!isOnline()) {
     const store = loadStore();
     const day = (Object.values(store.days) as DayFull[]).find((d) =>
-      d.meals.some((m) => m.id === meal_id)
+      d.meals.some((m) => m.id === meal_id),
     );
     if (day) {
       const meal = day.meals.find((m) => m.id === meal_id);
@@ -111,7 +117,10 @@ export async function addEntry(meal_id: number, fdc_id: number, quantity_g: numb
       };
       meal.entries.push(entry);
       cacheDay(day.date, day);
-      enqueue({ kind: "addEntry", payload: { meal_id, fdc_id, quantity_g, tempId: id } });
+      enqueue({
+        kind: "addEntry",
+        payload: { meal_id, fdc_id, quantity_g, tempId: id },
+      });
       return { id };
     }
     return null;
@@ -133,7 +142,9 @@ export async function updateEntry(entryId: number, newGrams: number) {
     saveStore(store);
     return { success: true };
   }
-  const response = await api.patch(`/entries/${entryId}`, { quantity_g: newGrams });
+  const response = await api.patch(`/entries/${entryId}`, {
+    quantity_g: newGrams,
+  });
   return response.data;
 }
 
@@ -150,7 +161,9 @@ export async function moveEntry(entryId: number, newOrder: number) {
     saveStore(store);
     return { success: true };
   }
-  const response = await api.patch(`/entries/${entryId}`, { sort_order: newOrder });
+  const response = await api.patch(`/entries/${entryId}`, {
+    sort_order: newOrder,
+  });
   return response.data;
 }
 
@@ -176,13 +189,30 @@ export async function getPresets() {
   return response.data.items;
 }
 
-export async function createPresetFromMeal(name: string, date: string, meal_name: string) {
-  const response = await api.post("/presets/from_meal", { name, date, meal_name });
+export async function createPresetFromMeal(
+  name: string,
+  date: string,
+  meal_name: string,
+) {
+  const response = await api.post("/presets/from_meal", {
+    name,
+    date,
+    meal_name,
+  });
   return response.data;
 }
 
-export async function applyPreset(presetId: number, date: string, meal_name: string, multiplier: number) {
-  const response = await api.post(`/presets/${presetId}/apply`, { date, meal_name, multiplier });
+export async function applyPreset(
+  presetId: number,
+  date: string,
+  meal_name: string,
+  multiplier: number,
+) {
+  const response = await api.post(`/presets/${presetId}/apply`, {
+    date,
+    meal_name,
+    multiplier,
+  });
   return response.data;
 }
 
@@ -197,13 +227,16 @@ export async function exportCSV(start: string, end: string) {
 
 export async function copyMealTo(
   sourceMealId: number,
-  payload: CopyMealPayload
+  payload: CopyMealPayload,
 ) {
   const response = await api.post(`/meals/${sourceMealId}/copy_to`, payload);
   return response.data;
 }
 
-export async function getHistory(startDate: string, endDate: string): Promise<HistoryDay[]> {
+export async function getHistory(
+  startDate: string,
+  endDate: string,
+): Promise<HistoryDay[]> {
   const params = {
     start_date: startDate,
     end_date: endDate,
@@ -219,7 +252,8 @@ export async function getWeight(date: string) {
   }
   try {
     const response = await api.get(`/weight/${date}`);
-    if (response.data?.weight !== undefined) cacheWeight(date, response.data.weight);
+    if (response.data?.weight !== undefined)
+      cacheWeight(date, response.data.weight);
     return response.data;
   } catch {
     return null;

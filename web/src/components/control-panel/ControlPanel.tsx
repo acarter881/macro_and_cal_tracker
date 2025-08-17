@@ -10,7 +10,7 @@ import {
   FlagIcon,
   ListBulletIcon,
   MagnifyingGlassIcon,
-  PlusCircleIcon
+  PlusCircleIcon,
 } from "@heroicons/react/24/outline";
 
 type TabKey = "search" | "custom" | "presets" | "goals" | "export";
@@ -19,11 +19,11 @@ const tabs: { key: TabKey; label: string; icon: ElementType }[] = [
   { key: "custom", label: "Custom Food", icon: PlusCircleIcon },
   { key: "presets", label: "Presets", icon: ListBulletIcon },
   { key: "goals", label: "Goals", icon: FlagIcon },
-  { key: "export", label: "Export", icon: ArrowDownTrayIcon }
+  { key: "export", label: "Export", icon: ArrowDownTrayIcon },
 ];
 
 export function ControlPanel() {
-  const [tab, setTab] = useState<TabKey>('search');
+  const [tab, setTab] = useState<TabKey>("search");
 
   return (
     <div className="card flex overflow-hidden">

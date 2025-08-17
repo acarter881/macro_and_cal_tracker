@@ -17,7 +17,7 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [needsKey, setNeedsKey] = useState(false);
   const [onboarded, setOnboarded] = useState(
-    () => !!localStorage.getItem("onboarding-complete")
+    () => !!localStorage.getItem("onboarding-complete"),
   );
   const [initError, setInitError] = useState<string | null>(null);
 

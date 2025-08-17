@@ -10,6 +10,22 @@ environment setup. Install them with:
 pip install -r requirements.txt
 ```
 
+### Pre-commit Hooks
+
+Install and configure the git hooks:
+
+```
+pip install pre-commit
+pre-commit install
+```
+
+Run all hooks on demand:
+
+```
+pre-commit run --all-files
+```
+
+
 ## Environment Variables
 
 ### Frontend

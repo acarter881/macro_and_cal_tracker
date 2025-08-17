@@ -1,10 +1,13 @@
 from server.utils import extract_macros_from_fdc
 
-from server.utils import extract_macros_from_fdc
-
 
 def test_extract_macros_empty():
-    assert extract_macros_from_fdc({}) == {"kcal": 0.0, "protein": 0.0, "carb": 0.0, "fat": 0.0}
+    assert extract_macros_from_fdc({}) == {
+        "kcal": 0.0,
+        "protein": 0.0,
+        "carb": 0.0,
+        "fat": 0.0,
+    }
 
 
 def test_extract_macros_compute_from_components():

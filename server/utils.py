@@ -1,26 +1,27 @@
-import os
 import json
+import logging
+import os
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Dict, Optional, TypedDict
-from datetime import date, datetime, timedelta
 
 import httpx
-import logging
 from fastapi import HTTPException
-from sqlmodel import Session, select
 from sqlalchemy import func
+from sqlmodel import Session, select
 from tenacity import (
+    before_sleep_log,
     retry,
     retry_if_exception_type,
     stop_after_attempt,
     wait_exponential,
-    before_sleep_log,
 )
 
 from server.models import Food, Meal
 
 USDA_BASE = "https://api.nal.usda.gov/fdc/v1"
-from dotenv import load_dotenv, find_dotenv
+from dotenv import find_dotenv, load_dotenv
+
 load_dotenv(find_dotenv())
 
 CACHE_TTL = timedelta(days=30)
@@ -37,7 +38,10 @@ exceptions_to_retry = (
 )
 
 # Location for storing USDA API key between runs
-CONFIG_PATH = Path(os.getenv("USDA_CONFIG_PATH") or Path.home() / ".macro_tracker_config.json")
+CONFIG_PATH = Path(
+    os.getenv("USDA_CONFIG_PATH") or Path.home() / ".macro_tracker_config.json"
+)
+
 
 def _load_config() -> Dict:
     try:
@@ -46,10 +50,12 @@ def _load_config() -> Dict:
     except Exception:
         return {}
 
+
 def _save_config(cfg: Dict) -> None:
     CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
     with open(CONFIG_PATH, "w", encoding="utf-8") as f:
         json.dump(cfg, f)
+
 
 _config = _load_config()
 
@@ -76,6 +82,7 @@ async def aclose_usda_client() -> None:
         await _usda_client.aclose()
         _usda_client = None
 
+
 def update_usda_key(new_key: str) -> None:
     """Persist a new USDA API key and update global reference."""
     global USDA_KEY, _config
@@ -83,11 +90,13 @@ def update_usda_key(new_key: str) -> None:
     _config["usda_key"] = new_key
     _save_config(_config)
 
+
 def _to_float(x):
     try:
         return float(x)
     except Exception:
         return 0.0
+
 
 class MacroTotals(TypedDict):
     kcal: float
@@ -96,7 +105,9 @@ class MacroTotals(TypedDict):
     fat: float
 
 
-def _parse_label_nutrients(lbl: dict, out: MacroTotals) -> tuple[Optional[float], Optional[float]]:
+def _parse_label_nutrients(
+    lbl: dict, out: MacroTotals
+) -> tuple[Optional[float], Optional[float]]:
     def lv(k):
         v = lbl.get(k) or {}
         return v.get("value")
@@ -215,6 +226,7 @@ def extract_macros_from_fdc(data: dict) -> MacroTotals:
         out[k] = _to_float(out[k])
     return out
 
+
 def _log_final_failure(retry_state):
     exc = retry_state.outcome.exception()
     logger.error(
@@ -243,8 +255,13 @@ async def fetch_food_detail(fdc_id: int) -> dict:
         try:
             return r.json()
         except Exception as e:
-            raise HTTPException(status_code=502, detail=f"USDA JSON decode error: {e!s}")
-    raise HTTPException(status_code=r.status_code, detail=f"USDA error {r.status_code}: {r.text[:400]}")
+            raise HTTPException(
+                status_code=502, detail=f"USDA JSON decode error: {e!s}"
+            )
+    raise HTTPException(
+        status_code=r.status_code, detail=f"USDA error {r.status_code}: {r.text[:400]}"
+    )
+
 
 async def ensure_food_cached(fdc_id: int, session: Session) -> Food:
     food = session.get(Food, fdc_id)
@@ -287,14 +304,20 @@ def scaled_macros_from_food(f: Food, qty: float) -> tuple[float, float, float, f
         (f.fat_g_per_100g or 0) * factor,
     )
 
+
 def get_or_create_meal(session: Session, date: date, name: str) -> Meal:
     date_str = date.isoformat()
-    m = session.exec(select(Meal).where(Meal.date == date_str, Meal.name == name)).first()
+    m = session.exec(
+        select(Meal).where(Meal.date == date_str, Meal.name == name)
+    ).first()
     if m:
         return m
-    max_sort_order = session.exec(
-        select(func.max(Meal.sort_order)).where(Meal.date == date_str)
-    ).first() or 0
+    max_sort_order = (
+        session.exec(
+            select(func.max(Meal.sort_order)).where(Meal.date == date_str)
+        ).first()
+        or 0
+    )
     new_order = max_sort_order + 1
     m = Meal(date=date_str, name=name, sort_order=new_order)
     session.add(m)

@@ -17,7 +17,7 @@ export async function searchFoods(query: string, dataType: string) {
       toast.error(
         typeof detail === "string"
           ? detail
-          : "USDA search service unavailable. Please try again later."
+          : "USDA search service unavailable. Please try again later.",
       );
     } else {
       toast.error("Food search failed.");
@@ -57,7 +57,9 @@ export async function deleteCustomFood(foodId: number) {
 }
 
 export async function getUsdaKey(): Promise<string | null> {
-  const response = await api.get("/config/usda-key", { headers: configHeaders });
+  const response = await api.get("/config/usda-key", {
+    headers: configHeaders,
+  });
   return response.data.key || null;
 }
 
@@ -65,7 +67,7 @@ export async function updateUsdaKey(key: string) {
   const response = await api.post(
     "/config/usda-key",
     { key },
-    { headers: configHeaders }
+    { headers: configHeaders },
   );
   return response.data;
 }

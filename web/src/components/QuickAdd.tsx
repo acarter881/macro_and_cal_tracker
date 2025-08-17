@@ -6,10 +6,10 @@ import { Input } from "./ui/Input";
 import { Modal } from "./ui/Modal";
 
 export function QuickAdd() {
-  const addFood = useStore(s => s.addFood);
-  const favorites = useStore(s => s.favorites);
-  const mealName = useStore(s => s.mealName);
-  const allMyFoods = useStore(s => s.allMyFoods);
+  const addFood = useStore((s) => s.addFood);
+  const favorites = useStore((s) => s.favorites);
+  const mealName = useStore((s) => s.mealName);
+  const allMyFoods = useStore((s) => s.allMyFoods);
   const [current, setCurrent] = useState<SimpleFood | null>(null);
   const [qty, setQty] = useState("0");
   if (!favorites.length) return null;
@@ -18,7 +18,7 @@ export function QuickAdd() {
     const unit =
       f.unit_name ||
       (f as any).unitName ||
-      allMyFoods.find(food => food.fdcId === f.fdcId)?.unit_name;
+      allMyFoods.find((food) => food.fdcId === f.fdcId)?.unit_name;
     const defaultAmount = f.defaultGrams ?? (unit ? 1 : 100);
     setQty(String(defaultAmount));
     setCurrent({ ...f, unit_name: unit });
@@ -36,7 +36,7 @@ export function QuickAdd() {
   return (
     <>
       <div className="flex flex-wrap gap-2 mb-4">
-        {favorites.map(f => (
+        {favorites.map((f) => (
           <Button
             key={f.fdcId}
             className="btn-secondary btn-sm"
@@ -51,18 +51,24 @@ export function QuickAdd() {
           <>
             <p className="mb-4">
               Add to <span className="font-semibold">{mealName}</span>: How many
-              <span className="font-semibold"> {current.unit_name || "grams"}</span>
-              {" "}of <span className="font-semibold">{current.description}</span>?
+              <span className="font-semibold">
+                {" "}
+                {current.unit_name || "grams"}
+              </span>{" "}
+              of <span className="font-semibold">{current.description}</span>?
             </p>
             <Input
               type="number"
               value={qty}
-              onChange={e => setQty(e.currentTarget.value)}
+              onChange={(e) => setQty(e.currentTarget.value)}
               className="w-full mb-4"
               autoFocus
             />
             <div className="flex justify-end gap-2">
-              <Button className="btn-secondary" onClick={() => setCurrent(null)}>
+              <Button
+                className="btn-secondary"
+                onClick={() => setCurrent(null)}
+              >
                 Cancel
               </Button>
               <Button className="btn-primary" onClick={submit}>

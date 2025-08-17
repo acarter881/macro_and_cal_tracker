@@ -1,10 +1,5 @@
 import { api } from "./client";
-import type {
-  DayFull,
-  SimpleFood,
-  OfflineOp,
-  OfflineStore,
-} from "../types";
+import type { DayFull, SimpleFood, OfflineOp, OfflineStore } from "../types";
 import { loadJSON, saveJSON } from "../utils/storage";
 
 export const isOnline = () =>
@@ -37,7 +32,9 @@ function purgeStore(store: OfflineStore) {
       delete store.dayTimestamps[date];
     }
   }
-  const dayEntries = Object.entries(store.dayTimestamps).sort((a, b) => b[1] - a[1]);
+  const dayEntries = Object.entries(store.dayTimestamps).sort(
+    (a, b) => b[1] - a[1],
+  );
   if (dayEntries.length > CACHE_MAX_ENTRIES) {
     for (const [date] of dayEntries.slice(CACHE_MAX_ENTRIES)) {
       delete store.days[date];
@@ -52,7 +49,9 @@ function purgeStore(store: OfflineStore) {
       delete store.weightTimestamps[date];
     }
   }
-  const weightEntries = Object.entries(store.weightTimestamps).sort((a, b) => b[1] - a[1]);
+  const weightEntries = Object.entries(store.weightTimestamps).sort(
+    (a, b) => b[1] - a[1],
+  );
   if (weightEntries.length > CACHE_MAX_ENTRIES) {
     for (const [date] of weightEntries.slice(CACHE_MAX_ENTRIES)) {
       delete store.weights[date];
@@ -99,7 +98,7 @@ function emitQueueSize() {
     window.dispatchEvent(
       new CustomEvent("offline-queue-changed", {
         detail: getOfflineQueueSize(),
-      })
+      }),
     );
   }
 }
@@ -216,7 +215,9 @@ export async function syncQueue() {
           idMap[item.payload.tempId] = newId;
           for (const day of Object.values(store.days) as DayFull[]) {
             for (const meal of day.meals) {
-              const entry = meal.entries.find((e) => e.id === item.payload.tempId);
+              const entry = meal.entries.find(
+                (e) => e.id === item.payload.tempId,
+              );
               if (entry) entry.id = newId;
             }
           }
@@ -231,7 +232,9 @@ export async function syncQueue() {
       case "updateEntry": {
         try {
           const entryId = idMap[item.payload.entryId] ?? item.payload.entryId;
-          await api.patch(`/entries/${entryId}`, { quantity_g: item.payload.newGrams });
+          await api.patch(`/entries/${entryId}`, {
+            quantity_g: item.payload.newGrams,
+          });
         } catch {
           store.queue.unshift(item);
           saveStore(store);
@@ -243,7 +246,9 @@ export async function syncQueue() {
       case "moveEntry": {
         try {
           const entryId = idMap[item.payload.entryId] ?? item.payload.entryId;
-          await api.patch(`/entries/${entryId}`, { sort_order: item.payload.newOrder });
+          await api.patch(`/entries/${entryId}`, {
+            sort_order: item.payload.newOrder,
+          });
         } catch {
           store.queue.unshift(item);
           saveStore(store);
@@ -266,7 +271,9 @@ export async function syncQueue() {
       }
       case "setWeight": {
         try {
-          await api.put(`/weight/${item.payload.date}`, { weight: item.payload.weight });
+          await api.put(`/weight/${item.payload.date}`, {
+            weight: item.payload.weight,
+          });
         } catch {
           store.queue.unshift(item);
           saveStore(store);

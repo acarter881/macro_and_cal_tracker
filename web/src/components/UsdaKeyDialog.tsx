@@ -26,7 +26,9 @@ export function UsdaKeyDialog({ onSaved }: Props) {
     <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
       <div className="bg-surface-card p-6 rounded shadow w-full max-w-sm">
         <h2 className="text-lg font-semibold mb-2">USDA API Key</h2>
-        <p className="text-sm mb-4">Enter your USDA API key to enable food search.</p>
+        <p className="text-sm mb-4">
+          Enter your USDA API key to enable food search.
+        </p>
         <Input
           value={key}
           onChange={(e) => setKey(e.target.value)}
@@ -34,7 +36,9 @@ export function UsdaKeyDialog({ onSaved }: Props) {
           placeholder="API Key"
         />
         <div className="text-right">
-          <Button onClick={save} disabled={!key || saving}>Save</Button>
+          <Button onClick={save} disabled={!key || saving}>
+            Save
+          </Button>
         </div>
       </div>
     </div>

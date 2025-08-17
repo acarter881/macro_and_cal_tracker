@@ -58,10 +58,16 @@ export type DayFull = {
 };
 
 // --- CONSTANTS & OTHER TYPES ---
-export const DATA_TYPE_OPTIONS = ["All", "Foundation", "SR Legacy", "Survey (FNDDS)", "Branded"] as const;
-export type DataTypeOpt = typeof DATA_TYPE_OPTIONS[number];
+export const DATA_TYPE_OPTIONS = [
+  "All",
+  "Foundation",
+  "SR Legacy",
+  "Survey (FNDDS)",
+  "Branded",
+] as const;
+export type DataTypeOpt = (typeof DATA_TYPE_OPTIONS)[number];
 
-export type LabelUnit = 'g'|'ml'|'oz'|'fl oz'|'cup'|'tbsp'|'tsp';
+export type LabelUnit = "g" | "ml" | "oz" | "fl oz" | "cup" | "tbsp" | "tsp";
 
 export type Preset = {
   id: number;
@@ -70,12 +76,12 @@ export type Preset = {
 };
 
 export type HistoryDay = {
-    date: string;
-    kcal: number;
-    protein: number;
-    fat: number;
-    carb: number;
-    weight?: number;
+  date: string;
+  kcal: number;
+  protein: number;
+  fat: number;
+  carb: number;
+  weight?: number;
 };
 
 // User-configurable daily macro goals

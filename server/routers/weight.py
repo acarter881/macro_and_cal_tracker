@@ -24,7 +24,9 @@ class WeightPayload(BaseModel):
 
 
 @router.put("/api/weight/{date}", response_model=BodyWeight)
-def set_weight(date: date, payload: WeightPayload, session: Session = Depends(get_session)):
+def set_weight(
+    date: date, payload: WeightPayload, session: Session = Depends(get_session)
+):
     date_str = date.isoformat()
     weight_entry = session.get(BodyWeight, date_str)
     if weight_entry:
