@@ -4,10 +4,11 @@ Revision ID: 16a51a1de3c0
 Revises: 
 Create Date: 2024-09-16 00:00:00.000000
 """
+
 from __future__ import annotations
 
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
 from sqlalchemy import inspect
 from sqlmodel import Session, select
 
@@ -25,6 +26,7 @@ def upgrade() -> None:
     if "sort_order" not in [c["name"] for c in insp.get_columns("meal")]:
         op.add_column("meal", sa.Column("sort_order", sa.Integer()))
         from server.models import Meal  # imported lazily
+
         session = Session(bind=bind)
         meals = session.exec(select(Meal).where(Meal.sort_order.is_(None))).all()
         for m in meals:
@@ -38,12 +40,15 @@ def upgrade() -> None:
 
     if "sort_order" not in [c["name"] for c in insp.get_columns("foodentry")]:
         op.add_column("foodentry", sa.Column("sort_order", sa.Integer()))
-        from server.models import Meal, FoodEntry  # imported lazily
+        from server.models import FoodEntry, Meal  # imported lazily
+
         session = Session(bind=bind)
         meals = session.exec(select(Meal.id).order_by(Meal.id)).all()
         for meal_id in meals:
             ents = session.exec(
-                select(FoodEntry).where(FoodEntry.meal_id == meal_id).order_by(FoodEntry.id)
+                select(FoodEntry)
+                .where(FoodEntry.meal_id == meal_id)
+                .order_by(FoodEntry.id)
             ).all()
             for idx, e in enumerate(ents, start=1):
                 e.sort_order = idx
@@ -51,7 +56,10 @@ def upgrade() -> None:
         session.commit()
 
     if "archived" not in [c["name"] for c in insp.get_columns("food")]:
-        op.add_column("food", sa.Column("archived", sa.Boolean(), nullable=False, server_default="0"))
+        op.add_column(
+            "food",
+            sa.Column("archived", sa.Boolean(), nullable=False, server_default="0"),
+        )
 
 
 def downgrade() -> None:

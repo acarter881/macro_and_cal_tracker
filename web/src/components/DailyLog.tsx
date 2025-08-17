@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from "react";
-import toast from 'react-hot-toast';
+import toast from "react-hot-toast";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import type { DropResult } from "@hello-pangea/dnd";
 import { addDays, subDays } from "date-fns";
@@ -82,13 +82,21 @@ export function DailyLog() {
       <div className="card">
         <div className="card-body flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <label htmlFor="date-picker" className="font-semibold text-sm">Date:</label>
+            <label htmlFor="date-picker" className="font-semibold text-sm">
+              Date:
+            </label>
             <div className="flex items-center gap-2">
               <Button
                 type="button"
                 aria-label="Previous day"
                 className="btn-ghost btn-sm"
-                onClick={() => setDate(subDays(new Date(currentDate), 1).toISOString().slice(0, 10))}
+                onClick={() =>
+                  setDate(
+                    subDays(new Date(currentDate), 1)
+                      .toISOString()
+                      .slice(0, 10),
+                  )
+                }
               >
                 ←
               </Button>
@@ -96,25 +104,42 @@ export function DailyLog() {
                 id="date-picker"
                 type="date"
                 value={currentDate}
-                onChange={e => setDate(e.target.value)}
+                onChange={(e) => setDate(e.target.value)}
               />
               <Button
                 type="button"
                 aria-label="Next day"
                 className="btn-ghost btn-sm"
-                onClick={() => setDate(addDays(new Date(currentDate), 1).toISOString().slice(0, 10))}
+                onClick={() =>
+                  setDate(
+                    addDays(new Date(currentDate), 1)
+                      .toISOString()
+                      .slice(0, 10),
+                  )
+                }
               >
                 →
               </Button>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <select className="form-input" value={mealName} onChange={e => setMealName(e.target.value)}>
-              {pickerMeals.map(m => (<option key={m.id}>{m.name}</option>))}
+            <select
+              className="form-input"
+              value={mealName}
+              onChange={(e) => setMealName(e.target.value)}
+            >
+              {pickerMeals.map((m) => (
+                <option key={m.id}>{m.name}</option>
+              ))}
             </select>
 
             {copiedMealId && (
-              <Button type="button" className="btn-secondary whitespace-nowrap" onClick={handlePasteMeal} disabled={isPasting}>
+              <Button
+                type="button"
+                className="btn-secondary whitespace-nowrap"
+                onClick={handlePasteMeal}
+                disabled={isPasting}
+              >
                 {isPasting ? "Pasting..." : `Paste to ${mealName}`}
               </Button>
             )}
@@ -130,7 +155,12 @@ export function DailyLog() {
               </Button>
             )}
 
-            <Button type="button" className="btn-secondary" onClick={handleAddMeal} disabled={isAddingMeal}>
+            <Button
+              type="button"
+              className="btn-secondary"
+              onClick={handleAddMeal}
+              disabled={isAddingMeal}
+            >
               {isAddingMeal ? "+ ..." : "+ Meal"}
             </Button>
           </div>
@@ -139,11 +169,19 @@ export function DailyLog() {
 
       <DragDropContext onDragEnd={handleDragEnd}>
         <Droppable droppableId="meals" type="MEAL">
-          {provided => (
-            <div ref={provided.innerRef} {...provided.droppableProps} className="space-y-6">
+          {(provided) => (
+            <div
+              ref={provided.innerRef}
+              {...provided.droppableProps}
+              className="space-y-6"
+            >
               {pickerMeals.map((m, index) => (
-                <Draggable key={m.id} draggableId={`meal-${m.id}`} index={index}>
-                  {providedMeal => (
+                <Draggable
+                  key={m.id}
+                  draggableId={`meal-${m.id}`}
+                  index={index}
+                >
+                  {(providedMeal) => (
                     <MealCard
                       meal={m}
                       isCurrent={m.name === mealName}
@@ -171,7 +209,9 @@ export function DailyLog() {
 // --- Child Components ---
 
 type MealCardProps = {
-  meal: MealType; isCurrent: boolean; onSelect: () => void;
+  meal: MealType;
+  isCurrent: boolean;
+  onSelect: () => void;
   onUpdateEntry: (entryId: number, grams: number) => Promise<void>;
   onDeleteEntry: (entryId: number) => Promise<void>;
   onDeleteMeal: (mealId: number) => Promise<void>;
@@ -181,7 +221,18 @@ type MealCardProps = {
   provided: any;
 };
 
-function MealCard({ meal, isCurrent, onSelect, onUpdateEntry, onDeleteEntry, onDeleteMeal, onCopyMeal, onRenameMeal, onCopyEntry, provided }: MealCardProps) {
+function MealCard({
+  meal,
+  isCurrent,
+  onSelect,
+  onUpdateEntry,
+  onDeleteEntry,
+  onDeleteMeal,
+  onCopyMeal,
+  onRenameMeal,
+  onCopyEntry,
+  provided,
+}: MealCardProps) {
   const [isRenaming, setIsRenaming] = useState(false);
   const [tempName, setTempName] = useState(meal.name);
   useEffect(() => setTempName(meal.name), [meal.name]);
@@ -196,45 +247,85 @@ function MealCard({ meal, isCurrent, onSelect, onUpdateEntry, onDeleteEntry, onD
       {...provided.draggableProps}
       {...provided.dragHandleProps}
     >
-      <div className="card-header bg-surface-light dark:bg-border-dark flex items-center relative py-3" onClick={!isRenaming ? onSelect : undefined}>
+      <div
+        className="card-header bg-surface-light dark:bg-border-dark flex items-center relative py-3"
+        onClick={!isRenaming ? onSelect : undefined}
+      >
         {isRenaming ? (
-          <form className="flex-1 flex items-center gap-2" onSubmit={e => { e.preventDefault(); submitRename(); }}>
-            <Input className="flex-1 py-1" value={tempName} onChange={e => setTempName(e.target.value)} autoFocus />
-            <Button type="submit" className="btn-secondary btn-sm">Save</Button>
+          <form
+            className="flex-1 flex items-center gap-2"
+            onSubmit={(e) => {
+              e.preventDefault();
+              submitRename();
+            }}
+          >
+            <Input
+              className="flex-1 py-1"
+              value={tempName}
+              onChange={(e) => setTempName(e.target.value)}
+              autoFocus
+            />
+            <Button type="submit" className="btn-secondary btn-sm">
+              Save
+            </Button>
           </form>
         ) : (
-          <h3 className="flex-1 text-center font-semibold text-lg dark:text-text-light">{meal.name}</h3>
+          <h3 className="flex-1 text-center font-semibold text-lg dark:text-text-light">
+            {meal.name}
+          </h3>
         )}
         <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+          <Button
+            type="button"
+            title="Rename meal"
+            aria-label="Rename meal"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsRenaming(true);
+            }}
+            className="btn-ghost btn-sm"
+          >
+            <PencilSquareIcon className="h-4 w-4" />
+          </Button>
+          <Button
+            type="button"
+            title="Copy meal"
+            aria-label="Copy meal"
+            onClick={(e) => {
+              e.stopPropagation();
+              onCopyMeal(meal.id);
+            }}
+            className="btn-ghost btn-sm"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-4 w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+              />
+            </svg>
+          </Button>
+          {meal.entries.length === 0 && (
             <Button
               type="button"
-              title="Rename meal"
-              aria-label="Rename meal"
-              onClick={(e) => { e.stopPropagation(); setIsRenaming(true); }}
+              title="Delete empty meal"
+              aria-label="Delete empty meal"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDeleteMeal(meal.id);
+              }}
               className="btn-ghost btn-sm"
             >
-              <PencilSquareIcon className="h-4 w-4" />
+              <TrashIcon className="h-4 w-4" />
             </Button>
-            <Button
-              type="button"
-              title="Copy meal"
-              aria-label="Copy meal"
-              onClick={(e) => { e.stopPropagation(); onCopyMeal(meal.id); }}
-              className="btn-ghost btn-sm"
-            >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-            </Button>
-            {meal.entries.length === 0 && (
-              <Button
-                type="button"
-                title="Delete empty meal"
-                aria-label="Delete empty meal"
-                onClick={(e) => { e.stopPropagation(); onDeleteMeal(meal.id); }}
-                className="btn-ghost btn-sm"
-              >
-                <TrashIcon className="h-4 w-4" />
-              </Button>
-            )}
+          )}
         </div>
       </div>
       <div className="overflow-x-auto">
@@ -262,26 +353,38 @@ function MealCard({ meal, isCurrent, onSelect, onUpdateEntry, onDeleteEntry, onD
             </tr>
           </thead>
           <Droppable droppableId={`entries-${meal.id}`} type="ENTRY">
-            {providedEntries => (
-          <tbody
-            ref={providedEntries.innerRef}
-            {...providedEntries.droppableProps}
-            className="table-row-group"
-          >
+            {(providedEntries) => (
+              <tbody
+                ref={providedEntries.innerRef}
+                {...providedEntries.droppableProps}
+                className="table-row-group"
+              >
                 {meal.entries.length ? (
                   meal.entries
                     .slice()
                     .sort((a, b) => a.sort_order - b.sort_order)
                     .map((e, idx) => (
-                      <Draggable key={e.id} draggableId={`entry-${e.id}`} index={idx}>
-                        {providedRow => (
-                          <Row e={e} onUpdate={onUpdateEntry} onDelete={onDeleteEntry} onCopy={onCopyEntry} provided={providedRow} />
+                      <Draggable
+                        key={e.id}
+                        draggableId={`entry-${e.id}`}
+                        index={idx}
+                      >
+                        {(providedRow) => (
+                          <Row
+                            e={e}
+                            onUpdate={onUpdateEntry}
+                            onDelete={onDeleteEntry}
+                            onCopy={onCopyEntry}
+                            provided={providedRow}
+                          />
                         )}
                       </Draggable>
                     ))
                 ) : (
                   <tr>
-                    <td className="p-4 text-text-muted text-center" colSpan={8}>No entries yet.</td>
+                    <td className="p-4 text-text-muted text-center" colSpan={8}>
+                      No entries yet.
+                    </td>
                   </tr>
                 )}
                 {providedEntries.placeholder}
@@ -290,12 +393,20 @@ function MealCard({ meal, isCurrent, onSelect, onUpdateEntry, onDeleteEntry, onD
           </Droppable>
           <tfoot className="table-footer-group">
             <tr className="font-semibold border-t-2 border-border-light dark:border-border-dark">
-                <td className="p-3 text-right" colSpan={3}></td>
-                <td className="p-3 subtotal-kcal text-right">{meal.subtotal.kcal.toFixed(1)}</td>
-                <td className="p-3 subtotal-fat text-right">{meal.subtotal.fat.toFixed(1)}</td>
-                <td className="p-3 subtotal-carb text-right">{meal.subtotal.carb.toFixed(1)}</td>
-                <td className="p-3 subtotal-protein text-right">{meal.subtotal.protein.toFixed(1)}</td>
-                <td className="p-3 text-right"></td>
+              <td className="p-3 text-right" colSpan={3}></td>
+              <td className="p-3 subtotal-kcal text-right">
+                {meal.subtotal.kcal.toFixed(1)}
+              </td>
+              <td className="p-3 subtotal-fat text-right">
+                {meal.subtotal.fat.toFixed(1)}
+              </td>
+              <td className="p-3 subtotal-carb text-right">
+                {meal.subtotal.carb.toFixed(1)}
+              </td>
+              <td className="p-3 subtotal-protein text-right">
+                {meal.subtotal.protein.toFixed(1)}
+              </td>
+              <td className="p-3 text-right"></td>
             </tr>
           </tfoot>
         </table>
@@ -304,15 +415,22 @@ function MealCard({ meal, isCurrent, onSelect, onUpdateEntry, onDeleteEntry, onD
   );
 }
 
-
-type RowProps = { e: EntryType, onUpdate: (id: number, grams: number) => Promise<void>, onDelete: (id: number) => Promise<void>, onCopy: (e: EntryType) => void, provided: any };
+type RowProps = {
+  e: EntryType;
+  onUpdate: (id: number, grams: number) => Promise<void>;
+  onDelete: (id: number) => Promise<void>;
+  onCopy: (e: EntryType) => void;
+  provided: any;
+};
 
 function Row({ e, onUpdate, onDelete, onCopy, provided }: RowProps) {
   const [g, setG] = useState<number>(e.quantity_g);
   const [isMutating, setIsMutating] = useState(false);
   const changed = g !== e.quantity_g;
 
-  useEffect(() => { setG(e.quantity_g); }, [e.quantity_g]);
+  useEffect(() => {
+    setG(e.quantity_g);
+  }, [e.quantity_g]);
 
   const handleUpdate = async () => {
     setIsMutating(true);
@@ -349,7 +467,9 @@ function Row({ e, onUpdate, onDelete, onCopy, provided }: RowProps) {
           const id = `entry-${e.id}-qty`;
           return (
             <>
-              <label htmlFor={id} className="sr-only">Quantity in {e.unit_name || 'grams'}</label>
+              <label htmlFor={id} className="sr-only">
+                Quantity in {e.unit_name || "grams"}
+              </label>
               <Input
                 id={id}
                 className="text-right w-20 py-1"
@@ -357,14 +477,14 @@ function Row({ e, onUpdate, onDelete, onCopy, provided }: RowProps) {
                 min={1}
                 step={1}
                 value={g}
-                onChange={ev => setG(parseFloat(ev.target.value))}
+                onChange={(ev) => setG(parseFloat(ev.target.value))}
                 disabled={isMutating}
               />
             </>
           );
         })()}
       </td>
-      <td className="p-2 text-right">{e.unit_name || 'g'}</td>
+      <td className="p-2 text-right">{e.unit_name || "g"}</td>
       <td className="p-2 text-right">{e.kcal.toFixed(1)}</td>
       <td className="p-2 text-right">{e.fat.toFixed(1)}</td>
       <td className="p-2 text-right">{e.carb.toFixed(1)}</td>
@@ -378,7 +498,20 @@ function Row({ e, onUpdate, onDelete, onCopy, provided }: RowProps) {
             title="Copy entry"
             aria-label="Copy entry"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-4 w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+              />
+            </svg>
           </Button>
           <Button
             className="btn-secondary btn-sm"
@@ -399,4 +532,3 @@ function Row({ e, onUpdate, onDelete, onCopy, provided }: RowProps) {
     </tr>
   );
 }
-

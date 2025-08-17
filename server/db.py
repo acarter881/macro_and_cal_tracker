@@ -1,15 +1,16 @@
-from pathlib import Path
 import shutil
+from pathlib import Path
 
 try:
     from platformdirs import user_data_dir
 except ModuleNotFoundError:  # pragma: no cover
+
     def user_data_dir(appname: str, appauthor: str) -> str:
         """Fallback implementation if platformdirs is unavailable."""
         return str(Path.home() / f".{appname}")
 
-from sqlmodel import Session, create_engine
 
+from sqlmodel import Session, create_engine
 
 data_dir = Path(user_data_dir("MacroTracker", "MacroTracker"))
 data_dir.mkdir(parents=True, exist_ok=True)
@@ -26,8 +27,10 @@ engine = create_engine(
     connect_args={"check_same_thread": False},
 )
 
+
 def get_engine():
     return engine
+
 
 def get_session():
     with Session(get_engine()) as session:

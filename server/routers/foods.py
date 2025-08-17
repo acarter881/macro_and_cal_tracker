@@ -1,15 +1,15 @@
-from typing import Optional, List
-
 import logging
+from typing import List, Optional
+
 import httpx
 from fastapi import APIRouter, Depends, HTTPException
-from sqlmodel import Session, select, delete
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from sqlalchemy import func
-from pydantic import BaseModel, field_validator, model_validator, ConfigDict, Field
+from sqlmodel import Session, delete, select
 
-from server.db import get_session
-from server.models import Food, FoodEntry, Favorite
 from server import utils
+from server.db import get_session
+from server.models import Favorite, Food, FoodEntry
 
 logger = logging.getLogger(__name__)
 
@@ -18,6 +18,7 @@ fetch_food_detail = utils.fetch_food_detail
 ensure_food_cached = utils.ensure_food_cached
 
 router = APIRouter()
+
 
 @router.get("/api/foods/search")
 async def foods_search(q: str, dataType: Optional[str] = None):
@@ -37,18 +38,29 @@ async def foods_search(q: str, dataType: Optional[str] = None):
             r.raise_for_status()
             data = r.json()
     except httpx.HTTPStatusError as e:
-        raise HTTPException(status_code=e.response.status_code,
-                            detail=f"USDA error {e.response.status_code}: {e.response.text[:200]}")
+        raise HTTPException(
+            status_code=e.response.status_code,
+            detail=f"USDA error {e.response.status_code}: {e.response.text[:200]}",
+        )
     except httpx.RequestError as e:
         raise HTTPException(status_code=503, detail=f"USDA API request failed: {e!s}")
-    return {"results": [
-        {"fdcId": i.get("fdcId"), "description": i.get("description"),
-         "brandOwner": i.get("brandOwner"), "dataType": i.get("dataType")}
-        for i in data.get("foods", [])
-    ]}
+    return {
+        "results": [
+            {
+                "fdcId": i.get("fdcId"),
+                "description": i.get("description"),
+                "brandOwner": i.get("brandOwner"),
+                "dataType": i.get("dataType"),
+            }
+            for i in data.get("foods", [])
+        ]
+    }
+
 
 @router.get("/api/foods/{fdc_id}")
-async def foods_get(fdc_id: int, session: Session = Depends(get_session), refresh: bool = False):
+async def foods_get(
+    fdc_id: int, session: Session = Depends(get_session), refresh: bool = False
+):
     if not refresh:
         food = session.get(Food, fdc_id)
         if food:
@@ -72,7 +84,9 @@ async def foods_get(fdc_id: int, session: Session = Depends(get_session), refres
             abr = resp.json()[0]
         abr_fn = abr.get("foodNutrients") or []
     except Exception as e:
-        logger.warning("Abridged fetch failed (%s), falling back to full foodNutrients", e)
+        logger.warning(
+            "Abridged fetch failed (%s), falling back to full foodNutrients", e
+        )
         abr_fn = []
     full_fn = data.get("foodNutrients") or []
     fn = abr_fn if abr_fn else full_fn
@@ -93,22 +107,28 @@ async def foods_get(fdc_id: int, session: Session = Depends(get_session), refres
         except (ValueError, TypeError):
             nut_map[nid] = 0.0
     lbl = data.get("labelNutrients") or {}
-    fat     = nut_map.get(1085) or nut_map.get(1004) or float(lbl.get("fat", {}).get("value", 0))
+    fat = (
+        nut_map.get(1085)
+        or nut_map.get(1004)
+        or float(lbl.get("fat", {}).get("value", 0))
+    )
     protein = nut_map.get(1003) or float(lbl.get("protein", {}).get("value", 0))
-    carb    = nut_map.get(1005) or float(lbl.get("carbohydrates", {}).get("value", 0))
-    kcal    = nut_map.get(1008) or float(lbl.get("calories", {}).get("value", 0))
+    carb = nut_map.get(1005) or float(lbl.get("carbohydrates", {}).get("value", 0))
+    kcal = nut_map.get(1008) or float(lbl.get("calories", {}).get("value", 0))
     if kcal == 0 and (fat or protein or carb):
         kcal = round(fat * 9 + protein * 4 + carb * 4, 2)
     macros = {"kcal": kcal, "protein": protein, "fat": fat, "carb": carb}
     values = dict(
         fdc_id=fdc_id,
-        description    = data.get("description") or data.get("descriptionShort") or "Unknown",
-        brand_owner    = data.get("brandOwner"),
-        data_type      = data.get("dataType") or data.get("dataCategory"),
-        kcal_per_100g      = float(macros["kcal"]),
-        protein_g_per_100g = float(macros["protein"]),
-        carb_g_per_100g    = float(macros["carb"]),
-        fat_g_per_100g     = float(macros["fat"]),
+        description=data.get("description")
+        or data.get("descriptionShort")
+        or "Unknown",
+        brand_owner=data.get("brandOwner"),
+        data_type=data.get("dataType") or data.get("dataCategory"),
+        kcal_per_100g=float(macros["kcal"]),
+        protein_g_per_100g=float(macros["protein"]),
+        carb_g_per_100g=float(macros["carb"]),
+        fat_g_per_100g=float(macros["fat"]),
     )
     existing = session.get(Food, fdc_id)
     if existing:
@@ -124,6 +144,7 @@ async def foods_get(fdc_id: int, session: Session = Depends(get_session), refres
         session.commit()
         session.refresh(food)
         return food
+
 
 class FavoriteIn(BaseModel):
     fdc_id: int
@@ -154,6 +175,7 @@ class RecentItem(BaseModel):
 class RecentsResponse(BaseModel):
     items: List[RecentItem]
 
+
 @router.get("/api/favorites", response_model=FavoriteListResponse)
 def list_favorites(session: Session = Depends(get_session)):
     favs = session.exec(select(Favorite)).all()
@@ -179,6 +201,7 @@ def list_favorites(session: Session = Depends(get_session)):
             )
     return FavoriteListResponse(items=items)
 
+
 @router.post("/api/favorites")
 async def add_favorite(payload: FavoriteIn, session: Session = Depends(get_session)):
     fav = session.get(Favorite, payload.fdc_id)
@@ -190,19 +213,25 @@ async def add_favorite(payload: FavoriteIn, session: Session = Depends(get_sessi
         session.add(fav)
         session.commit()
         return {"ok": True}
-    fav = Favorite(fdc_id=payload.fdc_id,
-                   alias=payload.alias,
-                   default_grams=float(payload.default_grams) if payload.default_grams is not None else None)
+    fav = Favorite(
+        fdc_id=payload.fdc_id,
+        alias=payload.alias,
+        default_grams=(
+            float(payload.default_grams) if payload.default_grams is not None else None
+        ),
+    )
     session.add(fav)
     await ensure_food_cached(payload.fdc_id, session)
     session.commit()
     return {"ok": True}
+
 
 @router.delete("/api/favorites/{fdc_id}")
 def remove_favorite(fdc_id: int, session: Session = Depends(get_session)):
     session.exec(delete(Favorite).where(Favorite.fdc_id == fdc_id))
     session.commit()
     return {"ok": True}
+
 
 @router.get("/api/recents", response_model=RecentsResponse)
 def list_recents(limit: int = 20, session: Session = Depends(get_session)):
@@ -230,6 +259,7 @@ def list_recents(limit: int = 20, session: Session = Depends(get_session)):
         for fid, desc, bo, dt in rows
     ]
     return RecentsResponse(items=items)
+
 
 class CustomFoodIn(BaseModel):
     description: str
@@ -271,14 +301,25 @@ class CustomFoodIn(BaseModel):
     @model_validator(mode="after")
     def check_macros(self):
         if self.unit_name:
-            required = [self.kcal_per_unit, self.protein_g_per_unit, self.carb_g_per_unit, self.fat_g_per_unit]
+            required = [
+                self.kcal_per_unit,
+                self.protein_g_per_unit,
+                self.carb_g_per_unit,
+                self.fat_g_per_unit,
+            ]
             if any(v is None for v in required):
                 raise ValueError("Per-unit macros are required when unit_name is set.")
         else:
-            required = [self.kcal_per_100g, self.protein_g_per_100g, self.carb_g_per_100g, self.fat_g_per_100g]
+            required = [
+                self.kcal_per_100g,
+                self.protein_g_per_100g,
+                self.carb_g_per_100g,
+                self.fat_g_per_100g,
+            ]
             if any(v is None for v in required):
                 raise ValueError("Macro values per 100g are required.")
         return self
+
 
 class CustomFoodUpdate(BaseModel):
     description: Optional[str] = None
@@ -321,11 +362,13 @@ class CustomFoodSearchResult(BaseModel):
 
     model_config = ConfigDict(populate_by_name=True)
 
+
 @router.post("/api/custom_foods", response_model=CustomFoodOut)
 def create_custom_food(body: CustomFoodIn, session: Session = Depends(get_session)):
     desc = body.description.strip()
     brand = (body.brand_owner or "").strip() or None
     import time
+
     fdc_id = -int(time.time() * 1000)
     f = Food(
         fdc_id=fdc_id,
@@ -348,11 +391,13 @@ def create_custom_food(body: CustomFoodIn, session: Session = Depends(get_sessio
     session.refresh(f)
     return f
 
+
 @router.get("/api/custom_foods/search", response_model=List[CustomFoodSearchResult])
 def search_custom_foods(q: str, session: Session = Depends(get_session)):
     q_like = f"%{q.strip()}%"
     rows = session.exec(
-        select(Food).where(
+        select(Food)
+        .where(
             Food.data_type == "Custom",
             Food.archived == False,
             Food.description.ilike(q_like),
@@ -371,8 +416,11 @@ def search_custom_foods(q: str, session: Session = Depends(get_session)):
         for r in rows
     ]
 
+
 @router.patch("/api/custom_foods/{fdc_id}")
-def update_custom_food(fdc_id: int, payload: CustomFoodUpdate, session: Session = Depends(get_session)):
+def update_custom_food(
+    fdc_id: int, payload: CustomFoodUpdate, session: Session = Depends(get_session)
+):
     food = session.get(Food, fdc_id)
     if not food or food.data_type != "Custom":
         raise HTTPException(status_code=404, detail="Custom food not found")
@@ -383,13 +431,16 @@ def update_custom_food(fdc_id: int, payload: CustomFoodUpdate, session: Session 
     session.refresh(food)
     return {"ok": True}
 
+
 @router.delete("/api/custom_foods/{fdc_id}")
 def delete_custom_food(fdc_id: int, session: Session = Depends(get_session)):
     food = session.get(Food, fdc_id)
     if not food:
         raise HTTPException(status_code=404, detail="Food not found.")
     if food.data_type != "Custom":
-        raise HTTPException(status_code=400, detail="Only custom foods can be deleted here.")
+        raise HTTPException(
+            status_code=400, detail="Only custom foods can be deleted here."
+        )
     cnt = session.exec(
         select(func.count()).select_from(FoodEntry).where(FoodEntry.fdc_id == fdc_id)
     ).one()
@@ -401,6 +452,7 @@ def delete_custom_food(fdc_id: int, session: Session = Depends(get_session)):
     session.delete(food)
     session.commit()
     return {"ok": True}
+
 
 @router.get("/api/my_foods", response_model=List[CustomFoodSearchResult])
 def my_foods(session: Session = Depends(get_session)):

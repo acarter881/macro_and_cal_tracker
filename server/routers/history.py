@@ -11,9 +11,10 @@ from server.utils import scaled_macros_from_food
 router = APIRouter()
 
 
-
 @router.get("/api/history")
-def get_history(start_date: date, end_date: date, session: Session = Depends(get_session)):
+def get_history(
+    start_date: date, end_date: date, session: Session = Depends(get_session)
+):
     start_str = start_date.isoformat()
     end_str = end_date.isoformat()
     meals = session.exec(
@@ -32,7 +33,9 @@ def get_history(start_date: date, end_date: date, session: Session = Depends(get
         if fdc_ids:
             foods = {
                 f.fdc_id: f
-                for f in session.exec(select(Food).where(Food.fdc_id.in_(fdc_ids))).all()
+                for f in session.exec(
+                    select(Food).where(Food.fdc_id.in_(fdc_ids))
+                ).all()
             }
 
     weights = session.exec(

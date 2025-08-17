@@ -1,25 +1,28 @@
-from typing import Optional, List, Dict
-from datetime import date
 import csv
 import io
+from datetime import date
+from typing import Dict, List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Response, Query
-from sqlmodel import Session, select
-from sqlalchemy import func, delete, desc
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from pydantic import BaseModel, field_validator
+from sqlalchemy import delete, desc, func
+from sqlmodel import Session, select
 
 from server.db import get_session
-from server.models import Meal, FoodEntry, Food
-from server.utils import get_or_create_meal, ensure_food_cached, scaled_macros_from_food
+from server.models import Food, FoodEntry, Meal
+from server.utils import ensure_food_cached, get_or_create_meal, scaled_macros_from_food
 
 router = APIRouter()
+
 
 class MealCreate(BaseModel):
     date: date
 
+
 class MealUpdate(BaseModel):
     name: Optional[str] = None
     sort_order: Optional[int] = None
+
 
 class FoodEntryCreate(BaseModel):
     meal_id: int
@@ -33,12 +36,16 @@ class FoodEntryCreate(BaseModel):
             raise ValueError("quantity_g must be ≥ 0")
         return v
 
+
 @router.post("/api/meals", response_model=Meal)
 def create_meal(payload: MealCreate, session: Session = Depends(get_session)):
     date_str = payload.date.isoformat()
-    max_sort_order = session.exec(
-        select(func.max(Meal.sort_order)).where(Meal.date == date_str)
-    ).first() or 0
+    max_sort_order = (
+        session.exec(
+            select(func.max(Meal.sort_order)).where(Meal.date == date_str)
+        ).first()
+        or 0
+    )
     new_order = max_sort_order + 1
     new_name = f"Meal {new_order}"
     db_meal = Meal(date=date_str, name=new_name, sort_order=new_order)
@@ -47,8 +54,11 @@ def create_meal(payload: MealCreate, session: Session = Depends(get_session)):
     session.refresh(db_meal)
     return db_meal
 
+
 @router.patch("/api/meals/{meal_id}", response_model=Meal)
-def update_meal(meal_id: int, payload: MealUpdate, session: Session = Depends(get_session)):
+def update_meal(
+    meal_id: int, payload: MealUpdate, session: Session = Depends(get_session)
+):
     meal = session.get(Meal, meal_id)
     if not meal:
         raise HTTPException(status_code=404, detail="Meal not found")
@@ -64,8 +74,7 @@ def update_meal(meal_id: int, payload: MealUpdate, session: Session = Depends(ge
         old_order = meal.sort_order
         if new_order < old_order:
             affected = session.exec(
-                select(Meal)
-                .where(
+                select(Meal).where(
                     Meal.date == meal.date,
                     Meal.sort_order >= new_order,
                     Meal.sort_order < old_order,
@@ -79,8 +88,7 @@ def update_meal(meal_id: int, payload: MealUpdate, session: Session = Depends(ge
                 session.add(m)
         elif new_order > old_order:
             affected = session.exec(
-                select(Meal)
-                .where(
+                select(Meal).where(
                     Meal.date == meal.date,
                     Meal.sort_order <= new_order,
                     Meal.sort_order > old_order,
@@ -105,14 +113,20 @@ def update_meal(meal_id: int, payload: MealUpdate, session: Session = Depends(ge
         session.refresh(meal)
     return meal
 
+
 @router.post("/api/entries", response_model=FoodEntry)
 def create_entry(payload: FoodEntryCreate, session: Session = Depends(get_session)):
     food = session.get(Food, payload.fdc_id)
     if not food or food.archived:
         raise HTTPException(status_code=404, detail="Food not available")
-    max_order = session.exec(
-        select(func.max(FoodEntry.sort_order)).where(FoodEntry.meal_id == payload.meal_id)
-    ).first() or 0
+    max_order = (
+        session.exec(
+            select(func.max(FoodEntry.sort_order)).where(
+                FoodEntry.meal_id == payload.meal_id
+            )
+        ).first()
+        or 0
+    )
     entry = FoodEntry(
         meal_id=payload.meal_id,
         fdc_id=payload.fdc_id,
@@ -131,11 +145,22 @@ def get_day(date: date, session: Session = Depends(get_session)):
     meals = session.exec(select(Meal).where(Meal.date == date_str)).all()
     meal_ids = [m.id for m in meals]
     if not meal_ids:
-        return {"meals": [], "entries": [], "totals": {"kcal": 0, "protein": 0, "fat": 0, "carb": 0}}
+        return {
+            "meals": [],
+            "entries": [],
+            "totals": {"kcal": 0, "protein": 0, "fat": 0, "carb": 0},
+        }
     entries = session.exec(
-        select(FoodEntry).where(FoodEntry.meal_id.in_(meal_ids)).order_by(FoodEntry.sort_order)
+        select(FoodEntry)
+        .where(FoodEntry.meal_id.in_(meal_ids))
+        .order_by(FoodEntry.sort_order)
     ).all()
-    foods = {f.fdc_id: f for f in session.exec(select(Food).where(Food.fdc_id.in_({e.fdc_id for e in entries}))).all()}
+    foods = {
+        f.fdc_id: f
+        for f in session.exec(
+            select(Food).where(Food.fdc_id.in_({e.fdc_id for e in entries}))
+        ).all()
+    }
     totals = {"kcal": 0.0, "protein": 0.0, "carb": 0.0, "fat": 0.0}
     for e in entries:
         f = foods.get(e.fdc_id)
@@ -146,7 +171,12 @@ def get_day(date: date, session: Session = Depends(get_session)):
         totals["protein"] += p
         totals["carb"] += c
         totals["fat"] += fat
-    return {"meals": meals, "entries": entries, "totals": {k: round(v, 2) for k, v in totals.items()}}
+    return {
+        "meals": meals,
+        "entries": entries,
+        "totals": {k: round(v, 2) for k, v in totals.items()},
+    }
+
 
 class EntryUpdate(BaseModel):
     quantity_g: Optional[float] = None
@@ -159,15 +189,20 @@ class EntryUpdate(BaseModel):
             raise ValueError("quantity_g must be ≥ 0")
         return v
 
+
 @router.patch("/api/entries/{entry_id}", response_model=FoodEntry)
-def update_entry(entry_id: int, payload: EntryUpdate, session: Session = Depends(get_session)):
+def update_entry(
+    entry_id: int, payload: EntryUpdate, session: Session = Depends(get_session)
+):
     e = session.get(FoodEntry, entry_id)
     if not e:
         raise HTTPException(status_code=404, detail="Entry not found")
     if payload.sort_order is not None and payload.sort_order != e.sort_order:
         new_order = max(1, payload.sort_order)
         entries_same_meal = session.exec(
-            select(FoodEntry).where(FoodEntry.meal_id == e.meal_id).order_by(FoodEntry.sort_order)
+            select(FoodEntry)
+            .where(FoodEntry.meal_id == e.meal_id)
+            .order_by(FoodEntry.sort_order)
         ).all()
         max_order = len(entries_same_meal)
         if new_order > max_order:
@@ -212,6 +247,7 @@ def update_entry(entry_id: int, payload: EntryUpdate, session: Session = Depends
     session.refresh(e)
     return e
 
+
 @router.delete("/api/entries/{entry_id}")
 def delete_entry(entry_id: int, session: Session = Depends(get_session)):
     e = session.get(FoodEntry, entry_id)
@@ -242,15 +278,24 @@ def delete_entry(entry_id: int, session: Session = Depends(get_session)):
     session.commit()
     return {"ok": True}
 
+
 @router.get("/api/days/{date}/full")
 async def get_day_full(date: date, session: Session = Depends(get_session)):
     date_str = date.isoformat()
-    meals = session.exec(select(Meal).where(Meal.date == date_str).order_by(Meal.sort_order)).all()
+    meals = session.exec(
+        select(Meal).where(Meal.date == date_str).order_by(Meal.sort_order)
+    ).all()
     meal_ids = [m.id for m in meals]
     if not meal_ids:
-        return {"date": date_str, "meals": [], "totals": {"kcal": 0, "protein": 0, "fat": 0, "carb": 0}}
+        return {
+            "date": date_str,
+            "meals": [],
+            "totals": {"kcal": 0, "protein": 0, "fat": 0, "carb": 0},
+        }
     entries = session.exec(
-        select(FoodEntry).where(FoodEntry.meal_id.in_(meal_ids)).order_by(FoodEntry.sort_order)
+        select(FoodEntry)
+        .where(FoodEntry.meal_id.in_(meal_ids))
+        .order_by(FoodEntry.sort_order)
     ).all()
     fdc_ids = list({e.fdc_id for e in entries if e.fdc_id is not None})
     foods: Dict[int, Food] = {}
@@ -258,14 +303,35 @@ async def get_day_full(date: date, session: Session = Depends(get_session)):
         q = select(Food).where(Food.fdc_id.in_(fdc_ids))
         foods_list = session.exec(q).all()
         foods = {f.fdc_id: f for f in foods_list}
+
     def row_for_entry(e: FoodEntry):
         f = foods.get(e.fdc_id)
         if f is None:
-            return {"id": e.id, "fdc_id": e.fdc_id, "description": "[deleted item]",
-                    "quantity_g": e.quantity_g, "kcal": 0.0, "protein": 0.0, "carb": 0.0, "fat": 0.0, "unit_name": None}
+            return {
+                "id": e.id,
+                "fdc_id": e.fdc_id,
+                "description": "[deleted item]",
+                "quantity_g": e.quantity_g,
+                "kcal": 0.0,
+                "protein": 0.0,
+                "carb": 0.0,
+                "fat": 0.0,
+                "unit_name": None,
+            }
         kcal, p, c, fat = scaled_macros_from_food(f, e.quantity_g)
-        return {"id": e.id, "fdc_id": e.fdc_id, "description": f.description, "quantity_g": e.quantity_g,
-                "kcal": kcal, "protein": p, "carb": c, "fat": fat, "sort_order": e.sort_order, "unit_name": f.unit_name}
+        return {
+            "id": e.id,
+            "fdc_id": e.fdc_id,
+            "description": f.description,
+            "quantity_g": e.quantity_g,
+            "kcal": kcal,
+            "protein": p,
+            "carb": c,
+            "fat": fat,
+            "sort_order": e.sort_order,
+            "unit_name": f.unit_name,
+        }
+
     by_meal: Dict[int, List[Dict]] = {m.id: [] for m in meals}
     for e in entries:
         by_meal[e.meal_id].append(row_for_entry(e))
@@ -279,47 +345,96 @@ async def get_day_full(date: date, session: Session = Depends(get_session)):
                 sub[k] += x[k]
         for k in totals:
             totals[k] += sub[k]
-        meals_out.append({"id": m.id, "name": m.name, "date": m.date, "sort_order": m.sort_order,
-                          "entries": m_entries, "subtotal": {k: round(v, 2) for k, v in sub.items()}})
-    return {"date": date_str, "meals": meals_out, "totals": {k: round(v, 2) for k, v in totals.items()}}
+        meals_out.append(
+            {
+                "id": m.id,
+                "name": m.name,
+                "date": m.date,
+                "sort_order": m.sort_order,
+                "entries": m_entries,
+                "subtotal": {k: round(v, 2) for k, v in sub.items()},
+            }
+        )
+    return {
+        "date": date_str,
+        "meals": meals_out,
+        "totals": {k: round(v, 2) for k, v in totals.items()},
+    }
+
 
 @router.get("/api/export")
-def export_csv(start: date = Query(..., description="YYYY-MM-DD"),
-               end: date = Query(..., description="YYYY-MM-DD"),
-               session: Session = Depends(get_session)):
+def export_csv(
+    start: date = Query(..., description="YYYY-MM-DD"),
+    end: date = Query(..., description="YYYY-MM-DD"),
+    session: Session = Depends(get_session),
+):
     start_str = start.isoformat()
     end_str = end.isoformat()
-    meals = session.exec(select(Meal).where(Meal.date >= start_str, Meal.date <= end_str)).all()
+    meals = session.exec(
+        select(Meal).where(Meal.date >= start_str, Meal.date <= end_str)
+    ).all()
     if not meals:
-        return Response(content="date,meal,item,grams,kcal,protein,carb,fat\n", media_type="text/csv")
+        return Response(
+            content="date,meal,item,grams,kcal,protein,carb,fat\n",
+            media_type="text/csv",
+        )
     meals_by_id = {m.id: m for m in meals}
-    entries = session.exec(select(FoodEntry).where(FoodEntry.meal_id.in_(list(meals_by_id.keys())))
-                           .order_by(FoodEntry.id)).all()
-    foods = {f.fdc_id: f for f in session.exec(select(Food).where(Food.fdc_id.in_({e.fdc_id for e in entries}))).all()}
-    buf = io.StringIO(); w = csv.writer(buf)
+    entries = session.exec(
+        select(FoodEntry)
+        .where(FoodEntry.meal_id.in_(list(meals_by_id.keys())))
+        .order_by(FoodEntry.id)
+    ).all()
+    foods = {
+        f.fdc_id: f
+        for f in session.exec(
+            select(Food).where(Food.fdc_id.in_({e.fdc_id for e in entries}))
+        ).all()
+    }
+    buf = io.StringIO()
+    w = csv.writer(buf)
     w.writerow(["date", "meal", "item", "grams", "kcal", "protein", "carb", "fat"])
     sorted_entries = sorted(
         entries,
-        key=lambda x: (meals_by_id[x.meal_id].date, meals_by_id[x.meal_id].sort_order, x.id or 0)
+        key=lambda x: (
+            meals_by_id[x.meal_id].date,
+            meals_by_id[x.meal_id].sort_order,
+            x.id or 0,
+        ),
     )
     for e in sorted_entries:
         f = foods.get(e.fdc_id)
         if not f:
             continue
         kcal, p, c, fat = scaled_macros_from_food(f, e.quantity_g)
-        w.writerow([meals_by_id[e.meal_id].date, meals_by_id[e.meal_id].name, f.description, e.quantity_g,
-                    kcal, p, c, fat])
+        w.writerow(
+            [
+                meals_by_id[e.meal_id].date,
+                meals_by_id[e.meal_id].name,
+                f.description,
+                e.quantity_g,
+                kcal,
+                p,
+                c,
+                fat,
+            ]
+        )
     csv_bytes = buf.getvalue().encode("utf-8")
     filename = f"macro_export_{start_str}_to_{end_str}.csv"
-    return Response(content=csv_bytes, media_type="text/csv",
-                    headers={"Content-Disposition": f'attachment; filename="{filename}"'})
+    return Response(
+        content=csv_bytes,
+        media_type="text/csv",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
 
 @router.delete("/api/meals/{meal_id}")
 async def delete_meal(meal_id: int, session: Session = Depends(get_session)):
     meal_to_delete = session.get(Meal, meal_id)
     if not meal_to_delete:
         raise HTTPException(status_code=404, detail="Meal not found")
-    has_entries = session.exec(select(FoodEntry).where(FoodEntry.meal_id == meal_id).limit(1)).first()
+    has_entries = session.exec(
+        select(FoodEntry).where(FoodEntry.meal_id == meal_id).limit(1)
+    ).first()
     if has_entries:
         raise HTTPException(
             status_code=409,
@@ -343,9 +458,11 @@ async def delete_meal(meal_id: int, session: Session = Depends(get_session)):
         session.commit()
     return {"deleted": True}
 
+
 class CopyToMealPayload(BaseModel):
     date: date
     meal_name: str
+
 
 @router.post("/api/meals/{source_meal_id}/copy_to", status_code=201)
 async def copy_meal_to(
@@ -366,7 +483,9 @@ async def copy_meal_to(
     dest_meal = get_or_create_meal(session, payload.date, payload.meal_name)
     max_sort_order = (
         session.exec(
-            select(func.max(FoodEntry.sort_order)).where(FoodEntry.meal_id == dest_meal.id)
+            select(func.max(FoodEntry.sort_order)).where(
+                FoodEntry.meal_id == dest_meal.id
+            )
         ).first()
         or 0
     )

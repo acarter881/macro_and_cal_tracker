@@ -5,6 +5,7 @@ available (such as in the test environment), the ``run_migrations`` function
 simply returns without raising an error. This keeps the application and test
 suite functional without requiring Alembic as a hard dependency.
 """
+
 from __future__ import annotations
 
 

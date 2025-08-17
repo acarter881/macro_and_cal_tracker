@@ -1,5 +1,5 @@
 import { useState } from "react";
-import toast from 'react-hot-toast';
+import toast from "react-hot-toast";
 import { useStore } from "../../store";
 import { createPresetFromMeal, deletePreset } from "../../api/meals";
 import { Button } from "../ui/Button";
@@ -7,7 +7,9 @@ import { Input } from "../ui/Input";
 
 export function PresetsTab() {
   const { date, presets, refreshPresets, applyPreset } = useStore();
-  const currentMeal = useStore(state => state.day?.meals.find(m => m.name === state.mealName));
+  const currentMeal = useStore(
+    (state) => state.day?.meals.find((m) => m.name === state.mealName),
+  );
   const [newPresetName, setNewPresetName] = useState("");
   const [isSavingPreset, setIsSavingPreset] = useState(false);
 
@@ -18,8 +20,8 @@ export function PresetsTab() {
       await createPresetFromMeal(newPresetName.trim(), date, currentMeal.name);
       setNewPresetName("");
       await refreshPresets();
-      toast.success('Preset saved!');
-    } catch (e:any) {
+      toast.success("Preset saved!");
+    } catch (e: any) {
       toast.error(e?.response?.data?.detail || "Failed to save preset.");
     } finally {
       setIsSavingPreset(false);
@@ -31,27 +33,62 @@ export function PresetsTab() {
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <label htmlFor={idPreset} className="sr-only">Preset name</label>
-        <Input id={idPreset} placeholder="Save current meal as..." value={newPresetName} onChange={(e) => setNewPresetName(e.target.value)} />
-        <Button className="btn-secondary w-full" onClick={handleSavePreset} disabled={isSavingPreset || !currentMeal?.entries?.length || !newPresetName.trim()}>
-          {isSavingPreset ? 'Saving...' : 'Save Preset'}
+        <label htmlFor={idPreset} className="sr-only">
+          Preset name
+        </label>
+        <Input
+          id={idPreset}
+          placeholder="Save current meal as..."
+          value={newPresetName}
+          onChange={(e) => setNewPresetName(e.target.value)}
+        />
+        <Button
+          className="btn-secondary w-full"
+          onClick={handleSavePreset}
+          disabled={
+            isSavingPreset ||
+            !currentMeal?.entries?.length ||
+            !newPresetName.trim()
+          }
+        >
+          {isSavingPreset ? "Saving..." : "Save Preset"}
         </Button>
       </div>
       <div className="max-h-64 overflow-auto">
         <table className="w-full text-sm">
-          <thead className="bg-surface-light dark:bg-border-dark/50"><tr><th className="text-left p-2">Name</th><th className="p-2 text-right">Actions</th></tr></thead>
+          <thead className="bg-surface-light dark:bg-border-dark/50">
+            <tr>
+              <th className="text-left p-2">Name</th>
+              <th className="p-2 text-right">Actions</th>
+            </tr>
+          </thead>
           <tbody>
             {presets.map((p) => (
-              <tr key={p.id} className="border-t border-border-light dark:border-border-dark">
-                <td className="p-2">{p.name} ({p.item_count})</td>
+              <tr
+                key={p.id}
+                className="border-t border-border-light dark:border-border-dark"
+              >
+                <td className="p-2">
+                  {p.name} ({p.item_count})
+                </td>
                 <td className="p-2 text-right">
                   <div className="flex gap-1 justify-end">
-                    <Button className="btn-ghost btn-sm" onClick={() => applyPreset(p.id)}>Apply</Button>
-                    <Button className="btn-ghost btn-sm text-brand-danger hover:bg-brand-danger/10 dark:hover:bg-brand-danger/30" onClick={async () => {
-                      if (!confirm(`Delete preset \"${p.name}\"?`)) return;
-                      await deletePreset(p.id);
-                      await refreshPresets();
-                    }}>Delete</Button>
+                    <Button
+                      className="btn-ghost btn-sm"
+                      onClick={() => applyPreset(p.id)}
+                    >
+                      Apply
+                    </Button>
+                    <Button
+                      className="btn-ghost btn-sm text-brand-danger hover:bg-brand-danger/10 dark:hover:bg-brand-danger/30"
+                      onClick={async () => {
+                        if (!confirm(`Delete preset \"${p.name}\"?`)) return;
+                        await deletePreset(p.id);
+                        await refreshPresets();
+                      }}
+                    >
+                      Delete
+                    </Button>
                   </div>
                 </td>
               </tr>

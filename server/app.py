@@ -1,19 +1,20 @@
 import asyncio
+import logging
+import os
 from contextlib import asynccontextmanager
 from pathlib import Path
-import os
-import logging
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import SQLModel
 
-from server.db import get_engine
-from server.routers import foods, meals, presets, history, weight, config
-from server.run_migrations import run_migrations
 from server import utils
+from server.db import get_engine
+from server.routers import config, foods, history, meals, presets, weight
+from server.run_migrations import run_migrations
 
 logging.basicConfig(level=logging.INFO)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -32,7 +33,9 @@ async def lifespan(app: FastAPI):
 
 allowed_origins_raw = os.getenv("ALLOWED_ORIGINS")
 if allowed_origins_raw:
-    allowed_origins = [origin.strip() for origin in allowed_origins_raw.split(",") if origin.strip()]
+    allowed_origins = [
+        origin.strip() for origin in allowed_origins_raw.split(",") if origin.strip()
+    ]
 else:
     allowed_origins = ["*"]
 

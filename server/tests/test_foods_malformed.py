@@ -1,9 +1,9 @@
-import httpx
 from importlib import reload
 
+import httpx
 from fastapi.testclient import TestClient
-from sqlmodel import SQLModel, Session, create_engine
 from sqlalchemy.pool import StaticPool
+from sqlmodel import Session, SQLModel, create_engine
 
 from server import db
 
@@ -27,10 +27,13 @@ def test_foods_get_handles_malformed_nutrients(tmp_path, monkeypatch):
     monkeypatch.setenv("USDA_KEY", "abc")
 
     import server.utils as utils
+
     reload(utils)
     import server.routers.foods as foods
+
     reload(foods)
     import server.app as app
+
     reload(app)
 
     engine = get_test_engine()
@@ -70,4 +73,3 @@ def test_foods_get_handles_malformed_nutrients(tmp_path, monkeypatch):
         data = resp.json()
         assert data["protein_g_per_100g"] == 0.0
         assert data["fat_g_per_100g"] == 5.0
-

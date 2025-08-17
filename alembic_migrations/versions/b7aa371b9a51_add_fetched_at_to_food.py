@@ -4,10 +4,11 @@ Revision ID: b7aa371b9a51
 Revises: 16a51a1de3c0
 Create Date: 2024-09-17 00:00:00.000000
 """
+
 from __future__ import annotations
 
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
 from sqlalchemy import inspect
 
 revision = "b7aa371b9a51"
