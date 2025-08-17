@@ -43,7 +43,7 @@ beforeEach(async () => {
     }
   };
 
-  const mod = await import('./api');
+  const mod = await import('./api/offline');
   syncQueue = mod.syncQueue;
   getOfflineQueueSize = mod.getOfflineQueueSize;
 });

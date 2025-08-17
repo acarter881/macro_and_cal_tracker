@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import toast from 'react-hot-toast';
 import { useStore } from "../store";
-import * as api from "../api";
+import { searchFoods, deleteCustomFood } from "../api/foods";
 import { DATA_TYPE_OPTIONS } from "../types";
 import type { DataTypeOpt, SimpleFood } from "../types";
 import { Button } from "./ui/Button";
@@ -55,7 +55,7 @@ export function SearchBar() {
     }
     try {
       setSearching(true);
-      const r = await api.searchFoods(query, typeFilter);
+      const r = await searchFoods(query, typeFilter);
       setResults(sortResults(r, unbrandedFirst));
     } finally { setSearching(false); }
   }
@@ -113,7 +113,7 @@ export function SearchBar() {
   async function handleDeleteCustomFood(foodId: number) {
     if (!confirm("Delete this custom food?")) return;
     try {
-      await api.deleteCustomFood(foodId);
+      await deleteCustomFood(foodId);
       setAllMyFoods(allMyFoods.filter(food => food.fdcId !== foodId));
       toast.success('Custom food deleted.');
     } catch (e: any) {

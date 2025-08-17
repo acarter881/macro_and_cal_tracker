@@ -8,7 +8,7 @@ import { Layout } from "./components/Layout";
 import { LoadingSpinner } from "./components/LoadingSpinner";
 import { UsdaKeyDialog } from "./components/UsdaKeyDialog";
 import { Onboarding } from "./components/Onboarding";
-import * as api from "./api";
+import { getUsdaKey } from "./api/foods";
 import toast from "react-hot-toast";
 import { Button } from "./components/ui/Button";
 
@@ -31,7 +31,7 @@ export default function App() {
     setInitError(null);
     try {
       await init();
-      const key = await api.getUsdaKey();
+      const key = await getUsdaKey();
       setNeedsKey(!key);
     } catch (err) {
       console.error("Failed to initialize application", err);

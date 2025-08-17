@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import toast from 'react-hot-toast';
-import * as api from "../../api";
+import { exportCSV } from "../../api/meals";
 import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
 import { useStore } from "../../store";
@@ -23,7 +23,7 @@ export function ExportTab() {
   async function handleExport() {
     setIsExporting(true);
     try {
-      const response = await api.exportCSV(exportStart, exportEnd);
+      const response = await exportCSV(exportStart, exportEnd);
       const blob = new Blob([response.data], { type: 'text/csv' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
