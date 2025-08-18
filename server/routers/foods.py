@@ -1,4 +1,5 @@
 import logging
+import time
 from typing import List, Optional
 
 import httpx
@@ -367,7 +368,6 @@ class CustomFoodSearchResult(BaseModel):
 def create_custom_food(body: CustomFoodIn, session: Session = Depends(get_session)):
     desc = body.description.strip()
     brand = (body.brand_owner or "").strip() or None
-    import time
 
     fdc_id = -int(time.time() * 1000)
     f = Food(
