@@ -250,21 +250,23 @@ def _log_final_failure(retry_state):
 )
 async def fetch_food_detail(fdc_id: int) -> dict:
     if not USDA_KEY:
+        logger.error("USDA_KEY is not set on the server")
         raise HTTPException(status_code=500, detail="USDA_KEY is not set on the server")
     url = f"{USDA_BASE}/food/{fdc_id}"
     params = {"api_key": USDA_KEY}
     client = await get_usda_client()
     r = await client.get(url, params=params)
-    if r.status_code == 200:
-        try:
-            return r.json()
-        except Exception as e:
-            raise HTTPException(
-                status_code=502, detail=f"USDA JSON decode error: {e!s}"
-            )
-    raise HTTPException(
-        status_code=r.status_code, detail=f"USDA error {r.status_code}: {r.text[:400]}"
-    )
+    try:
+        r.raise_for_status()
+        return r.json()
+    except httpx.HTTPStatusError as exc:
+        status = exc.response.status_code
+        text = exc.response.text[:400]
+        logger.error("USDA error %s: %s", status, text)
+        raise HTTPException(status_code=status, detail=f"USDA error {status}: {text}")
+    except json.JSONDecodeError as exc:
+        logger.error("USDA JSON decode error: %s", exc)
+        raise HTTPException(status_code=502, detail=f"USDA JSON decode error: {exc!s}")
 
 
 async def ensure_food_cached(fdc_id: int, session: Session) -> Food:
