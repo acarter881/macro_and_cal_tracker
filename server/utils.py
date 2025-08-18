@@ -43,12 +43,16 @@ CONFIG_PATH = Path(
 )
 
 
-def _load_config() -> Dict:
+def _load_config() -> Optional[Dict]:
     try:
         with open(CONFIG_PATH, "r", encoding="utf-8") as f:
             return json.load(f)
-    except Exception:
-        return {}
+    except OSError as exc:
+        logger.warning("Failed to load config %s: %s", CONFIG_PATH, exc)
+        return None
+    except json.JSONDecodeError as exc:
+        logger.warning("Invalid JSON in config %s: %s", CONFIG_PATH, exc)
+        raise
 
 
 def _save_config(cfg: Dict) -> None:
@@ -57,7 +61,7 @@ def _save_config(cfg: Dict) -> None:
         json.dump(cfg, f)
 
 
-_config = _load_config()
+_config = _load_config() or {}
 
 # USDA_KEY is loaded from config file first, then environment
 USDA_KEY = _config.get("usda_key") or os.getenv("USDA_KEY")

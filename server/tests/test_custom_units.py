@@ -5,7 +5,7 @@ from sqlalchemy.pool import StaticPool
 from sqlmodel import Session, SQLModel, create_engine
 
 from server import app, db
-from server.models import Food, Meal
+from server.models import Meal
 
 
 def get_test_engine():
@@ -32,27 +32,25 @@ def test_custom_unit_food():
     with TestClient(app.app) as client:
         SQLModel.metadata.create_all(engine)
         with Session(engine) as session:
-            food = Food(
-                fdc_id=-1,
-                description="Fish Oil",
-                data_type="Custom",
-                kcal_per_100g=0,
-                protein_g_per_100g=0,
-                carb_g_per_100g=0,
-                fat_g_per_100g=0,
-                unit_name="softgel",
-                kcal_per_unit=5,
-                protein_g_per_unit=0,
-                carb_g_per_unit=0,
-                fat_g_per_unit=0.5,
-            )
             meal = Meal(date=date(2024, 1, 1).isoformat(), name="Meal 1", sort_order=1)
-            session.add(food)
             session.add(meal)
             session.commit()
             meal_id = meal.id
+        resp_food = client.post(
+            "/api/custom_foods",
+            json={
+                "description": "Fish Oil",
+                "unit_name": "softgel",
+                "kcal_per_unit": 5,
+                "protein_g_per_unit": 0,
+                "carb_g_per_unit": 0,
+                "fat_g_per_unit": 0.5,
+            },
+        )
+        assert resp_food.status_code == 200
+        fdc_id = resp_food.json()["fdc_id"]
         resp = client.post(
-            "/api/entries", json={"meal_id": meal_id, "fdc_id": -1, "quantity_g": 2}
+            "/api/entries", json={"meal_id": meal_id, "fdc_id": fdc_id, "quantity_g": 2}
         )
         assert resp.status_code == 200
         day_resp = client.get(f"/api/days/{date(2024, 1, 1).isoformat()}/full")

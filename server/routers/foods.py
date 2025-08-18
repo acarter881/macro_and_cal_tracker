@@ -1,6 +1,7 @@
 import logging
 import time
 from typing import List, Optional
+from uuid import uuid4
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException
@@ -368,8 +369,8 @@ class CustomFoodSearchResult(BaseModel):
 def create_custom_food(body: CustomFoodIn, session: Session = Depends(get_session)):
     desc = body.description.strip()
     brand = (body.brand_owner or "").strip() or None
-
-    fdc_id = -int(time.time() * 1000)
+    # Use a UUID-based negative ID to avoid collisions with USDA records.
+    fdc_id = -(uuid4().int & ((1 << 63) - 1))
     f = Food(
         fdc_id=fdc_id,
         description=desc,
