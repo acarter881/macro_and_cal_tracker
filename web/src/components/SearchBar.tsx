@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { useStore } from "../store";
-import { searchFoods, deleteCustomFood } from "../api/foods";
+import { searchFoods, deleteCustomFood, archiveCustomFood } from "../api/foods";
 import { DATA_TYPE_OPTIONS } from "../types";
 import type { DataTypeOpt, SimpleFood } from "../types";
 import { Button } from "./ui/Button";
@@ -140,7 +140,21 @@ export function SearchBar() {
       setAllMyFoods(allMyFoods.filter((food) => food.fdcId !== foodId));
       toast.success("Custom food deleted.");
     } catch (e: any) {
-      toast.error(e?.response?.data?.detail || "Could not delete food.");
+      if (e?.response?.status === 409) {
+        if (confirm("Food is used in logs. Archive instead?")) {
+          try {
+            await archiveCustomFood(foodId);
+            setAllMyFoods(allMyFoods.filter((food) => food.fdcId !== foodId));
+            toast.success("Custom food archived.");
+          } catch (err: any) {
+            toast.error(
+              err?.response?.data?.detail || "Could not archive food.",
+            );
+          }
+        }
+      } else {
+        toast.error(e?.response?.data?.detail || "Could not delete food.");
+      }
     }
   }
 

@@ -1,4 +1,5 @@
 import logging
+
 import pytest
 
 from server.utils import _to_float
@@ -19,7 +20,7 @@ def test_to_float_unexpected_exception_logs_and_raises(caplog):
         def __float__(self):
             raise RuntimeError("boom")
 
-    with caplog.at_level(logging.ERROR):
+    with caplog.at_level(logging.ERROR, logger="server.utils"):
         with pytest.raises(RuntimeError):
             _to_float(Boom())
     assert "Unexpected error converting" in caplog.text

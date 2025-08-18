@@ -56,6 +56,13 @@ export async function deleteCustomFood(foodId: number) {
   return response.data;
 }
 
+export async function archiveCustomFood(foodId: number) {
+  const response = await api.patch(`/custom_foods/${foodId}`, {
+    archived: true,
+  });
+  return response.data;
+}
+
 export async function getUsdaKey(): Promise<string | null> {
   const response = await api.get("/config/usda-key", {
     headers: configHeaders,

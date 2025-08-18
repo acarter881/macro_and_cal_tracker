@@ -101,7 +101,7 @@ def _to_float(x):
     except (ValueError, TypeError):
         return 0.0
     except Exception:
-        logger.exception("Unexpected error converting %r to float", x)
+        logging.exception("Unexpected error converting %r to float", x)
         raise
 
 
