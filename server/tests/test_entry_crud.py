@@ -10,6 +10,7 @@ from sqlmodel import Session, SQLModel, create_engine
 
 from server import app, db
 from server.models import Food, Meal
+from server.routers.meals import DaySummary
 
 
 def get_test_engine():
@@ -75,11 +76,11 @@ def test_entry_crud_flow():
         day = date(2024, 1, 1).isoformat()
         resp3 = client.get(f"/api/days/{day}")
         assert resp3.status_code == 200
-        data = resp3.json()
-        assert data["entries"][0]["id"] == entry_id2
-        assert data["entries"][1]["id"] == entry_id
-        assert data["entries"][1]["quantity_g"] == 150.0
-        assert data["totals"] == {
+        data = DaySummary.model_validate(resp3.json())
+        assert data.entries[0].id == entry_id2
+        assert data.entries[1].id == entry_id
+        assert data.entries[1].quantity_g == 150.0
+        assert data.totals.model_dump() == {
             "kcal": 200.0,
             "protein": 20.0,
             "carb": 10.0,
@@ -91,8 +92,9 @@ def test_entry_crud_flow():
 
         resp5 = client.get(f"/api/days/{day}")
         assert resp5.status_code == 200
-        assert len(resp5.json()["entries"]) == 1
-        assert resp5.json()["totals"] == {
+        data5 = DaySummary.model_validate(resp5.json())
+        assert len(data5.entries) == 1
+        assert data5.totals.model_dump() == {
             "kcal": 150.0,
             "protein": 15.0,
             "carb": 7.5,
@@ -137,8 +139,8 @@ def test_move_last_entry_to_top():
         day = date(2024, 1, 1).isoformat()
         resp_day = client.get(f"/api/days/{day}")
         assert resp_day.status_code == 200
-        data = resp_day.json()
-        assert [e["id"] for e in data["entries"]] == [
+        data = DaySummary.model_validate(resp_day.json())
+        assert [e.id for e in data.entries] == [
             entry_ids[2],
             entry_ids[0],
             entry_ids[1],
@@ -182,8 +184,8 @@ def test_move_first_entry_to_bottom():
         day = date(2024, 1, 1).isoformat()
         resp_day = client.get(f"/api/days/{day}")
         assert resp_day.status_code == 200
-        data = resp_day.json()
-        assert [e["id"] for e in data["entries"]] == [
+        data = DaySummary.model_validate(resp_day.json())
+        assert [e.id for e in data.entries] == [
             entry_ids[1],
             entry_ids[2],
             entry_ids[0],
@@ -267,6 +269,6 @@ def test_delete_middle_entry_reorders():
         day = date(2024, 1, 1).isoformat()
         resp_day = client.get(f"/api/days/{day}")
         assert resp_day.status_code == 200
-        data = resp_day.json()
+        data = DaySummary.model_validate(resp_day.json())
         # remaining entries should have sequential sort_orders
-        assert [e["sort_order"] for e in data["entries"]] == [1, 2, 3]
+        assert [e.sort_order for e in data.entries] == [1, 2, 3]

@@ -1,7 +1,7 @@
 import csv
 import io
 from datetime import date
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from pydantic import BaseModel, field_validator
@@ -13,6 +13,19 @@ from server.models import Food, FoodEntry, Meal
 from server.utils import ensure_food_cached, get_or_create_meal, scaled_macros_from_food
 
 router = APIRouter()
+
+
+class DayTotals(BaseModel):
+    kcal: float
+    protein: float
+    carb: float
+    fat: float
+
+
+class DaySummary(BaseModel):
+    meals: List[Meal]
+    entries: List[FoodEntry]
+    totals: DayTotals
 
 
 class MealCreate(BaseModel):
@@ -139,17 +152,17 @@ def create_entry(payload: FoodEntryCreate, session: Session = Depends(get_sessio
     return entry
 
 
-@router.get("/api/days/{date}")
-def get_day(date: date, session: Session = Depends(get_session)):
+@router.get("/api/days/{date}", response_model=DaySummary)
+def get_day(date: date, session: Session = Depends(get_session)) -> DaySummary:
     date_str = date.isoformat()
     meals = session.exec(select(Meal).where(Meal.date == date_str)).all()
     meal_ids = [m.id for m in meals]
     if not meal_ids:
-        return {
-            "meals": [],
-            "entries": [],
-            "totals": {"kcal": 0, "protein": 0, "fat": 0, "carb": 0},
-        }
+        return DaySummary(
+            meals=[],
+            entries=[],
+            totals=DayTotals(kcal=0, protein=0, carb=0, fat=0),
+        )
     entries = session.exec(
         select(FoodEntry)
         .where(FoodEntry.meal_id.in_(meal_ids))
@@ -171,11 +184,11 @@ def get_day(date: date, session: Session = Depends(get_session)):
         totals["protein"] += p
         totals["carb"] += c
         totals["fat"] += fat
-    return {
-        "meals": meals,
-        "entries": entries,
-        "totals": {k: round(v, 2) for k, v in totals.items()},
-    }
+    return DaySummary(
+        meals=meals,
+        entries=entries,
+        totals=DayTotals(**{k: round(v, 2) for k, v in totals.items()}),
+    )
 
 
 class EntryUpdate(BaseModel):
