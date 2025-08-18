@@ -98,8 +98,11 @@ def update_usda_key(new_key: str) -> None:
 def _to_float(x):
     try:
         return float(x)
-    except Exception:
+    except (ValueError, TypeError):
         return 0.0
+    except Exception:
+        logger.exception("Unexpected error converting %r to float", x)
+        raise
 
 
 class MacroTotals(TypedDict):
