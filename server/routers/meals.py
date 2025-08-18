@@ -194,56 +194,52 @@ class EntryUpdate(BaseModel):
 def update_entry(
     entry_id: int, payload: EntryUpdate, session: Session = Depends(get_session)
 ):
-    e = session.get(FoodEntry, entry_id)
-    if not e:
-        raise HTTPException(status_code=404, detail="Entry not found")
-    if payload.sort_order is not None and payload.sort_order != e.sort_order:
-        new_order = max(1, payload.sort_order)
-        entries_same_meal = session.exec(
-            select(FoodEntry)
-            .where(FoodEntry.meal_id == e.meal_id)
-            .order_by(FoodEntry.sort_order)
-        ).all()
-        max_order = len(entries_same_meal)
-        if new_order > max_order:
-            new_order = max_order
-        old_order = e.sort_order
-        e.sort_order = 0
-        session.add(e)
-        session.flush()
-        if new_order < old_order:
-            affected = session.exec(
+    with session.begin():
+        e = session.get(FoodEntry, entry_id)
+        if not e:
+            raise HTTPException(status_code=404, detail="Entry not found")
+        if payload.sort_order is not None and payload.sort_order != e.sort_order:
+            new_order = max(1, payload.sort_order)
+            entries_same_meal = session.exec(
                 select(FoodEntry)
-                .where(
-                    FoodEntry.meal_id == e.meal_id,
-                    FoodEntry.sort_order >= new_order,
-                    FoodEntry.sort_order < old_order,
-                )
-                .order_by(desc(FoodEntry.sort_order))
-            ).all()
-            for item in affected:
-                item.sort_order += 1
-                session.add(item)
-                session.flush()
-        elif new_order > old_order:
-            affected = session.exec(
-                select(FoodEntry)
-                .where(
-                    FoodEntry.meal_id == e.meal_id,
-                    FoodEntry.sort_order <= new_order,
-                    FoodEntry.sort_order > old_order,
-                )
+                .where(FoodEntry.meal_id == e.meal_id)
                 .order_by(FoodEntry.sort_order)
             ).all()
-            for item in affected:
-                item.sort_order -= 1
-                session.add(item)
-                session.flush()
-        e.sort_order = new_order
-    if payload.quantity_g is not None:
-        e.quantity_g = float(payload.quantity_g)
-    session.add(e)
-    session.commit()
+            max_order = len(entries_same_meal)
+            if new_order > max_order:
+                new_order = max_order
+            old_order = e.sort_order
+            e.sort_order = 0
+            session.flush()
+            if new_order < old_order:
+                affected = session.exec(
+                    select(FoodEntry)
+                    .where(
+                        FoodEntry.meal_id == e.meal_id,
+                        FoodEntry.sort_order >= new_order,
+                        FoodEntry.sort_order < old_order,
+                    )
+                    .order_by(desc(FoodEntry.sort_order))
+                ).all()
+                for item in affected:
+                    item.sort_order += 1
+                    session.flush()
+            elif new_order > old_order:
+                affected = session.exec(
+                    select(FoodEntry)
+                    .where(
+                        FoodEntry.meal_id == e.meal_id,
+                        FoodEntry.sort_order <= new_order,
+                        FoodEntry.sort_order > old_order,
+                    )
+                    .order_by(FoodEntry.sort_order)
+                ).all()
+                for item in affected:
+                    item.sort_order -= 1
+                    session.flush()
+            e.sort_order = new_order
+        if payload.quantity_g is not None:
+            e.quantity_g = float(payload.quantity_g)
     session.refresh(e)
     return e
 
