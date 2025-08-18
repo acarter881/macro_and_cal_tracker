@@ -186,19 +186,24 @@ def list_favorites(session: Session = Depends(get_session)):
         food_map = {
             f.fdc_id: f
             for f in session.exec(
-                select(Food).where(Food.fdc_id.in_([x.fdc_id for x in favs]))
+                select(Food).where(
+                    Food.fdc_id.in_([x.fdc_id for x in favs]),
+                    Food.archived == False,
+                )
             ).all()
         }
         for f in favs:
             food = food_map.get(f.fdc_id)
+            if not food:
+                continue
             items.append(
                 FavoriteItem(
                     fdc_id=f.fdc_id,
                     alias=f.alias,
                     default_grams=f.default_grams,
-                    description=food.description if food else f"FDC {f.fdc_id}",
-                    brandOwner=getattr(food, "brand_owner", None) if food else None,
-                    dataType=getattr(food, "data_type", None) if food else None,
+                    description=food.description,
+                    brandOwner=food.brand_owner,
+                    dataType=food.data_type,
                 )
             )
     return FavoriteListResponse(items=items)
@@ -246,6 +251,7 @@ def list_recents(limit: int = 20, session: Session = Depends(get_session)):
         )
         .select_from(FoodEntry)
         .join(Food, FoodEntry.fdc_id == Food.fdc_id)
+        .where(Food.archived == False)
         .distinct()
         .order_by(FoodEntry.id.desc())
         .limit(limit)
@@ -335,6 +341,7 @@ class CustomFoodUpdate(BaseModel):
     protein_g_per_unit: Optional[float] = None
     carb_g_per_unit: Optional[float] = None
     fat_g_per_unit: Optional[float] = None
+    archived: Optional[bool] = None
 
 
 class CustomFoodOut(BaseModel):
