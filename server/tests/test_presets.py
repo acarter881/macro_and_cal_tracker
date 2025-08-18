@@ -10,6 +10,7 @@ from sqlmodel import Session, SQLModel, create_engine
 
 from server import app, db
 from server.models import Food
+from server.routers.meals import DaySummary
 
 
 def get_test_engine():
@@ -72,4 +73,5 @@ def test_preset_create_and_apply():
 
         day = client.get(f"/api/days/{date(2024, 1, 1).isoformat()}")
         assert day.status_code == 200
-        assert len(day.json()["entries"]) == 1
+        data = DaySummary.model_validate(day.json())
+        assert len(data.entries) == 1

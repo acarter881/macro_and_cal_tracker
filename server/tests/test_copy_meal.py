@@ -10,6 +10,7 @@ from sqlmodel import Session, SQLModel, create_engine
 
 from server import app, db
 from server.models import Food, FoodEntry, Meal
+from server.routers.meals import DaySummary
 
 
 def get_test_engine():
@@ -81,6 +82,6 @@ def test_copy_meal_assigns_sort_order():
         day = date(2024, 1, 2).isoformat()
         resp_day = client.get(f"/api/days/{day}")
         assert resp_day.status_code == 200
-        data = resp_day.json()
-        dest_entries = [e for e in data["entries"] if e["meal_id"] == dest_meal_id]
-        assert [e["sort_order"] for e in dest_entries] == [1, 2, 3]
+        data = DaySummary.model_validate(resp_day.json())
+        dest_entries = [e for e in data.entries if e.meal_id == dest_meal_id]
+        assert [e.sort_order for e in dest_entries] == [1, 2, 3]
