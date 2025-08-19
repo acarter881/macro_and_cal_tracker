@@ -14,6 +14,8 @@ import {
   cacheDay,
   cacheWeight,
   getCachedWeight,
+  cacheWater,
+  getCachedWater,
   nextTempId,
   enqueue,
 } from "./offline";
@@ -267,5 +269,30 @@ export async function setWeight(date: string, weight: number) {
     return { weight };
   }
   const response = await api.put(`/weight/${date}`, { weight });
+  return response.data;
+}
+
+export async function getWater(date: string) {
+  if (!isOnline()) {
+    const w = getCachedWater(date);
+    return w !== undefined ? { milliliters: w } : null;
+  }
+  try {
+    const response = await api.get(`/water/${date}`);
+    if (response.data?.milliliters !== undefined)
+      cacheWater(date, response.data.milliliters);
+    return response.data;
+  } catch {
+    return null;
+  }
+}
+
+export async function setWater(date: string, milliliters: number) {
+  if (!isOnline()) {
+    cacheWater(date, milliliters);
+    enqueue({ kind: "setWater", payload: { date, water: milliliters } });
+    return { milliliters };
+  }
+  const response = await api.put(`/water/${date}`, { milliliters });
   return response.data;
 }
