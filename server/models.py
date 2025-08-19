@@ -69,3 +69,8 @@ class PresetItem(SQLModel, table=True):
 class BodyWeight(SQLModel, table=True):
     date: str = Field(primary_key=True)
     weight: float
+
+
+class WaterIntake(SQLModel, table=True):
+    date: str = Field(primary_key=True)
+    milliliters: float

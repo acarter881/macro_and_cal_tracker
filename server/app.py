@@ -10,7 +10,7 @@ from sqlmodel import SQLModel
 
 from server import utils
 from server.db import get_engine
-from server.routers import config, foods, history, meals, presets, weight
+from server.routers import config, foods, history, meals, presets, weight, water
 from server.run_migrations import run_migrations
 
 logging.basicConfig(level=logging.INFO)
@@ -53,4 +53,5 @@ app.include_router(meals.router)
 app.include_router(presets.router)
 app.include_router(history.router)
 app.include_router(weight.router)
+app.include_router(water.router)
 app.include_router(config.router)
