@@ -18,6 +18,8 @@ const defaultStore: OfflineStore = {
   foodsTimestamp: 0,
   weights: {},
   weightTimestamps: {},
+  waters: {},
+  waterTimestamps: {},
   queue: [],
   nextId: -1,
 };
@@ -59,6 +61,23 @@ function purgeStore(store: OfflineStore) {
     }
   }
 
+  for (const date of Object.keys(store.waters)) {
+    const ts = store.waterTimestamps[date] || 0;
+    if (ts < cutoff) {
+      delete store.waters[date];
+      delete store.waterTimestamps[date];
+    }
+  }
+  const waterEntries = Object.entries(store.waterTimestamps).sort(
+    (a, b) => b[1] - a[1],
+  );
+  if (waterEntries.length > CACHE_MAX_ENTRIES) {
+    for (const [date] of waterEntries.slice(CACHE_MAX_ENTRIES)) {
+      delete store.waters[date];
+      delete store.waterTimestamps[date];
+    }
+  }
+
   if (store.foodsTimestamp < cutoff) {
     store.foods = [];
     store.foodsTimestamp = 0;
@@ -76,6 +95,8 @@ export function loadStore(): OfflineStore {
     foodsTimestamp: raw?.foodsTimestamp ?? 0,
     weights: raw?.weights ?? {},
     weightTimestamps: raw?.weightTimestamps ?? {},
+    waters: raw?.waters ?? {},
+    waterTimestamps: raw?.waterTimestamps ?? {},
     queue: raw?.queue ?? [],
     nextId: raw?.nextId ?? -1,
   };
@@ -154,6 +175,18 @@ export function cacheWeight(date: string, weight: number) {
 export function getCachedWeight(date: string): number | undefined {
   const s = loadStore();
   return s.weights[date];
+}
+
+export function cacheWater(date: string, water: number) {
+  const s = loadStore();
+  s.waters[date] = water;
+  s.waterTimestamps[date] = Date.now();
+  saveStore(s);
+}
+
+export function getCachedWater(date: string): number | undefined {
+  const s = loadStore();
+  return s.waters[date];
 }
 
 export async function syncQueue() {
@@ -273,6 +306,19 @@ export async function syncQueue() {
         try {
           await api.put(`/weight/${item.payload.date}`, {
             weight: item.payload.weight,
+          });
+        } catch {
+          store.queue.unshift(item);
+          saveStore(store);
+          emitQueueSize();
+          return;
+        }
+        break;
+      }
+      case "setWater": {
+        try {
+          await api.put(`/water/${item.payload.date}`, {
+            milliliters: item.payload.water,
           });
         } catch {
           store.queue.unshift(item);
