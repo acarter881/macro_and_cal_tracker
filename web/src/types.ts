@@ -82,6 +82,7 @@ export type HistoryDay = {
   fat: number;
   carb: number;
   weight?: number;
+  water?: number;
 };
 
 // User-configurable daily macro goals
@@ -127,6 +128,7 @@ export type UpdateEntryPayload = { entryId: number; newGrams: number };
 export type MoveEntryPayload = { entryId: number; newOrder: number };
 export type DeleteEntryPayload = { entryId: number };
 export type SetWeightPayload = { date: string; weight: number };
+export type SetWaterPayload = { date: string; water: number };
 
 export type OfflineOp =
   | { kind: "createMeal"; payload: CreateMealPayload }
@@ -136,7 +138,8 @@ export type OfflineOp =
   | { kind: "updateEntry"; payload: UpdateEntryPayload }
   | { kind: "moveEntry"; payload: MoveEntryPayload }
   | { kind: "deleteEntry"; payload: DeleteEntryPayload }
-  | { kind: "setWeight"; payload: SetWeightPayload };
+  | { kind: "setWeight"; payload: SetWeightPayload }
+  | { kind: "setWater"; payload: SetWaterPayload };
 
 export interface OfflineStore {
   days: Record<string, DayFull>;
@@ -145,6 +148,8 @@ export interface OfflineStore {
   foodsTimestamp: number;
   weights: Record<string, number>;
   weightTimestamps: Record<string, number>;
+  waters: Record<string, number>;
+  waterTimestamps: Record<string, number>;
   queue: OfflineOp[];
   nextId: number;
 }
