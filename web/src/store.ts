@@ -28,6 +28,7 @@ interface AppState {
   favorites: SimpleFood[];
   presets: Preset[];
   weight: number | null;
+  water: number | null;
   goals: Goals;
   /** Information about the most recently deleted entry for undo. */
   lastDeleted: { mealId: number; entry: EntryType; index: number } | null;
@@ -61,6 +62,7 @@ interface AppActions {
   setAllMyFoods: (foods: SimpleFood[]) => void;
   toggleFavorite: (food: SimpleFood) => void;
   saveWeight: (w: number) => Promise<void>;
+  saveWater: (ml: number) => Promise<void>;
   setGoals: (g: Goals) => void;
   syncOffline: () => Promise<void>;
 }
@@ -176,6 +178,7 @@ export const useStore = create<AppState & AppActions>((set, get) => ({
   favorites: loadFavorites(),
   presets: [],
   weight: null,
+  water: null,
   goals: getGoalsForDate(initialDate),
   lastDeleted: null,
   redoDeleted: null,
@@ -313,6 +316,16 @@ export const useStore = create<AppState & AppActions>((set, get) => ({
     }
   },
 
+  saveWater: async (ml) => {
+    try {
+      await mealsApi.setWater(get().date, ml);
+      set({ water: ml });
+      toast.success("Water saved!");
+    } catch {
+      toast.error("Failed to save water.");
+    }
+  },
+
   fetchDay: async () => {
     try {
       let d = await mealsApi.getDayFull(get().date);
@@ -322,8 +335,15 @@ export const useStore = create<AppState & AppActions>((set, get) => ({
         }
         d = await mealsApi.getDayFull(get().date);
       }
-      const w = await mealsApi.getWeight(get().date);
-      set({ day: d, weight: w?.weight ?? null });
+      const [w, waterRes] = await Promise.all([
+        mealsApi.getWeight(get().date),
+        mealsApi.getWater(get().date),
+      ]);
+      set({
+        day: d,
+        weight: w?.weight ?? null,
+        water: waterRes?.milliliters ?? null,
+      });
       const mealExists = d.meals.some(
         (m: MealType) => m.name === get().mealName,
       );
@@ -587,8 +607,6 @@ export const useStore = create<AppState & AppActions>((set, get) => ({
     await get().fetchDay();
     const foods = await foodsApi.searchMyFoods();
     set({ allMyFoods: foods });
-    const w = await mealsApi.getWeight(get().date);
-    set({ weight: w?.weight ?? null });
   },
 }));
 
