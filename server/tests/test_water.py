@@ -1,17 +1,14 @@
-import os
-
-os.environ["USDA_KEY"] = "test"
-
 from datetime import date
 
 from fastapi.testclient import TestClient
 from sqlalchemy.pool import StaticPool
-from sqlmodel import Session, SQLModel, create_engine
+from sqlmodel import SQLModel, Session, create_engine
 
 from server import app, db
 
 
 def get_test_engine():
+    """Return a SQLite engine that keeps data in memory for the test."""
     return create_engine(
         "sqlite://",
         connect_args={"check_same_thread": False},
@@ -27,14 +24,18 @@ def override_get_session(engine):
     return _get_session
 
 
-def test_set_and_get_water():
+def setup_client():
+    """Create a TestClient wired to a temporary in-memory database."""
     engine = get_test_engine()
     db.engine = engine
     app.app.dependency_overrides[db.get_session] = override_get_session(engine)
+    SQLModel.metadata.create_all(engine)
+    return TestClient(app.app)
 
-    with TestClient(app.app) as client:
-        SQLModel.metadata.create_all(engine)
 
+def test_put_and_get_water():
+    """PUT should create a record and GET should retrieve it."""
+    with setup_client() as client:
         resp = client.put(
             f"/api/water/{date(2024, 1, 1).isoformat()}",
             json={"milliliters": 500},
@@ -42,24 +43,18 @@ def test_set_and_get_water():
         assert resp.status_code == 200
         assert resp.json()["milliliters"] == 500
 
-        resp2 = client.get(f"/api/water/{date(2024, 1, 1).isoformat()}")
-        assert resp2.status_code == 200
-        assert resp2.json()["milliliters"] == 500
+        resp = client.get(f"/api/water/{date(2024, 1, 1).isoformat()}")
+        assert resp.status_code == 200
+        assert resp.json()["milliliters"] == 500
 
 
-def test_update_water_overwrites_previous():
-    engine = get_test_engine()
-    db.engine = engine
-    app.app.dependency_overrides[db.get_session] = override_get_session(engine)
-
-    with TestClient(app.app) as client:
-        SQLModel.metadata.create_all(engine)
-
-        resp = client.put(
+def test_put_water_overwrites_previous():
+    """A subsequent PUT for the same date should overwrite the previous value."""
+    with setup_client() as client:
+        client.put(
             f"/api/water/{date(2024, 1, 1).isoformat()}",
             json={"milliliters": 500},
         )
-        assert resp.status_code == 200
 
         resp = client.put(
             f"/api/water/{date(2024, 1, 1).isoformat()}",
@@ -67,18 +62,14 @@ def test_update_water_overwrites_previous():
         )
         assert resp.status_code == 200
 
-        resp2 = client.get(f"/api/water/{date(2024, 1, 1).isoformat()}")
-        assert resp2.status_code == 200
-        assert resp2.json()["milliliters"] == 750
+        resp = client.get(f"/api/water/{date(2024, 1, 1).isoformat()}")
+        assert resp.status_code == 200
+        assert resp.json()["milliliters"] == 750
 
 
 def test_get_water_not_found():
-    engine = get_test_engine()
-    db.engine = engine
-    app.app.dependency_overrides[db.get_session] = override_get_session(engine)
-
-    with TestClient(app.app) as client:
-        SQLModel.metadata.create_all(engine)
-
+    """GET for a date without data should return 404."""
+    with setup_client() as client:
         resp = client.get(f"/api/water/{date(2024, 2, 1).isoformat()}")
         assert resp.status_code == 404
+
