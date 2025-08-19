@@ -3,6 +3,7 @@ import { useStore } from "../store";
 import RadialProgress from "./RadialProgress";
 import { Button } from "./ui/Button";
 import { Input } from "./ui/Input";
+import { WaterTracker } from "./WaterTracker";
 
 export function Summary() {
   const totals = useStore((state) => state.day?.totals);
@@ -111,6 +112,7 @@ export function Summary() {
               </Button>
             </div>
           </div>
+          <WaterTracker />
           <div className="text-xs text-text-muted mt-4 text-center">
             Calories for custom foods use the label; USDA items use 4/4/9.
           </div>
