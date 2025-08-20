@@ -677,6 +677,7 @@ export const useStore = create<AppState & AppActions>((set, get) => {
       set({ weight: w?.weight ?? null, water: water?.milliliters ?? null });
     });
   },
+};
 });
 
 if (typeof window !== "undefined") {
