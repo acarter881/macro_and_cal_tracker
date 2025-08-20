@@ -66,6 +66,17 @@ npm run build && tauri build
 
 ## Environment Variables
 
+Copy the example files and adjust the values for your setup:
+
+```
+cp .env.example .env
+cp web/.env.example web/.env
+```
+
+The root `.env` configures backend variables such as `ALLOWED_ORIGINS` and
+`CONFIG_AUTH_TOKEN`. The `web/.env` file holds frontend variables like
+`VITE_API_BASE_URL` and `VITE_CONFIG_AUTH_TOKEN`.
+
 ### Frontend
 
 The frontend reads `VITE_API_BASE_URL` to know where to send API requests. If this
