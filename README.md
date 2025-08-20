@@ -1,6 +1,14 @@
 # macro_and_cal_tracker
 Tracking macros and calories in an easy-to-use app
 
+## Prerequisites
+
+Make sure the following tools are installed before working with the desktop app:
+
+- [Node.js](https://nodejs.org/)
+- [Rust](https://www.rust-lang.org/tools/install)
+- [Tauri CLI](https://tauri.app/) (`cargo install tauri-cli` or `npm install -g @tauri-apps/cli`)
+
 ## Installation
 
 The backend dependencies are pinned in `requirements.txt` for reproducible
@@ -8,6 +16,14 @@ environment setup. Install them with:
 
 ```
 pip install -r requirements.txt
+```
+
+Install frontend dependencies in the `web/` directory:
+
+```
+cd web
+npm install
+cd ..
 ```
 
 ### Pre-commit Hooks
@@ -25,6 +41,28 @@ Run all hooks on demand:
 pre-commit run --all-files
 ```
 
+
+## Running the App
+
+Start the API server:
+
+```
+uvicorn main:app
+```
+
+From the `web/` directory, launch the desktop client:
+
+```
+cd web
+npm run tauri dev
+```
+
+To build installers:
+
+```
+cd web
+npm run build && tauri build
+```
 
 ## Environment Variables
 
