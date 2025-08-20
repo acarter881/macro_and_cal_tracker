@@ -23,7 +23,7 @@ interface AppState {
   date: string;
   mealName: string;
   day: DayFull | null;
-  // busy: boolean; // <-- REMOVED
+  busy: boolean;
   allMyFoods: SimpleFood[];
   favorites: SimpleFood[];
   presets: Preset[];
@@ -172,13 +172,24 @@ const scaledMacros = (e: EntryType, grams: number): MacroTotals => {
 
 const initialDate = new Date().toISOString().slice(0, 10);
 
-export const useStore = create<AppState & AppActions>((set, get) => ({
+export const useStore = create<AppState & AppActions>((set, get) => {
+  const withBusy = async <T>(fn: () => Promise<T>): Promise<T> => {
+    set({ busy: true });
+    try {
+      return await fn();
+    } finally {
+      set({ busy: false });
+    }
+  };
+
+  return {
   copiedMealId: null,
   copiedEntry: null,
   theme: getInitialTheme(),
   date: initialDate,
   mealName: "Meal 1",
   day: null,
+  busy: false,
   allMyFoods: [],
   favorites: loadFavorites(),
   presets: [],
@@ -313,23 +324,27 @@ export const useStore = create<AppState & AppActions>((set, get) => ({
   },
 
   saveWeight: async (w) => {
-    try {
-      await mealsApi.setWeight(get().date, w);
-      set({ weight: w });
-      toast.success("Weight saved!");
-    } catch {
-      toast.error("Failed to save weight.");
-    }
+    await withBusy(async () => {
+      try {
+        await mealsApi.setWeight(get().date, w);
+        set({ weight: w });
+        toast.success("Weight saved!");
+      } catch {
+        toast.error("Failed to save weight.");
+      }
+    });
   },
 
   saveWater: async (ml) => {
-    try {
-      await mealsApi.setWater(get().date, ml);
-      set({ water: ml });
-      toast.success("Water saved!");
-    } catch {
-      toast.error("Failed to save water.");
-    }
+    await withBusy(async () => {
+      try {
+        await mealsApi.setWater(get().date, ml);
+        set({ water: ml });
+        toast.success("Water saved!");
+      } catch {
+        toast.error("Failed to save water.");
+      }
+    });
   },
 
   incrementWater: async (amount) => {
@@ -338,171 +353,259 @@ export const useStore = create<AppState & AppActions>((set, get) => ({
   },
 
   fetchDay: async () => {
-    try {
-      let d = await mealsApi.getDayFull(get().date);
-      if (d.meals.length === 0) {
-        for (let i = 0; i < 4; i++) {
-          await mealsApi.createMeal(get().date);
+    await withBusy(async () => {
+      try {
+        let d = await mealsApi.getDayFull(get().date);
+        if (d.meals.length === 0) {
+          for (let i = 0; i < 4; i++) {
+            await mealsApi.createMeal(get().date);
+          }
+          d = await mealsApi.getDayFull(get().date);
         }
-        d = await mealsApi.getDayFull(get().date);
+        const [w, water] = await Promise.all([
+          mealsApi.getWeight(get().date),
+          mealsApi.getWater(get().date),
+        ]);
+        set({
+          day: d,
+          weight: w?.weight ?? null,
+          water: water?.milliliters ?? null,
+        });
+        const mealExists = d.meals.some(
+          (m: MealType) => m.name === get().mealName,
+        );
+        if (!mealExists) set({ mealName: d.meals[0]?.name || "Meal 1" });
+      } catch (error) {
+        toast.error(
+          "Failed to fetch day. Please check your connection and try again.",
+        );
+        const state = get();
+        if (!state.day) {
+          const placeholder: DayFull = {
+            date: state.date,
+            meals: [],
+            totals: { kcal: 0, protein: 0, fat: 0, carb: 0 },
+          };
+          set({ day: placeholder });
+        }
       }
-      const [w, water] = await Promise.all([
-        mealsApi.getWeight(get().date),
-        mealsApi.getWater(get().date),
-      ]);
-      set({
-        day: d,
-        weight: w?.weight ?? null,
-        water: water?.milliliters ?? null,
-      });
-      const mealExists = d.meals.some(
-        (m: MealType) => m.name === get().mealName,
-      );
-      if (!mealExists) set({ mealName: d.meals[0]?.name || "Meal 1" });
-    } catch (error) {
-      toast.error(
-        "Failed to fetch day. Please check your connection and try again.",
-      );
-      const state = get();
-      if (!state.day) {
-        const placeholder: DayFull = {
-          date: state.date,
-          meals: [],
-          totals: { kcal: 0, protein: 0, fat: 0, carb: 0 },
-        };
-        set({ day: placeholder });
-      }
-    }
+    });
   },
 
   addFood: async (foodId, grams) => {
-    try {
-      const state = get();
-      let day = state.day;
-      if (!day) return;
-      let meal = day.meals.find((m) => m.name === state.mealName);
-      if (!meal) {
-        const newMeal = await mealsApi.createMeal(state.date);
-        meal = {
-          ...newMeal,
-          entries: [],
-          subtotal: { kcal: 0, protein: 0, fat: 0, carb: 0 },
+    await withBusy(async () => {
+      try {
+        const state = get();
+        let day = state.day;
+        if (!day) return;
+        let meal = day.meals.find((m) => m.name === state.mealName);
+        if (!meal) {
+          const newMeal = await mealsApi.createMeal(state.date);
+          meal = {
+            ...newMeal,
+            entries: [],
+            subtotal: { kcal: 0, protein: 0, fat: 0, carb: 0 },
+          };
+          day.meals.push(meal);
+        }
+        const food = await foodsApi.getFood(foodId);
+        const entryRes = await mealsApi.addEntry(meal.id, foodId, grams);
+        const macros = macrosFromFood(food, grams);
+        const newEntry: EntryType = {
+          id: entryRes.id,
+          description: food.description,
+          quantity_g: grams,
+          kcal: macros.kcal,
+          protein: macros.protein,
+          carb: macros.carb,
+          fat: macros.fat,
+          sort_order: entryRes.sort_order,
+          fdc_id: foodId,
+          unit_name: food.unit_name,
         };
-        day.meals.push(meal);
+        meal.entries.push(newEntry);
+        meal.entries.sort((a, b) => a.sort_order - b.sort_order);
+        meal.subtotal = applyDelta(meal.subtotal, macros);
+        day.totals = applyDelta(day.totals, macros);
+        set({ day });
+      } catch (e) {
+        toast.error("Failed to add food entry.");
       }
-      const food = await foodsApi.getFood(foodId);
-      const entryRes = await mealsApi.addEntry(meal.id, foodId, grams);
-      const macros = macrosFromFood(food, grams);
-      const newEntry: EntryType = {
-        id: entryRes.id,
-        description: food.description,
-        quantity_g: grams,
-        kcal: macros.kcal,
-        protein: macros.protein,
-        carb: macros.carb,
-        fat: macros.fat,
-        sort_order: entryRes.sort_order,
-        fdc_id: foodId,
-        unit_name: food.unit_name,
-      };
-      meal.entries.push(newEntry);
-      meal.entries.sort((a, b) => a.sort_order - b.sort_order);
-      meal.subtotal = applyDelta(meal.subtotal, macros);
-      day.totals = applyDelta(day.totals, macros);
-      set({ day });
-    } catch (e) {
-      toast.error("Failed to add food entry.");
-    }
+    });
   },
 
   addMeal: async () => {
-    const newMeal = await mealsApi.createMeal(get().date);
-    await get().fetchDay();
-    set({ mealName: newMeal.name });
+    await withBusy(async () => {
+      const newMeal = await mealsApi.createMeal(get().date);
+      await get().fetchDay();
+      set({ mealName: newMeal.name });
+    });
   },
 
   deleteMeal: async (mealId) => {
-    await mealsApi.deleteMeal(mealId);
-    await get().fetchDay();
+    await withBusy(async () => {
+      await mealsApi.deleteMeal(mealId);
+      await get().fetchDay();
+    });
   },
 
   renameMeal: async (mealId, newName) => {
-    await mealsApi.updateMeal(mealId, { name: newName });
-    set((state) => {
-      const day = state.day;
-      if (!day) return {};
-      const meal = day.meals.find((m) => m.id === mealId);
-      const wasCurrent = meal ? state.mealName === meal.name : false;
-      if (meal) meal.name = newName;
-      return { day, mealName: wasCurrent ? newName : state.mealName };
+    await withBusy(async () => {
+      await mealsApi.updateMeal(mealId, { name: newName });
+      set((state) => {
+        const day = state.day;
+        if (!day) return {};
+        const meal = day.meals.find((m) => m.id === mealId);
+        const wasCurrent = meal ? state.mealName === meal.name : false;
+        if (meal) meal.name = newName;
+        return { day, mealName: wasCurrent ? newName : state.mealName };
+      });
     });
   },
 
   moveMeal: async (mealId, newOrder) => {
-    await mealsApi.updateMeal(mealId, { sort_order: newOrder });
-    await get().fetchDay();
+    await withBusy(async () => {
+      await mealsApi.updateMeal(mealId, { sort_order: newOrder });
+      await get().fetchDay();
+    });
   },
 
   updateEntry: async (entryId, grams) => {
-    await mealsApi.updateEntry(entryId, grams);
-    set((state) => {
-      const day = state.day;
-      if (!day) return {};
-      for (const meal of day.meals) {
-        const entry = meal.entries.find((e) => e.id === entryId);
-        if (entry) {
-          const newTotals = scaledMacros(entry, grams);
-          const delta = {
-            kcal: newTotals.kcal - entry.kcal,
-            protein: newTotals.protein - entry.protein,
-            fat: newTotals.fat - entry.fat,
-            carb: newTotals.carb - entry.carb,
-          };
-          entry.quantity_g = grams;
-          entry.kcal = newTotals.kcal;
-          entry.protein = newTotals.protein;
-          entry.fat = newTotals.fat;
-          entry.carb = newTotals.carb;
-          meal.subtotal = applyDelta(meal.subtotal, delta);
-          day.totals = applyDelta(day.totals, delta);
-          break;
+    await withBusy(async () => {
+      await mealsApi.updateEntry(entryId, grams);
+      set((state) => {
+        const day = state.day;
+        if (!day) return {};
+        for (const meal of day.meals) {
+          const entry = meal.entries.find((e) => e.id === entryId);
+          if (entry) {
+            const newTotals = scaledMacros(entry, grams);
+            const delta = {
+              kcal: newTotals.kcal - entry.kcal,
+              protein: newTotals.protein - entry.protein,
+              fat: newTotals.fat - entry.fat,
+              carb: newTotals.carb - entry.carb,
+            };
+            entry.quantity_g = grams;
+            entry.kcal = newTotals.kcal;
+            entry.protein = newTotals.protein;
+            entry.fat = newTotals.fat;
+            entry.carb = newTotals.carb;
+            meal.subtotal = applyDelta(meal.subtotal, delta);
+            day.totals = applyDelta(day.totals, delta);
+            break;
+          }
         }
-      }
-      return { day };
+        return { day };
+      });
     });
   },
 
   moveEntry: async (entryId, newOrder) => {
-    await mealsApi.moveEntry(entryId, newOrder);
-    set((state) => {
-      const day = state.day;
-      if (!day) return {};
-      for (const meal of day.meals) {
-        const idx = meal.entries.findIndex((e) => e.id === entryId);
-        if (idx >= 0) {
-          const [entry] = meal.entries.splice(idx, 1);
-          meal.entries.splice(Math.max(0, newOrder - 1), 0, entry);
-          meal.entries.forEach((e, i) => {
-            e.sort_order = i + 1;
-          });
-          break;
+    await withBusy(async () => {
+      await mealsApi.moveEntry(entryId, newOrder);
+      set((state) => {
+        const day = state.day;
+        if (!day) return {};
+        for (const meal of day.meals) {
+          const idx = meal.entries.findIndex((e) => e.id === entryId);
+          if (idx >= 0) {
+            const [entry] = meal.entries.splice(idx, 1);
+            meal.entries.splice(Math.max(0, newOrder - 1), 0, entry);
+            meal.entries.forEach((e, i) => {
+              e.sort_order = i + 1;
+            });
+            break;
+          }
         }
-      }
-      return { day };
+        return { day };
+      });
     });
   },
 
   deleteEntry: async (entryId) => {
-    await mealsApi.deleteEntry(entryId);
-    set((state) => {
-      const day = state.day;
-      if (!day) return {};
-      let deleted: { mealId: number; entry: EntryType; index: number } | null =
-        null;
-      for (const meal of day.meals) {
-        const idx = meal.entries.findIndex((e) => e.id === entryId);
+    await withBusy(async () => {
+      await mealsApi.deleteEntry(entryId);
+      set((state) => {
+        const day = state.day;
+        if (!day) return {};
+        let deleted: { mealId: number; entry: EntryType; index: number } | null =
+          null;
+        for (const meal of day.meals) {
+          const idx = meal.entries.findIndex((e) => e.id === entryId);
+          if (idx >= 0) {
+            const entry = meal.entries[idx];
+            meal.entries.splice(idx, 1);
+            meal.entries.forEach((e, i) => {
+              e.sort_order = i + 1;
+            });
+            const delta = {
+              kcal: -entry.kcal,
+              protein: -entry.protein,
+              fat: -entry.fat,
+              carb: -entry.carb,
+            };
+            meal.subtotal = applyDelta(meal.subtotal, delta);
+            day.totals = applyDelta(day.totals, delta);
+            deleted = { mealId: meal.id, entry, index: idx };
+            break;
+          }
+        }
+        return { day, lastDeleted: deleted, redoDeleted: null };
+      });
+    });
+  },
+
+  undo: async () => {
+    await withBusy(async () => {
+      const info = get().lastDeleted;
+      if (!info) return;
+      const { mealId, entry, index } = info;
+      const res = await mealsApi.addEntry(
+        mealId,
+        entry.fdc_id || 0,
+        entry.quantity_g,
+      );
+      set((state) => {
+        const day = state.day;
+        if (!day) return {};
+        const meal = day.meals.find((m) => m.id === mealId);
+        if (!meal) return {};
+        const newEntry = { ...entry, id: res.id, sort_order: res.sort_order };
+        meal.entries.splice(index, 0, newEntry);
+        meal.entries.forEach((e, i) => {
+          e.sort_order = i + 1;
+        });
+        const delta = {
+          kcal: entry.kcal,
+          protein: entry.protein,
+          fat: entry.fat,
+          carb: entry.carb,
+        };
+        meal.subtotal = applyDelta(meal.subtotal, delta);
+        day.totals = applyDelta(day.totals, delta);
+        return {
+          day,
+          lastDeleted: null,
+          redoDeleted: { mealId, entry: newEntry, index },
+        };
+      });
+    });
+  },
+
+  redo: async () => {
+    await withBusy(async () => {
+      const info = get().redoDeleted;
+      if (!info) return;
+      const { mealId, entry, index } = info;
+      await mealsApi.deleteEntry(entry.id);
+      set((state) => {
+        const day = state.day;
+        if (!day) return {};
+        const meal = day.meals.find((m) => m.id === mealId);
+        if (!meal) return {};
+        const idx = meal.entries.findIndex((e) => e.id === entry.id);
         if (idx >= 0) {
-          const entry = meal.entries[idx];
           meal.entries.splice(idx, 1);
           meal.entries.forEach((e, i) => {
             e.sort_order = i + 1;
@@ -515,92 +618,32 @@ export const useStore = create<AppState & AppActions>((set, get) => ({
           };
           meal.subtotal = applyDelta(meal.subtotal, delta);
           day.totals = applyDelta(day.totals, delta);
-          deleted = { mealId: meal.id, entry, index: idx };
-          break;
         }
-      }
-      return { day, lastDeleted: deleted, redoDeleted: null };
-    });
-  },
-
-  undo: async () => {
-    const info = get().lastDeleted;
-    if (!info) return;
-    const { mealId, entry, index } = info;
-    const res = await mealsApi.addEntry(
-      mealId,
-      entry.fdc_id || 0,
-      entry.quantity_g,
-    );
-    set((state) => {
-      const day = state.day;
-      if (!day) return {};
-      const meal = day.meals.find((m) => m.id === mealId);
-      if (!meal) return {};
-      const newEntry = { ...entry, id: res.id, sort_order: res.sort_order };
-      meal.entries.splice(index, 0, newEntry);
-      meal.entries.forEach((e, i) => {
-        e.sort_order = i + 1;
+        return { day, lastDeleted: { mealId, entry, index }, redoDeleted: null };
       });
-      const delta = {
-        kcal: entry.kcal,
-        protein: entry.protein,
-        fat: entry.fat,
-        carb: entry.carb,
-      };
-      meal.subtotal = applyDelta(meal.subtotal, delta);
-      day.totals = applyDelta(day.totals, delta);
-      return {
-        day,
-        lastDeleted: null,
-        redoDeleted: { mealId, entry: newEntry, index },
-      };
-    });
-  },
-
-  redo: async () => {
-    const info = get().redoDeleted;
-    if (!info) return;
-    const { mealId, entry, index } = info;
-    await mealsApi.deleteEntry(entry.id);
-    set((state) => {
-      const day = state.day;
-      if (!day) return {};
-      const meal = day.meals.find((m) => m.id === mealId);
-      if (!meal) return {};
-      const idx = meal.entries.findIndex((e) => e.id === entry.id);
-      if (idx >= 0) {
-        meal.entries.splice(idx, 1);
-        meal.entries.forEach((e, i) => {
-          e.sort_order = i + 1;
-        });
-        const delta = {
-          kcal: -entry.kcal,
-          protein: -entry.protein,
-          fat: -entry.fat,
-          carb: -entry.carb,
-        };
-        meal.subtotal = applyDelta(meal.subtotal, delta);
-        day.totals = applyDelta(day.totals, delta);
-      }
-      return { day, lastDeleted: { mealId, entry, index }, redoDeleted: null };
     });
   },
 
   refreshPresets: async () => {
-    const presets = await mealsApi.getPresets();
-    set({ presets });
+    await withBusy(async () => {
+      const presets = await mealsApi.getPresets();
+      set({ presets });
+    });
   },
 
   applyPreset: async (presetId) => {
-    try {
-      await mealsApi.applyPreset(presetId, get().date, get().mealName, 1);
-      await get().fetchDay();
-      toast.success("Preset applied!");
-    } catch (e) {
-      const err = e as { response?: { data?: { detail?: string } } };
-      toast.error(err?.response?.data?.detail || "Failed to apply preset.");
-    }
+    await withBusy(async () => {
+      try {
+        await mealsApi.applyPreset(presetId, get().date, get().mealName, 1);
+        await get().fetchDay();
+        toast.success("Preset applied!");
+      } catch (e) {
+        const err = e as { response?: { data?: { detail?: string } } };
+        toast.error(
+          err?.response?.data?.detail || "Failed to apply preset.",
+        );
+      }
+    });
   },
 
   setGoals: (g) => {
@@ -622,17 +665,19 @@ export const useStore = create<AppState & AppActions>((set, get) => ({
   },
 
   syncOffline: async () => {
-    await syncQueue();
-    await get().fetchDay();
-    const foods = await foodsApi.searchMyFoods();
-    set({ allMyFoods: foods });
-    const [w, water] = await Promise.all([
-      mealsApi.getWeight(get().date),
-      mealsApi.getWater(get().date),
-    ]);
-    set({ weight: w?.weight ?? null, water: water?.milliliters ?? null });
+    await withBusy(async () => {
+      await syncQueue();
+      await get().fetchDay();
+      const foods = await foodsApi.searchMyFoods();
+      set({ allMyFoods: foods });
+      const [w, water] = await Promise.all([
+        mealsApi.getWeight(get().date),
+        mealsApi.getWater(get().date),
+      ]);
+      set({ weight: w?.weight ?? null, water: water?.milliliters ?? null });
+    });
   },
-}));
+});
 
 if (typeof window !== "undefined") {
   window.addEventListener("online", () => {
