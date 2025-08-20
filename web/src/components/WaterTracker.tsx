@@ -8,6 +8,7 @@ const ML_PER_OUNCE = 29.5735;
 export function WaterTracker() {
   const water = useStore((s) => s.water);
   const saveWater = useStore((s) => s.saveWater);
+  const incrementWater = useStore((s) => s.incrementWater);
   const [ml, setMl] = useState("");
   const [oz, setOz] = useState("");
 
@@ -48,6 +49,14 @@ export function WaterTracker() {
     }
   };
 
+  const addWater = (amount: number) => {
+    const current = water ?? 0;
+    const total = current + amount;
+    setMl(total.toString());
+    setOz((total / ML_PER_OUNCE).toFixed(1));
+    incrementWater(amount);
+  };
+
   return (
     <div className="mt-6">
       <label className="block mb-1 text-sm text-text dark:text-text-light">
@@ -70,6 +79,22 @@ export function WaterTracker() {
           onChange={(e) => handleOzChange(e.target.value)}
           placeholder="oz"
         />
+      </div>
+      <div className="flex gap-2 mb-2">
+        <Button
+          type="button"
+          className="btn-secondary w-full"
+          onClick={() => addWater(250)}
+        >
+          +250 ml
+        </Button>
+        <Button
+          type="button"
+          className="btn-secondary w-full"
+          onClick={() => addWater(8 * ML_PER_OUNCE)}
+        >
+          +8 oz
+        </Button>
       </div>
       <Button
         className="btn-primary w-full"

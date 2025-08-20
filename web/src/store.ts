@@ -63,6 +63,7 @@ interface AppActions {
   toggleFavorite: (food: SimpleFood) => void;
   saveWeight: (w: number) => Promise<void>;
   saveWater: (ml: number) => Promise<void>;
+  incrementWater: (amount: number) => Promise<void>;
   setGoals: (g: Goals) => void;
   syncOffline: () => Promise<void>;
 }
@@ -326,6 +327,11 @@ export const useStore = create<AppState & AppActions>((set, get) => ({
     } catch {
       toast.error("Failed to save water.");
     }
+  },
+
+  incrementWater: async (amount) => {
+    const current = get().water ?? 0;
+    await get().saveWater(current + amount);
   },
 
   fetchDay: async () => {
