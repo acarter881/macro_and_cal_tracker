@@ -82,7 +82,7 @@ export type HistoryDay = {
   fat: number;
   carb: number;
   weight?: number;
-  water?: number;
+  water: number;
 };
 
 // User-configurable daily macro goals

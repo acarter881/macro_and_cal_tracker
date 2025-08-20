@@ -9,7 +9,7 @@ from sqlalchemy.pool import StaticPool
 from sqlmodel import Session, SQLModel, create_engine
 
 from server import app, db
-from server.models import BodyWeight, Food, FoodEntry, Meal
+from server.models import BodyWeight, Food, FoodEntry, Meal, WaterIntake
 
 
 def get_test_engine():
@@ -28,7 +28,7 @@ def override_get_session(engine):
     return _get_session
 
 
-def test_history_returns_macros_and_weight():
+def test_history_returns_macros_weight_and_water():
     engine = get_test_engine()
     db.engine = engine
     app.app.dependency_overrides[db.get_session] = override_get_session(engine)
@@ -55,6 +55,9 @@ def test_history_returns_macros_and_weight():
             w1 = BodyWeight(date=date(2024, 1, 1).isoformat(), weight=180)
             w2 = BodyWeight(date=date(2024, 1, 2).isoformat(), weight=181)
             session.add_all([w1, w2])
+            water1 = WaterIntake(date=date(2024, 1, 1).isoformat(), milliliters=1000)
+            water2 = WaterIntake(date=date(2024, 1, 2).isoformat(), milliliters=1500)
+            session.add_all([water1, water2])
             session.commit()
 
         resp = client.get(
@@ -74,6 +77,7 @@ def test_history_returns_macros_and_weight():
                 "carb": 5.0,
                 "fat": 2.0,
                 "weight": 180.0,
+                "water": 1000.0,
             },
             {
                 "date": "2024-01-02",
@@ -82,5 +86,6 @@ def test_history_returns_macros_and_weight():
                 "carb": 10.0,
                 "fat": 4.0,
                 "weight": 181.0,
+                "water": 1500.0,
             },
         ]

@@ -2,10 +2,11 @@ from datetime import date, timedelta
 from typing import Dict
 
 from fastapi import APIRouter, Depends
+from sqlalchemy import func
 from sqlmodel import Session, select
 
 from server.db import get_session
-from server.models import BodyWeight, Food, FoodEntry, Meal
+from server.models import BodyWeight, Food, FoodEntry, Meal, WaterIntake
 from server.utils import scaled_macros_from_food
 
 router = APIRouter()
@@ -45,6 +46,16 @@ def get_history(
     ).all()
     weight_map = {w.date: w.weight for w in weights}
 
+    waters = session.exec(
+        select(
+            WaterIntake.date,
+            func.sum(WaterIntake.milliliters).label("milliliters"),
+        )
+        .where(WaterIntake.date >= start_str, WaterIntake.date <= end_str)
+        .group_by(WaterIntake.date)
+    ).all()
+    water_map = {d: ml for d, ml in waters}
+
     totals: Dict[str, Dict[str, float]] = {}
     for e in entries:
         meal = meal_map.get(e.meal_id)
@@ -75,6 +86,7 @@ def get_history(
                 "carb": round(t["carb"], 2),
                 "fat": round(t["fat"], 2),
                 "weight": weight_map.get(day),
+                "water": round(water_map.get(day, 0.0), 2),
             }
         )
         cur += timedelta(days=1)
