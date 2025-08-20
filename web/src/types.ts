@@ -91,6 +91,7 @@ export type Goals = {
   protein: number;
   fat: number;
   carb: number;
+  water: number;
 };
 
 export interface CustomFoodPayload {
