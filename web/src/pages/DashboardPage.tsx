@@ -13,6 +13,7 @@ import { format, subDays, parseISO } from "date-fns";
 import { getHistory } from "../api/meals";
 import type { HistoryDay } from "../types";
 import { LoadingSpinner } from "../components/LoadingSpinner";
+import { BusyOverlay } from "../components/BusyOverlay";
 import { useStore } from "../store";
 import { Button } from "../components/ui/Button";
 
@@ -115,6 +116,7 @@ export function DashboardPage() {
 
   return (
     <div className="space-y-8">
+      <BusyOverlay />
       <div className="flex gap-2">
         {[7, 30, 90].map((opt) => (
           <Button
