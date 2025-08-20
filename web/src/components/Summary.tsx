@@ -10,6 +10,8 @@ export function Summary() {
   const weight = useStore((state) => state.weight);
   const goals = useStore((state) => state.goals);
   const water = useStore((state) => state.water);
+  const showWater = useStore((state) => state.showWater);
+  const toggleShowWater = useStore((state) => state.toggleShowWater);
   const saveWeight = useStore((state) => state.saveWeight);
   const [input, setInput] = useState("");
 
@@ -20,10 +22,17 @@ export function Summary() {
   return (
     <div>
       <div className="sticky top-6 card">
-        <div className="card-header">
+        <div className="card-header flex items-center justify-between">
           <h2 className="font-semibold text-lg dark:text-text-light">
             Today's Totals
           </h2>
+          <Button
+            className="btn-ghost text-sm"
+            onClick={toggleShowWater}
+            aria-label="Toggle water tracking"
+          >
+            {showWater ? "Hide Water" : "Show Water"}
+          </Button>
         </div>
         <div className="card-body">
           <div className="flex justify-between items-stretch gap-2">
@@ -88,19 +97,21 @@ export function Summary() {
           </div>
 
           {/* water */}
-          <div className="flex-1 bg-brand-primary/10 dark:bg-brand-primary/30 p-3 rounded-lg text-center transition-shadow hover:shadow-md">
-            <div className="text-sm text-brand-primary dark:text-brand-primary mb-2">
-              Water
+          {showWater && (
+            <div className="flex-1 bg-brand-primary/10 dark:bg-brand-primary/30 p-3 rounded-lg text-center transition-shadow hover:shadow-md">
+              <div className="text-sm text-brand-primary dark:text-brand-primary mb-2">
+                Water
+              </div>
+              <RadialProgress
+                value={water ?? 0}
+                goal={goals.water}
+                color="text-brand-primary"
+                decimals={0}
+                unit="ml"
+                valueClassName="text-base"
+              />
             </div>
-            <RadialProgress
-              value={water ?? 0}
-              goal={goals.water}
-              color="text-brand-primary"
-              decimals={0}
-              unit="ml"
-              valueClassName="text-base"
-            />
-          </div>
+          )}
         </div>
         <div className="mt-6">
             <label
@@ -128,7 +139,7 @@ export function Summary() {
               </Button>
             </div>
           </div>
-          <WaterTracker />
+          {showWater && <WaterTracker />}
           <div className="text-xs text-text-muted mt-4 text-center">
             Calories for custom foods use the label; USDA items use 4/4/9.
           </div>

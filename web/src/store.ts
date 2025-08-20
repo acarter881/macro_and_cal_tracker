@@ -30,6 +30,7 @@ interface AppState {
   weight: number | null;
   water: number | null;
   goals: Goals;
+  showWater: boolean;
   /** Information about the most recently deleted entry for undo. */
   lastDeleted: { mealId: number; entry: EntryType; index: number } | null;
   /** Information about the last undone deletion for redo. */
@@ -65,6 +66,7 @@ interface AppActions {
   saveWater: (ml: number) => Promise<void>;
   incrementWater: (amount: number) => Promise<void>;
   setGoals: (g: Goals) => void;
+  toggleShowWater: () => void;
   syncOffline: () => Promise<void>;
 }
 
@@ -183,6 +185,7 @@ export const useStore = create<AppState & AppActions>((set, get) => ({
   weight: null,
   water: null,
   goals: getGoalsForDate(initialDate),
+  showWater: loadJSON<boolean>("showWater", true),
   lastDeleted: null,
   redoDeleted: null,
 
@@ -608,6 +611,14 @@ export const useStore = create<AppState & AppActions>((set, get) => ({
       saveJSON("defaultGoals", g);
     }
     set({ goals: g });
+  },
+
+  toggleShowWater: () => {
+    set((state) => {
+      const value = !state.showWater;
+      saveJSON("showWater", value);
+      return { showWater: value };
+    });
   },
 
   syncOffline: async () => {
