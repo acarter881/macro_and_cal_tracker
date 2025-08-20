@@ -244,7 +244,7 @@ export async function getHistory(
     end_date: endDate,
   };
   const response = await api.get("/history", { params });
-  return response.data;
+  return response.data.map((d: HistoryDay) => ({ ...d, water: d.water ?? 0 }));
 }
 
 export async function getWeight(date: string) {
