@@ -9,6 +9,7 @@ export function Summary() {
   const totals = useStore((state) => state.day?.totals);
   const weight = useStore((state) => state.weight);
   const goals = useStore((state) => state.goals);
+  const water = useStore((state) => state.water);
   const saveWeight = useStore((state) => state.saveWeight);
   const [input, setInput] = useState("");
 
@@ -71,22 +72,37 @@ export function Summary() {
               />
             </div>
 
-            {/* protein */}
-            <div className="flex-1 bg-brand-success/10 dark:bg-brand-success/30 p-3 rounded-lg text-center transition-shadow hover:shadow-md">
-              <div className="text-sm text-brand-success dark:text-brand-success mb-2">
-                Protein
-              </div>
-              <RadialProgress
-                value={totals?.protein ?? 0}
-                goal={goals.protein}
-                color="text-brand-success"
-                decimals={1}
-                unit="g"
-                valueClassName="text-base"
-              />
+          {/* protein */}
+          <div className="flex-1 bg-brand-success/10 dark:bg-brand-success/30 p-3 rounded-lg text-center transition-shadow hover:shadow-md">
+            <div className="text-sm text-brand-success dark:text-brand-success mb-2">
+              Protein
             </div>
+            <RadialProgress
+              value={totals?.protein ?? 0}
+              goal={goals.protein}
+              color="text-brand-success"
+              decimals={1}
+              unit="g"
+              valueClassName="text-base"
+            />
           </div>
-          <div className="mt-6">
+
+          {/* water */}
+          <div className="flex-1 bg-brand-primary/10 dark:bg-brand-primary/30 p-3 rounded-lg text-center transition-shadow hover:shadow-md">
+            <div className="text-sm text-brand-primary dark:text-brand-primary mb-2">
+              Water
+            </div>
+            <RadialProgress
+              value={water ?? 0}
+              goal={goals.water}
+              color="text-brand-primary"
+              decimals={0}
+              unit="ml"
+              valueClassName="text-base"
+            />
+          </div>
+        </div>
+        <div className="mt-6">
             <label
               htmlFor="body-weight"
               className="block mb-1 text-sm text-text dark:text-text-light"

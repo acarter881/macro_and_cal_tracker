@@ -78,11 +78,13 @@ const getInitialTheme = (): Theme => {
 };
 
 // --- Daily Goals helpers -------------------------------------------------
-const EMPTY_GOALS: Goals = { kcal: 0, protein: 0, fat: 0, carb: 0 };
+const EMPTY_GOALS: Goals = { kcal: 0, protein: 0, fat: 0, carb: 0, water: 0 };
 
 // Return default goals saved in localStorage, or empty goals if none set
-const loadDefaultGoals = (): Goals =>
-  loadJSON<Goals>("defaultGoals", { ...EMPTY_GOALS });
+const loadDefaultGoals = (): Goals => ({
+  ...EMPTY_GOALS,
+  ...loadJSON<Partial<Goals>>("defaultGoals", {}),
+});
 
 // Return full mapping of date -> goals from localStorage
 const loadGoalsMap = (): Record<string, Goals> =>
@@ -91,12 +93,12 @@ const loadGoalsMap = (): Record<string, Goals> =>
 // Load goals for specific date, falling back to the most recently saved goals
 const getGoalsForDate = (d: string): Goals => {
   const all = loadGoalsMap();
-  if (all[d]) return all[d];
+  if (all[d]) return { ...EMPTY_GOALS, ...all[d] };
   const past = Object.keys(all)
     .filter((date) => date <= d)
     .sort();
   const latest = past[past.length - 1];
-  if (latest) return all[latest];
+  if (latest) return { ...EMPTY_GOALS, ...all[latest] };
   return loadDefaultGoals();
 };
 

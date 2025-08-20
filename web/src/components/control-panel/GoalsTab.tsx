@@ -10,12 +10,14 @@ export function GoalsTab() {
     fat: string;
     carb: string;
     protein: string;
+    water: string;
     kcal?: string;
   };
   const [goalInput, setGoalInput] = useState<GoalInputState>({
     fat: "",
     carb: "",
     protein: "",
+    water: "",
   });
 
   useEffect(() => {
@@ -23,6 +25,7 @@ export function GoalsTab() {
       fat: goals.fat ? goals.fat.toString() : "",
       carb: goals.carb ? goals.carb.toString() : "",
       protein: goals.protein ? goals.protein.toString() : "",
+      water: goals.water ? goals.water.toString() : "",
     });
   }, [goals]);
 
@@ -31,6 +34,7 @@ export function GoalsTab() {
       fat: parseFloat(goalInput.fat) || 0,
       carb: parseFloat(goalInput.carb) || 0,
       protein: parseFloat(goalInput.protein) || 0,
+      water: parseFloat(goalInput.water) || 0,
       kcal: 0,
     };
     const computedKcal = g.protein * 4 + g.carb * 4 + g.fat * 9;
@@ -48,6 +52,7 @@ export function GoalsTab() {
     fat: "goal-fat",
     carb: "goal-carb",
     protein: "goal-protein",
+    water: "goal-water",
   } as const;
 
   return (
@@ -95,6 +100,21 @@ export function GoalsTab() {
             value={goalInput.protein}
             onChange={(e) =>
               setGoalInput({ ...goalInput, protein: e.target.value })
+            }
+          />
+        </div>
+        <div className="flex flex-col">
+          <label htmlFor={ids.water} className="sr-only">
+            Water ml
+          </label>
+          <Input
+            id={ids.water}
+            type="number"
+            step="1"
+            placeholder="Water ml"
+            value={goalInput.water}
+            onChange={(e) =>
+              setGoalInput({ ...goalInput, water: e.target.value })
             }
           />
         </div>
