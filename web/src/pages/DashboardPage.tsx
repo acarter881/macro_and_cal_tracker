@@ -52,6 +52,7 @@ export function DashboardPage() {
   const [days, setDays] = useState(7);
   const [loading, setLoading] = useState(true);
   const theme = useStore((state) => state.theme);
+  const showWater = useStore((state) => state.showWater);
   const palette = palettes[theme];
 
   useEffect(() => {
@@ -171,16 +172,18 @@ export function DashboardPage() {
               </div>
             </div>
           </div>
-          <div className="card">
-            <div className="card-body text-center">
-              <div className="text-sm text-text-muted dark:text-text-light">
-                Avg Water
-              </div>
-              <div className="text-2xl font-semibold dark:text-text-light">
-                {stats.avgWater.toFixed(0)} ml
+          {showWater && (
+            <div className="card">
+              <div className="card-body text-center">
+                <div className="text-sm text-text-muted dark:text-text-light">
+                  Avg Water
+                </div>
+                <div className="text-2xl font-semibold dark:text-text-light">
+                  {stats.avgWater.toFixed(0)} ml
+                </div>
               </div>
             </div>
-          </div>
+          )}
           <div className="card">
             <div className="card-body text-center">
               <div className="text-sm text-text-muted dark:text-text-light">
@@ -335,47 +338,49 @@ export function DashboardPage() {
           )}
         </div>
       </div>
-      <div className="card">
-        <div className="card-header">
-          <h2 className="font-semibold text-lg dark:text-text-light">
-            Water Intake Trend (Last {days} Days)
-          </h2>
+      {showWater && (
+        <div className="card">
+          <div className="card-header">
+            <h2 className="font-semibold text-lg dark:text-text-light">
+              Water Intake Trend (Last {days} Days)
+            </h2>
+          </div>
+          <div className="card-body h-80">
+            {loading ? (
+              <LoadingSpinner />
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={formattedData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={palette.grid} />
+                  <XAxis
+                    dataKey="date"
+                    tick={{ fill: palette.axis }}
+                    stroke={palette.axis}
+                  />
+                  <YAxis tick={{ fill: palette.axis }} stroke={palette.axis} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: palette.tooltipBg,
+                      border: "none",
+                    }}
+                    labelStyle={{ color: palette.tooltipColor }}
+                    itemStyle={{ color: palette.tooltipColor }}
+                  />
+                  <Legend wrapperStyle={{ color: palette.axis }} />
+                  <Line
+                    type="monotone"
+                    dataKey="water"
+                    name="Water (ml)"
+                    stroke={palette.lines.water}
+                    strokeWidth={2}
+                    activeDot={{ r: 8 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
+          </div>
         </div>
-        <div className="card-body h-80">
-          {loading ? (
-            <LoadingSpinner />
-          ) : (
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={formattedData}>
-                <CartesianGrid strokeDasharray="3 3" stroke={palette.grid} />
-                <XAxis
-                  dataKey="date"
-                  tick={{ fill: palette.axis }}
-                  stroke={palette.axis}
-                />
-                <YAxis tick={{ fill: palette.axis }} stroke={palette.axis} />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: palette.tooltipBg,
-                    border: "none",
-                  }}
-                  labelStyle={{ color: palette.tooltipColor }}
-                  itemStyle={{ color: palette.tooltipColor }}
-                />
-                <Legend wrapperStyle={{ color: palette.axis }} />
-                <Line
-                  type="monotone"
-                  dataKey="water"
-                  name="Water (ml)"
-                  stroke={palette.lines.water}
-                  strokeWidth={2}
-                  activeDot={{ r: 8 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          )}
-        </div>
-      </div>
+      )}
     </div>
   );
 }
