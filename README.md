@@ -64,6 +64,10 @@ cd web
 npm run build && tauri build
 ```
 
+## Release Workflow
+
+The repository includes a GitHub Actions workflow (`.github/workflows/release.yml`) that builds installers for Windows, macOS, and Linux. Pushing a tag beginning with `v` or manually running the workflow triggers `tauri build` on each platform and uploads the generated bundles as workflow artifacts.
+
 ## Environment Variables
 
 Copy the example files and adjust the values for your setup:
