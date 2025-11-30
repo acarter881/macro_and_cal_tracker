@@ -1,3 +1,4 @@
+import toast from "react-hot-toast";
 import type {
   DayFull,
   MealType,
@@ -187,8 +188,15 @@ export async function deleteEntry(entryId: number) {
 }
 
 export async function getPresets() {
-  const response = await api.get("/presets");
-  return response.data.items;
+  if (!isOnline()) return [];
+  try {
+    const response = await api.get("/presets");
+    return response.data.items;
+  } catch (err) {
+    console.error("Failed to fetch presets:", err);
+    toast.error("Unable to load presets. Try again when back online.");
+    return [];
+  }
 }
 
 export async function createPresetFromMeal(

@@ -46,9 +46,15 @@ export async function searchMyFoods() {
   if (!isOnline()) {
     return getCachedFoods();
   }
-  const response = await api.get("/my_foods");
-  cacheFoods(response.data);
-  return response.data;
+  try {
+    const response = await api.get("/my_foods");
+    cacheFoods(response.data);
+    return response.data;
+  } catch (err) {
+    console.error("Failed to fetch saved foods:", err);
+    toast.error("Unable to load saved foods. Showing cached list.");
+    return getCachedFoods();
+  }
 }
 
 export async function deleteCustomFood(foodId: number) {
